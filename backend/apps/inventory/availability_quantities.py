@@ -6,7 +6,7 @@ from apps.inventory.availability_types import InsufficientStock
 
 
 def adjust_quantities(
-    product, *, delta_available, delta_damaged, delta_lost, reason, actor
+    product, *, delta_available, delta_damaged, delta_lost, reason, actor, _return_adjustment=False
 ):
     """Apply signed deltas to a product's available/damaged/lost buckets, recompute
     total, record an InventoryAdjustment, and audit. Row-locked; refuses to make any
@@ -45,7 +45,7 @@ def adjust_quantities(
         from apps.audit import services as audit
         from apps.operations.models import InventoryAdjustment
 
-        InventoryAdjustment.objects.create(
+        adjustment = InventoryAdjustment.objects.create(
             makerspace=locked.makerspace,
             product=locked,
             delta_available=delta_available,
@@ -66,7 +66,7 @@ def adjust_quantities(
                 "reason": reason,
             },
         )
-    return locked
+    return (locked, adjustment) if _return_adjustment else locked
 
 
 def consume_available(product, quantity, reason, actor):
@@ -81,6 +81,14 @@ def consume_available(product, quantity, reason, actor):
         reason=reason,
         actor=actor,
     )
+
+
+def consume_available_with_adjustment(product, quantity, reason, actor):
+    """Use the same quantity owner and return its canonical adjustment for an idempotency receipt."""
+    if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
+        raise InsufficientStock("Consumption quantity must be a positive integer.")
+    return adjust_quantities(product, delta_available=-quantity, delta_damaged=0, delta_lost=0,
+                             reason=reason, actor=actor, _return_adjustment=True)
 
 
 def move_available_to_triage_bucket(product, quantity, *, outcome, reason, actor):

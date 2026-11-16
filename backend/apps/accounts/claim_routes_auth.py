@@ -1,5 +1,6 @@
 """Claim policies for the authentication surface."""
 
+from django.utils.translation import gettext_noop
 from apps.accounts.claim_route_types import AnonymousRead, ControlRoute, Refused
 
 
@@ -11,6 +12,23 @@ def _refused(name, methods, reason):
 
 
 AUTH_CLAIM_ROUTES = {
+    **_refused("auth-account-restore-email", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-restore-phone", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-restore-social-start", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-restore-social-complete", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-deletion", ("GET", "HEAD", "POST"), "claim sessions cannot delete accounts"),
+    **_refused("auth-reauth", ("GET", "HEAD", "POST"), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-social-start", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-social-complete", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-social-factor", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-phone-start", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-phone-confirm", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-enrollment-email", ("POST",), "claim sessions cannot enroll MFA"),
+    **_refused("auth-reauth-enrollment-confirm", ("POST",), "claim sessions cannot enroll MFA"),
+    **_refused(
+        "auth-organizations-self-service", ("GET", "HEAD", "POST"),
+        "claim sessions cannot create organizations",
+    ),
     **_refused("auth-mfa", ("GET", "HEAD", "POST"), "claim sessions cannot manage MFA"),
     **_refused("auth-mfa-enroll", ("POST",), "claim sessions cannot enroll MFA"),
     **_refused("auth-mfa-confirm", ("POST",), "claim sessions cannot enroll MFA"),
@@ -22,6 +40,11 @@ AUTH_CLAIM_ROUTES = {
     **_refused("social-google", ("POST",), "claim sessions cannot change identity"),
     **_refused("social-apple", ("POST",), "claim sessions cannot change identity"),
     **_refused("social-oidc", ("POST",), "claim sessions cannot change identity"),
+    **_refused("social-github-browser-start", ("POST",), "claim sessions cannot change identity"),
+    **_refused("social-github-browser-callback", ("POST",), "claim sessions cannot change identity"),
+    **_refused("social-github-link-start", ("POST",), "claim sessions cannot link identity providers"),
+    **_refused("social-oidc-link-start", ("POST",), "claim sessions cannot link identity providers"),
+    **_refused("social-link-callback", ("POST",), "claim sessions cannot link identity providers"),
     ("social-oidc-browser-start", "POST"): ControlRoute(),
     ("social-oidc-browser-start", "OPTIONS"): AnonymousRead(),
     ("social-oidc-browser-callback", "POST"): ControlRoute(),
@@ -40,8 +63,14 @@ AUTH_CLAIM_ROUTES = {
         "claim sessions cannot create device grants",
     ),
     **_refused("device-login", ("POST",), "claim sessions cannot create device grants"),
+    **_refused("device-passkey-options", ("POST",), "claim sessions cannot create device grants"),
+    **_refused("device-passkey-login", ("POST",), "claim sessions cannot create device grants"),
+    **_refused("social-github-device-start", ("POST",), "claim sessions cannot change identity"),
+    **_refused("social-github-device", ("POST",), "claim sessions cannot change identity"),
     **_refused("device-refresh", ("POST",), "claim sessions cannot use device refresh families"),
     **_refused("device-logout", ("POST",), "claim sessions cannot mutate device grants"),
+    **_refused("device-staff-grant", ("POST",), "claim sessions cannot create device grants"),
+    **_refused("device-event-grant", ("POST",), "claim sessions cannot create device grants"),
     **_refused("device-grants", ("GET", "HEAD"), "claim sessions cannot enumerate device grants"),
     **_refused("device-grant-detail", ("DELETE",), "claim sessions cannot revoke device grants"),
     **_refused("auth-phone-login-start", ("POST",), "claim sessions cannot change login identity"),
@@ -60,9 +89,13 @@ AUTH_CLAIM_ROUTES = {
     ("auth-refresh", "OPTIONS"): AnonymousRead(),
     ("auth-logout", "POST"): ControlRoute(),
     ("auth-logout", "OPTIONS"): AnonymousRead(),
+    ("auth-logout-all", "POST"): ControlRoute(),
+    ("auth-logout-all", "OPTIONS"): AnonymousRead(),
     ("auth-me", "GET"): ControlRoute(),
     ("auth-me", "HEAD"): ControlRoute(),
     ("auth-me", "OPTIONS"): AnonymousRead(),
+    # Phase 8 i18n: the language preference is platform account data, not the walk-in's.
+    ("auth-me", "PATCH"): Refused(gettext_noop("claim sessions cannot change account preferences")),
     **_refused("auth-change-password", ("POST",), "walk-ins have no password credential"),
     **_refused("auth-forgot-password", ("POST",), "walk-ins have no password credential"),
     **_refused("auth-reset-password", ("POST",), "walk-ins have no password credential"),
@@ -74,4 +107,24 @@ AUTH_CLAIM_ROUTES = {
     ),
     **_refused("auth-email-verification-resend", ("POST",), "walk-ins cannot verify email"),
     **_refused("auth-email-verification-confirm", ("POST",), "walk-ins cannot verify email"),
+    # Release 2 S-A: passkeys belong to a person's own web session, never a claim session.
+    **_refused("auth-passkeys", ("GET", "HEAD"), "claim sessions cannot manage passkeys"),
+    **_refused("auth-passkey-detail", ("PATCH", "DELETE"), "claim sessions cannot manage passkeys"),
+    **_refused("auth-passkeys-register-options", ("POST",), "claim sessions cannot add passkeys"),
+    **_refused("auth-passkeys-register-verify", ("POST",), "claim sessions cannot add passkeys"),
+    **_refused("auth-passkeys-authenticate-options", ("POST",), "claim sessions do not authenticate"),
+    **_refused("auth-passkeys-authenticate-verify", ("POST",), "claim sessions do not authenticate"),
+    **_refused("auth-mfa-passkey-options", ("POST",), "claim sessions cannot exchange credentials"),
+    **_refused("auth-reauth-passkey-options", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-passkey", ("POST",), "claim sessions cannot reauthenticate"),
+    # Release 2 S-B: remembered devices and the unusual-login code belong to a person's own sign-in.
+    **_refused("auth-devices", ("GET", "HEAD"), "claim sessions have no remembered devices"),
+    **_refused("auth-device-detail", ("DELETE",), "claim sessions have no remembered devices"),
+    # Token-only (no authentication classes): a presented claim token is never read.
+    ("auth-login-code-resend", "POST"): ControlRoute(),
+    ("auth-login-code-resend", "OPTIONS"): AnonymousRead(),
+    ("auth-security-alerts-not-me", "POST"): ControlRoute(),
+    ("auth-security-alerts-not-me", "OPTIONS"): AnonymousRead(),
+    # No authentication classes: reports cookie PRESENCE only, never reads a claim token.
+    **{("auth-browser-state", method): AnonymousRead() for method in ("GET", "HEAD", "OPTIONS")},
 }

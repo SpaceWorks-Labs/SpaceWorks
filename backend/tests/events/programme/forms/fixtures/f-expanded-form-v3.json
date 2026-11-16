@@ -1,0 +1,84 @@
+{
+  "contract_version": 3,
+  "owner": "F",
+  "single_choice_other": {
+    "schema": {
+      "schema_version": 2,
+      "form_id": "example",
+      "revision": 1,
+      "questions": [
+        {
+          "id": "choice",
+          "type": "single_choice",
+          "label": "Choice",
+          "required": true,
+          "options": [
+            {
+              "id": "other",
+              "label": "Other",
+              "other": true
+            }
+          ],
+          "bounds": {
+            "other_max_length": 300
+          }
+        }
+      ]
+    },
+    "raw": {
+      "choice": {
+        "option_id": "other",
+        "text": "Vegetarian"
+      }
+    },
+    "canonical_value": {
+      "option_id": "other",
+      "text": "Vegetarian"
+    }
+  },
+  "multi_choice_other": {
+    "raw": {
+      "option_ids": [
+        "a",
+        "other"
+      ],
+      "other_text": "Custom"
+    }
+  },
+  "error_envelopes": {
+    "new_member": {
+      "code": "invalid_answer",
+      "detail": "Invalid answer.",
+      "fields": {
+        "emergency": {
+          "phone": [
+            "Enter a valid phone."
+          ]
+        }
+      }
+    },
+    "ordinary_answers": {
+      "answers": {
+        "emergency": {
+          "phone": [
+            "Enter a valid phone."
+          ]
+        }
+      }
+    },
+    "ordinary_custom_answers": {
+      "custom_answers": {
+        "emergency": {
+          "phone": [
+            "Enter a valid phone."
+          ]
+        }
+      }
+    }
+  },
+  "read_only_editor_fields": [
+    "event_context"
+  ],
+  "save_sensitive_defaults": false,
+  "no_numeric_age_persistence": true
+}

@@ -1,10 +1,10 @@
-Hello {{ print_request.requester.username }},
+{% load i18n %}{% blocktranslate trimmed with username=print_request.requester.username %}Hello {{ username }},{% endblocktranslate %}
 
-Your print request "{{ print_request.title }}" has been accepted.
+{% blocktranslate trimmed with title=print_request.title %}Your print request "{{ title }}" has been accepted.{% endblocktranslate %}
 
-Bucket: {{ print_request.bucket.name }}
-Makerspace: {{ print_request.bucket.makerspace.name }}
+{% blocktranslate trimmed with name=print_request.bucket.name %}Bucket: {{ name }}{% endblocktranslate %}
+{% blocktranslate trimmed with name=print_request.bucket.makerspace.name %}Makerspace: {{ name }}{% endblocktranslate %}
 {% if status_url %}
-Track your request: {{ status_url }}
+{% blocktranslate trimmed with status_url=status_url %}Track your request: {{ status_url }}{% endblocktranslate %}
 {% endif %}
-Tracking token: {{ public_token }}
+{% blocktranslate trimmed with public_token=public_token %}Tracking token: {{ public_token }}{% endblocktranslate %}

@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post" action="{{ request.path }}">
@@ -11,7 +12,7 @@
   <fieldset class="module aligned">
     {% for obj in queryset %}
       <div class="form-row">
-        <label>QR:</label>
+        <label>{% translate "QR:" %}</label>
         <div class="readonly">{{ obj.payload }} ({{ obj.target_type }} #{{ obj.target_id }})</div>
       </div>
     {% endfor %}

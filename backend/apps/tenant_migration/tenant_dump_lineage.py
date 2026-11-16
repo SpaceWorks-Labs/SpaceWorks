@@ -9,7 +9,8 @@ from .tenant_dump_manifest import verify_envelope_custody_manifest
 
 
 FORMAT = "spaceworks-tenant-dump-v1"
-DERIVATION_POLICY_VERSION = 5
+# 6: one-shot tenant recipients; no request-time superadmin decision (P1b, #111 Q7).
+DERIVATION_POLICY_VERSION = 6
 
 
 def canonical_digest(value):

@@ -13,6 +13,7 @@ from apps.payments.providers.base import (
     CheckoutRequest,
     CheckoutResult,
     PaymentsUnavailable,
+    ProviderOutcomeUnknown,
     RefundRequest,
     RefundResult,
     WebhookEvent,
@@ -67,14 +68,19 @@ class StripeProvider:
             raise PaymentsUnavailable("Stripe did not return a Checkout URL.")
         return CheckoutResult(order_id=session_id, checkout_url=checkout_url)
 
-    def expire_checkout(self, source, order_id: str) -> None:
+    def expire_checkout(self, source, order_id: str) -> bool:
         if not order_id:
-            return
-        stripe_client.expire_checkout_session(source, order_id)
+            return True
+        return stripe_client.expire_checkout_session(source, order_id)
 
     def create_refund(self, source, request: RefundRequest) -> RefundResult:
         if not request.payment_id:
             raise PaymentsUnavailable("The payment has no Stripe PaymentIntent to refund.")
+        params = {}
+        if request.refund_application_fee:
+            params["refund_application_fee"] = True
+        if request.reverse_transfer:
+            params["reverse_transfer"] = True
         try:
             refund = stripe_client.create_refund(
                 source,
@@ -82,17 +88,18 @@ class StripeProvider:
                 payment_intent=request.payment_id,
                 amount=request.amount_minor,
                 metadata={key: str(value) for key, value in (request.metadata or {}).items()},
+                **params,
             )
         except PaymentsUnavailable:
             raise
         except Exception as exc:
             raise PaymentsUnavailable("Stripe rejected the refund.") from exc
         refund_id = _value(refund, "id")
-        if not refund_id:
-            raise PaymentsUnavailable("Stripe did not return a refund id.")
+        if not isinstance(refund_id, str) or not refund_id.strip():
+            raise ProviderOutcomeUnknown("Stripe did not return a refund id.")
         return RefundResult(
             refund_id=refund_id,
-            status=REFUND_STATUSES.get(_value(refund, "status") or "", "pending"),
+            status=REFUND_STATUSES.get(str(_value(refund, "status") or ""), "pending"),
         )
 
     def verify_webhook(self, source, *, payload: bytes, headers) -> WebhookEvent:

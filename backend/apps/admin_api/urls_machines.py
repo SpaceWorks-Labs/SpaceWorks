@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.admin_api.views_machine_downtime import MachineDowntimeView, MachineLockoutView
+
 from apps.admin_api.views_machine_candidates import MachineOperatorCandidatesView
 from apps.admin_api.views_machine_consumables import (
     MachineConsumableCandidatesView,
@@ -18,6 +20,8 @@ from apps.admin_api.views_machine_operators import (
     MachineOperatorDetailView,
     MachineOperatorsView,
 )
+from apps.admin_api.views_machine_access import MachineAccessRevokeView, MachineAccessView, MachineOpenAccessView
+from apps.admin_api.views_machine_access_members import MachineAccessCandidatesView
 from apps.admin_api.views_machine_publicity import MachinePublicityView
 from apps.admin_api.views_machine_type_pricing import (
     MachineTypePricingDetailView,
@@ -37,7 +41,15 @@ from apps.admin_api.views_machines_actions import (
 )
 
 
+from .views_machine_usage_candidates import MachineUsageCandidatesView
+
 urlpatterns = [
+    path("makerspaces/<int:makerspace_id>/machine-access", MachineAccessView.as_view(), name="admin-machine-access"),
+    path("makerspaces/<int:makerspace_id>/machine-access/candidates", MachineAccessCandidatesView.as_view(),
+         name="admin-machine-access-candidates"),
+    path("machine-access/<int:pk>/revoke", MachineAccessRevokeView.as_view(), name="admin-machine-access-revoke"),
+    path("machines/<int:pk>/open-access", MachineOpenAccessView.as_view(), name="admin-machine-open-access"),
+    path("machines/<int:pk>/usage-candidates", MachineUsageCandidatesView.as_view(), name="admin-machine-usage-candidates"),
     path(
         'makerspace/<int:makerspace_id>/machines',
         MachineListCreateView.as_view(),
@@ -83,6 +95,9 @@ urlpatterns = [
         MachineSetStatusView.as_view(),
         name='admin-machine-set-status',
     ),
+    # Lane L12: the downtime ledger and maintenance lockout (machines.maintenance).
+    path('machines/<int:pk>/downtime', MachineDowntimeView.as_view(), name='admin-machine-downtime'),
+    path('machines/<int:pk>/lockout', MachineLockoutView.as_view(), name='admin-machine-lockout'),
     path(
         'machines/<int:pk>/retire',
         MachineRetireView.as_view(),
@@ -158,4 +173,41 @@ urlpatterns = [
         MachineErrorLogView.as_view(),
         name='admin-machine-error-logs',
     ),
+]
+
+# Lane L23: metered machine sessions (#158), behind `machines.sessions`.
+from apps.admin_api.views_machine_session_settings import MachineTypeSessionSettingsView  # noqa: E402
+from apps.admin_api.views_machine_sessions import (  # noqa: E402
+    MachineSessionAmendView, MachineSessionAssignView, MachineSessionConfirmView, MachineSessionListView,
+    MachineSessionStopView,
+)
+
+urlpatterns += [
+    path('makerspaces/<int:makerspace_id>/machine-sessions', MachineSessionListView.as_view(),
+         name='admin-machine-sessions'),
+    path('machine-sessions/<int:pk>/stop', MachineSessionStopView.as_view(), name='admin-machine-session-stop'),
+    path('machine-sessions/<int:pk>/amend', MachineSessionAmendView.as_view(), name='admin-machine-session-amend'),
+    path('machine-sessions/<int:pk>/assign', MachineSessionAssignView.as_view(), name='admin-machine-session-assign'),
+    path('machine-sessions/<int:pk>/confirm', MachineSessionConfirmView.as_view(),
+         name='admin-machine-session-confirm'),
+    path('makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/session-settings',
+         MachineTypeSessionSettingsView.as_view(), name='admin-machine-type-session-settings'),
+]
+
+# Release 0.12.0 (decision 223): induction events, behind `machines.induction_events`.
+from apps.admin_api.views_machine_induction import (  # noqa: E402
+    EventInductionGrantView, EventInductionUnlinkView, EventInductionView, GuestCertificationRevokeView,
+)
+from apps.admin_api.views_machine_induction_upcoming import UpcomingInductionsView  # noqa: E402
+
+urlpatterns += [
+    path('makerspaces/<int:makerspace_id>/induction-events', UpcomingInductionsView.as_view(),
+         name='admin-induction-events-upcoming'),
+    path('makerspaces/<int:makerspace_id>/events/<int:event_id>/induction', EventInductionView.as_view(),
+         name='admin-event-induction'),
+    path('makerspaces/<int:makerspace_id>/events/<int:event_id>/induction/grant', EventInductionGrantView.as_view(),
+         name='admin-event-induction-grant'),
+    path('induction-links/<int:pk>', EventInductionUnlinkView.as_view(), name='admin-event-induction-unlink'),
+    path('guest-certification-grants/<int:pk>/revoke', GuestCertificationRevokeView.as_view(),
+         name='admin-guest-certification-revoke'),
 ]

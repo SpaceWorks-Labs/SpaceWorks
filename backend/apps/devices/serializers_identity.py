@@ -5,6 +5,7 @@ read-only everywhere. ``kind`` is set once at creation. Unknown fields are rejec
 rather than ignored, so a client cannot believe it changed something it did not.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
@@ -55,7 +56,7 @@ class DeviceUpdateSerializer(StrictSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         if not attrs:
-            raise serializers.ValidationError("Provide name or offline_threshold_seconds.")
+            raise serializers.ValidationError(gettext("Provide name or offline_threshold_seconds."))
         return attrs
 
 

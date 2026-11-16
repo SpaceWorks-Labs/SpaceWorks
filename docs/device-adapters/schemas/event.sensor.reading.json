@@ -1,0 +1,26 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.sensor.reading.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "sensor": {
+      "maxLength": 60,
+      "minLength": 1,
+      "type": "string"
+    },
+    "unit": {
+      "maxLength": 16,
+      "type": "string"
+    },
+    "value": {
+      "maximum": 1000000000,
+      "minimum": -1000000000,
+      "type": "number"
+    }
+  },
+  "required": [
+    "sensor",
+    "value"
+  ],
+  "type": "object"
+}

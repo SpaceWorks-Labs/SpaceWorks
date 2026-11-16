@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
@@ -33,7 +34,7 @@ _FORBIDDEN = OpenApiResponse(description="The actor lacks manage_makerspace here
         },
     ),
 )
-class ApiIntegrationSettingsView(generics.RetrieveUpdateAPIView):
+class ApiIntegrationSettingsView(RecentReauthenticationMixin, generics.RetrieveUpdateAPIView):
     serializer_class = ApiIntegrationSettingsSerializer
     permission_classes = [IsActiveStaff]
     http_method_names = ["get", "patch", "head", "options"]

@@ -72,6 +72,17 @@ OMITTED_TARGET_RELATIONS = {
         "accounts.MemberClaimCode",
         "omitted_target_model",
     ),
+    # Account-level profile projects are omitted from a dump (account-owned), so a presence session keeps its row
+    # and the project link is nulled with provenance.
+    ("presence.PresenceSession", "account_project"): NullWithProvenance(
+        "makerspaces.AccountProject",
+        "omitted_target_model",
+    ),
+    # Release 2 L5: a claim keeps its row; the bearer pay link it came through is dropped.
+    ("payments.PaymentClaim", "pay_link"): NullWithProvenance(
+        "payments.PaymentPayLink",
+        "omitted_target_model",
+    ),
 }
 
 PAYMENT_SUBJECT_REFERENCES = {
@@ -80,9 +91,31 @@ PAYMENT_SUBJECT_REFERENCES = {
     "event_registration": "events.EventRegistration",
     "makerspace_membership": "makerspaces.MakerspaceMembership",
     "membership_term": "makerspaces.MembershipTerm",
+    "membership_term_start": "makerspaces.MembershipTerm",
+    # Decision 223(b): a day-pass charge points at its pass; the ledger row survives a pass purge.
+    "guest_pass": "makerspaces.GuestPass",
     "membership_request": "makerspaces.MembershipRequest",
     "loan_deposit": "hardware_requests.HardwareRequest",
     "loan_late_fee": "hardware_requests.HardwareRequest",
+    # Lane L15: rental is per loan; damage and lost are per accountability row.
+    "loan_rental": "hardware_requests.HardwareRequest",
+    "loan_damage": "hardware_requests.RequesterAccountability",
+    "loan_lost": "hardware_requests.RequesterAccountability",
+    # Lane L23: one metered machine session.
+    "machine_session": "machines.MachineSession",
+    # Lane L6: one order of several tickets; one hosting fee per event.
+    "event_order": "events.EventOrder",
+    "event_venue_fee": "events.EventVenueFee",
+    # Lane L18: one gift (or one pledge period); one sponsor payment.
+    "donation": "payments.Donation",
+    "sponsorship": "payments.SponsorshipCharge",
+    # Lane L21b: an entry fee per project; one leader-paid charge per team.
+    "submission_fee": "events.HackathonSubmission",
+    "team_registration": "events.HackathonTeam",
+    # Hack-money G10: a refundable deposit per registration.
+    "event_deposit": "events.EventRegistration",
+    # Lane L22: one shop order (online or a front-desk sale).
+    "shop_order": "shop.ShopOrder",
 }
 
 NOTIFICATION_URL_ROUTES = (

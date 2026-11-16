@@ -22,6 +22,8 @@ from .runner_queries import after_keyset, is_statement_timeout, key_value, selec
 from .reference_provenance import ReferenceProvenanceWriter
 from .references import SEMANTIC_REFERENCES, USER_EDGES, require_raw_user
 from .types import Fidelity, SemanticUserRef
+from .runner_users import _read_users, staff_track_user_ids, write_user_sidecars
+from apps.backup.capture_managers import every_row
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +77,9 @@ def build_archive(
                 cursor.execute("SELECT transaction_timestamp()")
                 snapshot_at = cursor.fetchone()[0]
 
+            from apps.operations.cloud_jobs.admission import assert_export
+            assert_export(job)
+            closure.update(staff_track_user_ids(job.makerspace_id))
             datasets = [
                 dataset for dataset in DATASETS.values()
                 if dataset.fidelity is fidelity and dataset.model != "accounts.User"
@@ -113,6 +118,7 @@ def build_archive(
                 user_rows = [row for row in user_rows if row.pk in approved_ids]
                 user_count = len(user_rows)
             if fidelity is Fidelity.PORTABLE:
+                write_user_sidecars(root, user_rows)
                 # Re-read one dataset at a time inside the same repeatable-read
                 # snapshot. Approval must see the complete closure before any PII is
                 # written, but retaining every tenant row in memory would be unbounded.
@@ -184,8 +190,13 @@ def build_archive(
 
 
 def _read_dataset(dataset, tenant_id, closure, page_size, deadline, monotonic):
+    # Stage answers, travel support and the payout ledger travel only in a custodial
+    # portable migration; a readable export carries their headers and no rows.
+    from apps.tenant_migration.catalog_reimbursements import PORTABLE_MODELS
+    if dataset.fidelity is Fidelity.REDACTED and dataset.model in PORTABLE_MODELS:
+        return [], 0
     model = apps.get_model(dataset.model)
-    queryset = model.objects.filter(dataset.predicate.as_q(tenant_id))
+    queryset = every_row(model).filter(dataset.predicate.as_q(tenant_id))
     queryset = select_declared_relations(queryset, dataset)
     cursor_values, rows, count = None, [], 0
     while True:
@@ -211,25 +222,6 @@ def _read_dataset(dataset, tenant_id, closure, page_size, deadline, monotonic):
     return rows, count
 
 
-def _read_users(dataset, closure, page_size, deadline, monotonic):
-    model = apps.get_model("accounts.User")
-    queryset = model.objects.filter(pk__in=closure)
-    cursor_values, rows = None, []
-    while True:
-        _check_deadline(dataset.path, len(rows), deadline, monotonic)
-        page_query = queryset
-        if cursor_values is not None:
-            page_query = page_query.filter(after_keyset(dataset.keyset, cursor_values))
-        page = list(page_query.order_by(*dataset.keyset)[:page_size])
-        if not page:
-            break
-        rows.extend(page)
-        cursor_values = tuple(key_value(page[-1], name) for name in dataset.keyset)
-        if any(value is None for value in cursor_values):
-            raise ExportIntegrityError("global/users.csv contains a null keyset value.")
-    return rows, len(rows)
-
-
 def _collect_user_ids(dataset, rows, closure):
     user_model = apps.get_model("accounts.User")
     edges = [
@@ -246,7 +238,7 @@ def _collect_user_ids(dataset, rows, closure):
                 candidates.add(int(value))
                 row_values.append((row, field_name, edge, int(value)))
         _collect_semantic_user(dataset, row, candidates, row_values)
-    existing = set(user_model.objects.filter(pk__in=candidates).values_list("pk", flat=True))
+    existing = set(every_row(user_model).filter(pk__in=candidates).values_list("pk", flat=True))
     dangling = set()
     for row, field_name, edge, value in row_values:
         if edge.raw:
@@ -266,6 +258,12 @@ def _collect_user_ids(dataset, rows, closure):
 
 
 def _collect_semantic_user(dataset, row, candidates, row_values):
+    if dataset.fidelity is Fidelity.PORTABLE and dataset.model == "events.SubmissionSnapshot":
+        for value in row.sealed_member_ids:
+            if type(value) is not int or value <= 0:
+                raise ExportIntegrityError("Invalid sealed programme member reference.")
+            candidates.add(value)
+            row_values.append((row, "sealed_member_ids", type("Edge", (), {"raw": True})(), value))
     decisions = SEMANTIC_REFERENCES.get(
         (dataset.fidelity, dataset.model, "target_type+target_id"), ()
     )

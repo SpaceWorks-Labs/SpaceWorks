@@ -6,4 +6,4 @@ from .views_profile import LogoutView, MeView
 
 __all__ = ["LoginView", "RefreshView", "LogoutView", "MeView"]
 
-from .views_refresh import _refresh_user_is_active, _refresh_surface, _assert_staff_refresh_scope
+from .views_refresh import _refresh_user_is_active  # noqa: F401 -- re-exported

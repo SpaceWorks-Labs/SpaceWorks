@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +12,7 @@ from apps.bookings.serializers_admin import (
 )
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
 from apps.bookings import services
+from apps.bookings.services_decisions import BookingDecisionSerializer, BookingRejectSerializer
 from apps.bookings.models import Booking
 from apps.hardware_requests.view_helpers import (
     ERROR_400,
@@ -21,7 +21,6 @@ from apps.hardware_requests.view_helpers import (
     ERROR_404,
     ERROR_409,
 )
-from apps.makerspaces.guards import require_module
 from apps.payments.models import Payment
 
 
@@ -43,34 +42,25 @@ class _BookingPagination(PageNumberPagination):
 
 
 def _manageable_booking(actor, pk):
+    from .booking_authority import visible_spaces, require
     booking = get_object_or_404(
-        rbac.scope_by_visibility_or_action(
-            actor,
-            rbac.Action.MANAGE_BOOKINGS,
-            Booking.objects.select_related('space__makerspace'),
-            field='space__makerspace_id',
-        ),
-        pk=pk,
+        Booking.objects.select_related("space__makerspace").filter(
+            space_id__in=visible_spaces(actor).values("pk")), pk=pk,
     )
-    require_module(booking.space.makerspace, 'bookings')
-    if not rbac.can(
-        actor,
-        rbac.Action.MANAGE_BOOKINGS,
-        booking.space.makerspace_id,
-    ):
-        raise PermissionDenied()
+    require(actor, booking.space, "manage_reservations")
     return booking
 
 
 class _BookingActionView(APIView):
     permission_classes = [IsActiveStaff]
     operation = None
+    body = EmptyActionSerializer
 
     def execute(self, request, pk):
         booking = _manageable_booking(request.user, pk)
-        serializer = EmptyActionSerializer(data=request.data)
+        serializer = self.body(data=request.data)
         serializer.is_valid(raise_exception=True)
-        booking = self.operation(booking, actor=request.user)
+        booking = self.operation(booking, actor=request.user, **serializer.validated_data)
         context = scoped_payment_context(
             request.user,
             rbac.Action.MANAGE_BOOKINGS,
@@ -82,11 +72,12 @@ class _BookingActionView(APIView):
 
 class BookingCancelView(_BookingActionView):
     operation = staticmethod(services.cancel_booking)
+    body = BookingDecisionSerializer
 
     @extend_schema(
         tags=['Admin bookings'],
-        summary='Cancel a booking',
-        request=EmptyActionSerializer,
+        summary='Cancel a booking (optional reason shown to the requester)',
+        request=BookingDecisionSerializer,
         responses={
             200: BookingAdminSerializer,
             **VALIDATED_ERROR_RESPONSES,
@@ -116,11 +107,12 @@ class BookingApproveView(_BookingActionView):
 
 class BookingRejectView(_BookingActionView):
     operation = staticmethod(services.reject_booking)
+    body = BookingRejectSerializer
 
     @extend_schema(
         tags=['Admin bookings'],
-        summary='Reject a pending booking',
-        request=EmptyActionSerializer,
+        summary='Reject a pending booking (reason required, shown to the requester)',
+        request=BookingRejectSerializer,
         responses={
             200: BookingAdminSerializer,
             **VALIDATED_ERROR_RESPONSES,

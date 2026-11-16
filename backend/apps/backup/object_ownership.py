@@ -1,19 +1,20 @@
-"""N-way object ownership planning and byte-level closure proofs."""
+"""Object ownership planning and byte-level closure proofs.
+
+Every captured object belongs to the one platform-readable main component (protocol v2,
+owner decision #110): there are no sovereign slices.
+"""
 
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
 from apps.backup.digests import sha256_file
+from .object_capture_proof import capture_proof, assert_capture_proof
 from apps.backup.object_ownership_registry import ReferencePolicy
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 MAIN_COMPONENT = "main"
-
-
-def slice_component(makerspace_id):
-    return f"slice:{int(makerspace_id)}"
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,8 @@ class ObjectReference:
     retention_state: str = "live"
     object_expired_at: str = ""
     expired_size_bytes: int | None = None
+    expected_size_bytes: int | None = None
+    expected_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -43,9 +46,8 @@ class CapturedObject:
 class ObjectOwnershipPlan:
     """Immutable source references plus progressively bound capture facts."""
 
-    def __init__(self, references, sovereign_makerspace_ids):
+    def __init__(self, references):
         self.references = tuple(references)
-        self.sovereign_makerspace_ids = tuple(sorted(sovereign_makerspace_ids))
         grouped = defaultdict(list)
         for reference in self.references:
             grouped[(reference.bucket_kind, reference.object_key)].append(reference)
@@ -94,6 +96,7 @@ class ObjectOwnershipPlan:
                 "canonical_component": component,
                 "makerspace_id": makerspaces[0] if len(makerspaces) == 1 else None,
                 "module_key": modules[0] if len(modules) == 1 else "",
+                **capture_proof(references),
             }
             if references[0].retention_state == "expired":
                 result[bucket_kind][key].update(
@@ -171,6 +174,7 @@ class ObjectOwnershipPlan:
                     raise BackupBuildError(
                         "A packaged object differs from its immutable capture ledger."
                     )
+                assert_capture_proof(capture_proof(references), {"size": size, "sha256": digest})
             self._packaged_owner[identity] = component
             captured[identity] = CapturedObject(
                 size=size,
@@ -222,9 +226,7 @@ class ObjectOwnershipPlan:
                 )
 
     def assert_complete(self):
-        expected_components = {MAIN_COMPONENT} | {
-            slice_component(value) for value in self.sovereign_makerspace_ids
-        }
+        expected_components = {MAIN_COMPONENT}
         if set(self._captured) != expected_components:
             raise BackupBuildError("Not every object component closure was captured.")
         for component in expected_components:
@@ -254,8 +256,8 @@ class ObjectOwnershipPlan:
                     )
 
 
-def build_object_ownership_plan(sovereign_makerspace_ids):
+def build_object_ownership_plan():
     """Compatibility entrypoint; snapshot extraction lives in its own module."""
     from apps.backup.object_reference_capture import build_object_ownership_plan as build
 
-    return build(sovereign_makerspace_ids)
+    return build()

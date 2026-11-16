@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -88,7 +89,7 @@ class MachineTypeListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         slug = serializer.validated_data.get("slug")
         if MachineType.objects.filter(makerspace_id=makerspace_id, slug=slug).exists():
-            raise ValidationError({"slug": "A machine type with this slug already exists."})
+            raise ValidationError({"slug": gettext("A machine type with this slug already exists.")})
         machine_type = MachineType.objects.create(
             makerspace_id=makerspace_id,
             is_builtin=False,
@@ -133,7 +134,7 @@ class MachineTypeDetailView(APIView):
             pk=pk,
         )
         if machine_type.is_builtin or machine_type.makerspace_id is None:
-            raise ValidationError('Built-in machine types cannot be changed.')
+            raise ValidationError(gettext('Built-in machine types cannot be changed.'))
 
         serializer = MachineTypeUpdateSerializer(
             machine_type,
@@ -153,6 +154,6 @@ class MachineTypeDetailView(APIView):
                 )
         except IntegrityError:
             raise ValidationError(
-                'A machine type with this name or slug already exists in this makerspace.'
+                gettext('A machine type with this name or slug already exists in this makerspace.')
             )
         return Response(MachineTypeSerializer(machine_type).data)

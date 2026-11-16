@@ -1,0 +1,486 @@
+{
+  "contract_version": 4,
+  "entry_url": "https://spaceworks.example/e/11111111-2222-4333-8444-555555555555",
+  "setup": {
+    "member_id": 18,
+    "memberships": [],
+    "applications": [],
+    "registrations": [],
+    "profiles": [],
+    "grants": [],
+    "saved_details": [],
+    "account_email": "",
+    "account_phone": "",
+    "account_registration_enabled": true
+  },
+  "context": {
+    "context_version": 1,
+    "event": {
+      "id": 42,
+      "public_token": "11111111-2222-4333-8444-555555555555",
+      "starts_at": "2026-12-01T04:00:00Z",
+      "ends_at": "2026-12-02T12:00:00Z",
+      "timezone_name": "Asia/Kolkata",
+      "event_date_revision": 7,
+      "as_of_date": "2026-12-01"
+    },
+    "makerspace": {
+      "id": 9,
+      "slug": "workshop"
+    },
+    "programme": {
+      "kind": "hackathon",
+      "capabilities": {
+        "events.hackathons": true,
+        "events.mentoring": true,
+        "events.mentor_rounds": false,
+        "events.volunteering": true,
+        "events.project_gallery": true
+      },
+      "team_mode": "individual_then_team",
+      "finder_enabled": true
+    },
+    "application_form": {
+      "schema_version": 2,
+      "form_id": "hackathon-application",
+      "revision": 3,
+      "questions": [
+        {
+          "id": "institution",
+          "type": "short_text",
+          "label": "School or organisation",
+          "required": true,
+          "profile_field_key": "institution",
+          "bounds": {
+            "max_length": 200
+          },
+          "disclosure": {
+            "organizer": true,
+            "reviewer": false,
+            "judge": false
+          }
+        },
+        {
+          "id": "emergency",
+          "type": "emergency_contact",
+          "label": "Emergency contact",
+          "required": false,
+          "profile_field_key": "emergency_contact",
+          "disclosure": {
+            "organizer": true,
+            "reviewer": false,
+            "judge": false
+          }
+        }
+      ],
+      "event_context": {
+        "event_id": 42,
+        "event_date_revision": 7,
+        "timezone_name": "Asia/Kolkata",
+        "as_of_date": "2026-12-01"
+      }
+    },
+    "registration_form": null,
+    "coc": {
+      "revision": 5,
+      "body": "Fixture CoC."
+    },
+    "admission_requirements": {
+      "registration_audience": "accounts",
+      "ticket_selection_required": true,
+      "ticket_types": [
+        {
+          "id": 8,
+          "name": "Participant",
+          "amount": "100.00",
+          "audience": "public",
+          "spots_left": null
+        }
+      ],
+      "currency": "INR",
+      "promo_codes_enabled": true,
+      "invite_code_allowed": false,
+      "verified_email_invite_supported": false,
+      "contact_requirements": {
+        "email": {
+          "fallback_required": true
+        },
+        "phone": {
+          "fallback_required": true
+        }
+      },
+      "host_waiver": null
+    },
+    "eligibility": {
+      "eligible": true,
+      "reason": null
+    },
+    "saved_details": {
+      "readiness": "ready"
+    },
+    "routes": {
+      "member_base": "/api/v1/member/makerspaces/9/events/42",
+      "context": {
+        "name": "events-programme-public-context",
+        "url": "/api/v1/public/event-programmes/11111111-2222-4333-8444-555555555555/context/"
+      },
+      "application": {
+        "name": "events-programme-member-application-detail",
+        "url": "/api/v1/member/makerspaces/9/events/42/application/"
+      },
+      "application_submit": {
+        "name": "events-programme-member-application-submit",
+        "url": "/api/v1/member/makerspaces/9/events/42/application/submit/"
+      },
+      "application_withdraw": {
+        "name": "events-programme-member-application-withdraw",
+        "url": "/api/v1/member/makerspaces/9/events/42/application/withdraw/"
+      },
+      "application_rsvp": {
+        "name": "events-programme-member-application-rsvp",
+        "url": "/api/v1/member/makerspaces/9/events/42/application/rsvp/"
+      },
+      "application_date_review": {
+        "name": "events-programme-member-application-date-review",
+        "url": "/api/v1/member/makerspaces/9/events/42/application/date-review/"
+      },
+      "role_postings": {
+        "name": "events-programme-member-role-posting-list",
+        "url": "/api/v1/member/makerspaces/9/events/42/role-postings/"
+      },
+      "prefill": {
+        "name": "member-saved-details-prefill",
+        "url": "/api/v1/member/saved-details/prefill/"
+      },
+      "ordinary_register": null
+    }
+  },
+  "context_status": 200,
+  "prefill_request": {
+    "context": {
+      "event_id": 42,
+      "makerspace_id": 9,
+      "subject_kind": "application"
+    },
+    "form_id": "hackathon-application",
+    "form_revision": 3,
+    "event_date_revision": 7
+  },
+  "prefill_response": {
+    "form_revision": 3,
+    "event_date_revision": 7,
+    "values": {},
+    "saved_detail_versions": {},
+    "save_defaults": {
+      "institution": true,
+      "emergency_contact": false
+    },
+    "derivation_inputs": {}
+  },
+  "virtual_draft": {
+    "id": null,
+    "event_id": 42,
+    "version": 0,
+    "state": "draft",
+    "registration_id": null,
+    "allowed_actions": [
+      "edit",
+      "submit"
+    ],
+    "form": {
+      "schema_version": 2,
+      "form_id": "hackathon-application",
+      "revision": 3,
+      "questions": [
+        {
+          "id": "institution",
+          "type": "short_text",
+          "label": "School or organisation",
+          "required": true,
+          "profile_field_key": "institution",
+          "bounds": {
+            "max_length": 200
+          },
+          "disclosure": {
+            "organizer": true,
+            "reviewer": false,
+            "judge": false
+          }
+        }
+      ],
+      "event_context": {
+        "event_id": 42,
+        "event_date_revision": 7,
+        "timezone_name": "Asia/Kolkata",
+        "as_of_date": "2026-12-01"
+      }
+    },
+    "answers": [],
+    "admission_requirements": {
+      "registration_audience": "accounts",
+      "ticket_selection_required": true,
+      "ticket_types": [
+        {
+          "id": 8,
+          "name": "Participant",
+          "amount": "100.00",
+          "audience": "public",
+          "spots_left": null
+        }
+      ],
+      "currency": "INR",
+      "promo_codes_enabled": true,
+      "invite_code_allowed": false,
+      "verified_email_invite_supported": false,
+      "contact_requirements": {
+        "email": {
+          "fallback_required": true
+        },
+        "phone": {
+          "fallback_required": true
+        }
+      },
+      "host_waiver": null
+    },
+    "admission": {
+      "ticket_type_id": null,
+      "contact": {
+        "name": "Fixture Member",
+        "email": "",
+        "phone": ""
+      },
+      "quote": null,
+      "invite_applied": false,
+      "promo_applied": false,
+      "host_waiver_acceptance": null
+    },
+    "save_intent": null
+  },
+  "submit_request": {
+    "operation_id": "33333333-3333-4333-8333-333333333333",
+    "expected_version": 0,
+    "form": {
+      "schema_version": 2,
+      "form_id": "hackathon-application",
+      "revision": 3
+    },
+    "answers": {
+      "institution": "Maker College"
+    },
+    "derivations": {},
+    "save_choices": {
+      "institution": true
+    },
+    "saved_detail_versions": {
+      "institution": 0
+    },
+    "ticket_type_id": 8,
+    "email": "fixture.member@example.test",
+    "phone": "+919800000017",
+    "coc": {
+      "revision": 5,
+      "accepted": true
+    },
+    "optional_consents": {
+      "mlh_data_sharing": false
+    },
+    "event_date_revision": 7
+  },
+  "submit_status": 201,
+  "submit_response": {
+    "id": 61,
+    "event_id": 42,
+    "version": 1,
+    "state": "submitted",
+    "registration_id": 71,
+    "rsvp_due_at": null,
+    "allowed_actions": [
+      "withdraw"
+    ],
+    "save_intent": {
+      "operation_id": "33333333-3333-4333-8333-333333333333",
+      "state": "pending",
+      "status_url": "/api/v1/member/saved-details/save-intents/33333333-3333-4333-8333-333333333333/"
+    },
+    "answer_review": {
+      "event_date_revision": 7,
+      "as_of_date": "2026-12-01",
+      "locked": false,
+      "date_review_required": false
+    },
+    "answers": [
+      {
+        "id": "institution",
+        "type": "short_text",
+        "value": "Maker College"
+      }
+    ],
+    "omitted_question_ids": []
+  },
+  "ordinary_context": {
+    "context_version": 1,
+    "event": {
+      "id": 42,
+      "public_token": "11111111-2222-4333-8444-555555555555",
+      "starts_at": "2026-12-01T04:00:00Z",
+      "ends_at": "2026-12-02T12:00:00Z",
+      "timezone_name": "Asia/Kolkata",
+      "event_date_revision": 7,
+      "as_of_date": "2026-12-01"
+    },
+    "makerspace": {
+      "id": 9,
+      "slug": "workshop"
+    },
+    "programme": {
+      "kind": "ordinary",
+      "capabilities": {
+        "events.hackathons": false,
+        "events.mentoring": false,
+        "events.mentor_rounds": false,
+        "events.volunteering": false,
+        "events.project_gallery": false
+      },
+      "team_mode": null,
+      "finder_enabled": false
+    },
+    "application_form": null,
+    "registration_form": {
+      "schema_version": 2,
+      "form_id": "hackathon-application",
+      "revision": 3,
+      "questions": [
+        {
+          "id": "institution",
+          "type": "short_text",
+          "label": "School or organisation",
+          "required": true,
+          "profile_field_key": "institution",
+          "bounds": {
+            "max_length": 200
+          },
+          "disclosure": {
+            "organizer": true,
+            "reviewer": false,
+            "judge": false
+          }
+        }
+      ],
+      "event_context": {
+        "event_id": 42,
+        "event_date_revision": 7,
+        "timezone_name": "Asia/Kolkata",
+        "as_of_date": "2026-12-01"
+      }
+    },
+    "coc": null,
+    "admission_requirements": {
+      "registration_audience": "accounts",
+      "ticket_selection_required": true,
+      "ticket_types": [
+        {
+          "id": 8,
+          "name": "Participant",
+          "amount": "100.00",
+          "audience": "public",
+          "spots_left": null
+        }
+      ],
+      "currency": "INR",
+      "promo_codes_enabled": true,
+      "invite_code_allowed": false,
+      "verified_email_invite_supported": false,
+      "contact_requirements": {
+        "email": {
+          "fallback_required": true
+        },
+        "phone": {
+          "fallback_required": true
+        }
+      },
+      "host_waiver": null
+    },
+    "eligibility": {
+      "eligible": true,
+      "reason": null
+    },
+    "saved_details": {
+      "readiness": "ready"
+    },
+    "routes": {
+      "member_base": "/api/v1/member/makerspaces/9/events/42",
+      "context": {
+        "name": "events-programme-public-context",
+        "url": "/api/v1/public/event-programmes/11111111-2222-4333-8444-555555555555/context/"
+      },
+      "application": null,
+      "application_submit": null,
+      "application_withdraw": null,
+      "application_rsvp": null,
+      "application_date_review": null,
+      "role_postings": {
+        "name": "events-programme-member-role-posting-list",
+        "url": "/api/v1/member/makerspaces/9/events/42/role-postings/"
+      },
+      "prefill": {
+        "name": "member-saved-details-prefill",
+        "url": "/api/v1/member/saved-details/prefill/"
+      },
+      "ordinary_register": {
+        "name": "public-event-register",
+        "url": "/api/v1/public/workshop/events/11111111-2222-4333-8444-555555555555/register/"
+      }
+    }
+  },
+  "negative_cases": [
+    {
+      "case": "anonymous",
+      "status": 401
+    },
+    {
+      "case": "wrong_origin",
+      "status": 404
+    },
+    {
+      "case": "unknown_token",
+      "status": 404
+    },
+    {
+      "case": "wrong_host",
+      "status": 404
+    },
+    {
+      "case": "foreign_prefill",
+      "status": 404
+    },
+    {
+      "case": "changed_form",
+      "status": 409
+    },
+    {
+      "case": "changed_date",
+      "status": 409
+    },
+    {
+      "case": "enabled_config_disabled_capability_no_ordinary_fallback",
+      "status": 404
+    },
+    {
+      "case": "ended_context_separate_results_unaffected",
+      "status": 404
+    }
+  ],
+  "ineligible_routes": {
+    "application": null,
+    "application_submit": null,
+    "application_withdraw": null,
+    "application_rsvp": null,
+    "application_date_review": null,
+    "role_postings": null,
+    "prefill": null,
+    "ordinary_register": null
+  },
+  "created_memberships": 0,
+  "context_and_virtual_draft_write_rows": false,
+  "legacy_entry_url": "/m/workshop/events/11111111-2222-4333-8444-555555555555"
+}

@@ -1,5 +1,6 @@
 """Compatibility wrappers that add generic metering to the pooled ledger."""
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -15,9 +16,9 @@ def _quantity(value, field):
     try:
         parsed = Decimal(str(value)).quantize(Decimal("0.01"))
     except (InvalidOperation, TypeError, ValueError) as exc:
-        raise ValidationError({field: "Enter a valid quantity."}) from exc
+        raise ValidationError({field: gettext("Enter a valid quantity.")}) from exc
     if not parsed.is_finite() or parsed < 0:
-        raise ValidationError({field: "Enter a non-negative quantity."})
+        raise ValidationError({field: gettext("Enter a non-negative quantity.")})
     return parsed
 
 
@@ -25,7 +26,7 @@ def _unit(request, machine):
     configured = (machine.machine_type.capability_config or {}).get("metering_unit")
     unit = request.metering_unit or configured or MeteringUnit.WEIGHT
     if unit not in MeteringUnit.values:
-        raise ValidationError({"metering_unit": "Unsupported metering unit."})
+        raise ValidationError({"metering_unit": gettext("Unsupported metering unit.")})
     return unit
 
 
@@ -34,16 +35,20 @@ def _apply(pool, actor, *, kind, delta, service_request=None, usage_entry=None, 
     after = pool.remaining_grams + delta
     if after < 0:
         unit = "grams" if pool.unit == "grams" else pool.unit
-        raise ValidationError({"grams": f"Only {pool.remaining_grams} {unit} remain."})
+        raise ValidationError({"grams": gettext('Only {remaining_grams} {unit} remain.').format(remaining_grams=pool.remaining_grams, unit=unit)})
     if after > pool.initial_grams:
         unit = "grams" if pool.unit == "grams" else pool.unit
-        raise ValidationError({"grams": f"Adjustment would exceed initial {unit}."})
+        raise ValidationError({"grams": gettext('Adjustment would exceed initial {unit}.').format(unit=unit)})
     unit = metering_unit or metering_unit_for_pool(pool.unit) or MeteringUnit.WEIGHT
     row = MachineConsumableAdjustment.objects.create(
         consumable_pool=pool, makerspace=pool.makerspace, kind=kind, quantity_delta=delta,
         metering_unit=unit, consumed_quantity=delta, service_request=service_request,
         usage_entry=usage_entry, reason=str(reason).strip(), created_by=actor,
     )
+    if kind == MachineConsumableAdjustment.Kind.MANUAL and delta < 0:
+        from .consumable_costs import record_cost
+        record_cost(makerspace=pool.makerspace, source_kind="manual_adjustment", source_id=row.pk,
+                    quantity=-delta, measurement_unit=pool.unit, price_source=pool, actor=actor)
     pool.remaining_grams = after
     pool.save(update_fields=["remaining_grams", "updated_at"])
     audit.record(actor, f"machine_consumable_pool.{kind}", makerspace=pool.makerspace, target=row,
@@ -70,21 +75,21 @@ def reserve_for_request(legacy, service_request, actor, *, pool, planned_grams=N
         unit = _unit(request, machine)
         quantity = _quantity(planned_quantity, "planned_quantity")
         if not quantity:
-            raise ValidationError({"planned_quantity": "Planned quantity must be greater than zero."})
+            raise ValidationError({"planned_quantity": gettext("Planned quantity must be greater than zero.")})
         expected_pool_unit = pool_unit_for_metering(unit)
         if expected_pool_unit is None or locked.unit != expected_pool_unit:
-            raise ValidationError({"consumable_pool": "Consumable pool unit is incompatible with this metering unit."})
+            raise ValidationError({"consumable_pool": gettext("Consumable pool unit is incompatible with this metering unit.")})
         if not locked.is_active:
-            raise ValidationError({"consumable_pool": "Consumable pool is retired."})
+            raise ValidationError({"consumable_pool": gettext("Consumable pool is retired.")})
         # Keep the request-tenant assertion the scope helper does not make: it binds the pool to the
         # MACHINE's makerspace, while the check it replaced bound it to the REQUEST's.
         if locked.makerspace_id != request.makerspace_id or not pool_serves_machine(locked, machine):
-            raise ValidationError({"consumable_pool": "Consumable pool is incompatible with this machine service request."})
+            raise ValidationError({"consumable_pool": gettext("Consumable pool is incompatible with this machine service request.")})
         from apps.machines.printer_capabilities import is_printer_type
         from apps.machines.service_consumable_pools import _validate_pool
         _validate_pool(machine, locked, request.capability_payload if is_printer_type(machine.machine_type) else None)
         if request.reserved_quantity:
-            raise ValidationError({"planned_quantity": "Consumable quantity is already reserved."})
+            raise ValidationError({"planned_quantity": gettext("Consumable quantity is already reserved.")})
         _apply(locked, actor, kind=MachineConsumableAdjustment.Kind.RESERVE, delta=-quantity,
                service_request=request, metering_unit=unit)
         request.run_consumable_pool = locked
@@ -123,7 +128,7 @@ def reconcile_request(legacy, service_request, actor, *, actual_grams=None, actu
         pool = request.run_consumable_pool.__class__.objects.select_for_update(of=("self",)).get(pk=request.run_consumable_pool_id)
         unit = request.metering_unit or metering_unit_for_pool(pool.unit)
         if unit not in MeteringUnit.values:
-            raise ValidationError({"metering_unit": "Unsupported metering unit."})
+            raise ValidationError({"metering_unit": gettext("Unsupported metering unit.")})
         reserved = request.reserved_quantity or Decimal("0")
         delta = reserved - actual
         if delta:

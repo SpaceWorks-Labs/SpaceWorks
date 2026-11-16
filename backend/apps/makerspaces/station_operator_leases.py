@@ -8,6 +8,7 @@ gate and the operation's capability conjunction. The stored action snapshot can 
 narrow that live result, never widen it.
 """
 
+from django.utils.translation import gettext_lazy
 from datetime import timedelta
 from uuid import UUID
 
@@ -25,7 +26,7 @@ from apps.makerspaces.models_station_leases import StationOperatorLease
 
 LEASE_SALT = "spaceworks.kiosk.operator-lease.v1"
 LEASE_HEADER = "X-Kiosk-Operator-Lease"
-LEASE_REFUSAL = "Invalid operator lease."
+LEASE_REFUSAL = gettext_lazy("Invalid operator lease.")
 
 
 def _lease_meta(lease, **extra):

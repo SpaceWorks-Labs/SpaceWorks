@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.operations.org_report_strategies import AggregationKind
+from .serializers_report_chart import ReportChartSpecSerializer
 
 
 class OrganizationReportRowsSerializer(serializers.Serializer):
@@ -18,3 +19,4 @@ class OrganizationReportResponseSerializer(serializers.Serializer):
     )
     breakdown = OrganizationReportBreakdownSerializer(many=True)
     total = OrganizationReportRowsSerializer()
+    chart_spec = ReportChartSpecSerializer(required=False, allow_null=True)

@@ -1,4 +1,5 @@
 """Hooks for 7b's generic delivery. Adapter state never owns a second lease protocol."""
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 
@@ -42,7 +43,7 @@ def command_content(principal, label_id):
         makerspace, device = locked_label_device(principal)
         label, command = owned_label(device, label_id)
         if label.result in ["succeeded", "failed"]:
-            raise LabelConflict("A terminal command cannot download labels again.")
+            raise LabelConflict(gettext("A terminal command cannot download labels again."))
         batch = locked_batch(label, device)
         if batch is None:
             cancel_label(makerspace, device, command, label=label)

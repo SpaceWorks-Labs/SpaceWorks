@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -14,14 +14,18 @@ from apps.admin_api.serializers_inventory import (
 from apps.events import services_series_images
 from apps.events.serializers_series import EventSeriesDetailSerializer
 from apps.events.views_series import manageable_series
+from apps.events.event_permissions import EDIT_DETAILS
+from apps.events.programme.cover_finalize import claim_cover, convert_to_webp
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
+from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.inventory import public_image_storage
 
 
 PREFIX = "event-series"
 ERRORS = {
-    400: OpenApiResponse(description="Invalid image upload request."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+    409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
     401: OpenApiResponse(description="Authentication required."),
     403: OpenApiResponse(description="Event management access is required."),
     404: OpenApiResponse(description="Event series not found."),
@@ -39,14 +43,18 @@ class EventSeriesImageView(APIView):
         responses={201: PublicImageUploadResponseSerializer, **ERRORS},
     )
     def post(self, request, pk):
-        series = manageable_series(request.user, pk)
+        series = manageable_series(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         content_type = serializer.validated_data["content_type"]
         ext = public_image_storage.ext_for(content_type, serializer.validated_data["filename"])
         object_key = public_image_storage.build_object_key(PREFIX, series.makerspace_id, ext)
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(series.makerspace)  # #234: refuse before the upload when storage is full
         try:
-            upload = public_image_storage.presigned_upload(object_key, content_type)
+            upload = public_image_storage.presigned_upload(
+                object_key, content_type,
+                **({"exact_bytes": serializer.validated_data["size"]} if "size" in serializer.validated_data else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(
@@ -59,20 +67,21 @@ class EventSeriesImageView(APIView):
         request=PublicImageAttachRequestSerializer,
         responses={200: EventSeriesDetailSerializer, **ERRORS},
     )
-    @transaction.atomic
     def put(self, request, pk):
-        series = manageable_series(request.user, pk)
+        series = manageable_series(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageAttachRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
         if not object_key.startswith(f"{PREFIX}/{series.makerspace_id}/"):
-            raise ValidationError({"object_key": "Image object key is outside this makerspace."})
+            raise ValidationError({"object_key": gettext("Image object key is outside this makerspace.")})
         if not public_image_storage.is_safe_object_key(object_key):
-            raise ValidationError({"object_key": "Invalid image object key."})
+            raise ValidationError({"object_key": gettext("Invalid image object key.")})
         if public_image_storage.public_image_key_in_use(
             series.makerspace_id, object_key, series_id=series.pk
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
+        # This destination claim commits before remote writes and survives attachment rollback.
+        claim_cover(object_key)
         try:
             result = public_image_storage.finalize_upload(object_key)
             valid = result.status == "ok" and public_image_storage.sniff_is_valid_image(object_key)
@@ -82,19 +91,25 @@ class EventSeriesImageView(APIView):
             public_image_storage.delete_object(object_key)
             public_image_storage.delete_object(public_image_storage.staging_key(object_key))
             message = (
-                "Uploaded file is not a valid image."
+                gettext("Uploaded file is not a valid image.")
                 if result.status == "ok"
                 else public_image_storage.finalize_error_message(result)
             )
             raise ValidationError({"object_key": message})
+        try:
+            from apps.makerspaces.limits import check_upload_size
+            check_upload_size(series.makerspace, result.size)
+            object_key = convert_to_webp(object_key)
+        except StorageUnavailable:
+            return storage_unavailable_response()
         series = services_series_images.update_image(series, request.user, object_key)
-        return Response(EventSeriesDetailSerializer(series).data)
+        return Response(EventSeriesDetailSerializer(series, context={"request": request}).data)
 
     @extend_schema(
         tags=["Admin event series"], summary="Clear a series image",
         request=None, responses={200: EventSeriesDetailSerializer, **ERRORS},
     )
     def delete(self, request, pk):
-        series = manageable_series(request.user, pk)
+        series = manageable_series(request.user, pk, EDIT_DETAILS)
         series = services_series_images.remove_image(series, request.user)
-        return Response(EventSeriesDetailSerializer(series).data)
+        return Response(EventSeriesDetailSerializer(series, context={"request": request}).data)

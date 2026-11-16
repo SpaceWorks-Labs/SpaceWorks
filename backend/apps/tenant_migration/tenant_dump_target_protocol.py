@@ -6,7 +6,6 @@ from .tenant_dump_errors import TenantDumpTargetError
 
 
 INSTALL_PROTOCOL = "spaceworks-lane-d-target-dek-install-v1"
-CHALLENGE_PROTOCOL = "spaceworks-lane-d-target-recipient-proof-v1"
 
 
 def encode_install_request(*, identities, envelope_path, makerspace_id, inventory):
@@ -21,18 +20,6 @@ def encode_install_request(*, identities, envelope_path, makerspace_id, inventor
     return _encode(request)
 
 
-def encode_challenge_request(*, identity, ciphertext):
-    if not isinstance(ciphertext, str) or not ciphertext:
-        _refuse("The target recipient challenge is invalid.", "challenge_invalid")
-    return _encode(
-        {
-            "protocol": CHALLENGE_PROTOCOL,
-            "identity_path": str(identity.path),
-            "ciphertext": ciphertext,
-        }
-    )
-
-
 def decode_request(payload):
     try:
         value = json.loads(payload)
@@ -41,8 +28,6 @@ def decode_request(payload):
     protocol = value.get("protocol") if isinstance(value, dict) else None
     if protocol == INSTALL_PROTOCOL:
         return protocol, _decode_install(value)
-    if protocol == CHALLENGE_PROTOCOL:
-        return protocol, _decode_challenge(value)
     _refuse("The target helper request is invalid.", "helper_protocol")
 
 
@@ -74,21 +59,6 @@ def _decode_install(value):
         "envelope_path": envelope_path,
         "makerspace_id": makerspace_id,
         "inventory": inventory,
-    }
-
-
-def _decode_challenge(value):
-    if (
-        set(value) != {"protocol", "identity_path", "ciphertext"}
-        or not isinstance(value.get("identity_path"), str)
-        or not value["identity_path"]
-        or not isinstance(value.get("ciphertext"), str)
-        or not value["ciphertext"]
-    ):
-        _refuse("The target recipient helper request is invalid.", "helper_protocol")
-    return {
-        "identity_path": value["identity_path"],
-        "ciphertext": value["ciphertext"],
     }
 
 

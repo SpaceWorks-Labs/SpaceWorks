@@ -15,7 +15,7 @@ AVAILABILITY_SCHEMA = {
         },
         "label": {
             "type": "string",
-            "enum": ["Available", "Limited", "Unavailable"],
+            "enum": ["Available", "Limited", "Unavailable", "Lent at events only"],
         },
         "count": {"type": "integer", "minimum": 0},
     },
@@ -45,6 +45,13 @@ class PublicProductSerializer(serializers.Serializer):
     borrowing_terms = serializers.SerializerMethodField()
     availability = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
+    expected_back_on = serializers.SerializerMethodField()
+    event_only = serializers.BooleanField(read_only=True, help_text="Lent only through an event: show no request button.")
+
+    @extend_schema_field({"type": "string", "format": "date", "nullable": True})
+    def get_expected_back_on(self, product):
+        from .public_expected_back import expected_back_on
+        return expected_back_on(product, self.context.setdefault("_expected_back", {}))
 
     @extend_schema_field(serializers.CharField())
     def get_borrowing_terms(self, product):
@@ -69,6 +76,12 @@ class PublicCategorySerializer(serializers.Serializer):
     product_count = serializers.IntegerField(read_only=True)
 
 
+class PublicNextEventSerializer(serializers.Serializer):
+    title = serializers.CharField(read_only=True)
+    starts_at = serializers.DateTimeField(read_only=True)
+    public_url = serializers.CharField(read_only=True, help_text="Relative path of the public event page.")
+
+
 class PublicMakerspaceSerializer(serializers.Serializer):
     name = serializers.CharField(read_only=True)
     public_code = serializers.CharField(read_only=True)
@@ -77,6 +90,19 @@ class PublicMakerspaceSerializer(serializers.Serializer):
     map_url = serializers.CharField(read_only=True)
     logo_url = serializers.SerializerMethodField()
     cover_image_url = serializers.SerializerMethodField()
+    offers = serializers.SerializerMethodField()
+    next_event = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(choices=[
+        "inventory", "machines", "events", "bookings", "shop", "memberships", "donations",
+    ])))
+    def get_offers(self, makerspace):
+        return self.context.get("public_offers", ({}, {}))[0].get(makerspace.pk, [])
+
+    @extend_schema_field(PublicNextEventSerializer(allow_null=True))
+    def get_next_event(self, makerspace):
+        event = self.context.get("public_offers", ({}, {}))[1].get(makerspace.pk)
+        return PublicNextEventSerializer(event).data if event else None
 
     @extend_schema_field({"type": "string", "format": "uri", "nullable": True})
     def get_logo_url(self, makerspace):
@@ -113,10 +139,11 @@ class PublicStatsStatusCountsSerializer(serializers.Serializer):
     pending = serializers.IntegerField(read_only=True)
     accepted = serializers.IntegerField(read_only=True)
     printing = serializers.IntegerField(read_only=True)
-    completed = serializers.IntegerField(read_only=True)
+    completed = serializers.IntegerField(read_only=True, allow_null=True)
     collected = serializers.IntegerField(read_only=True)
     failed = serializers.IntegerField(read_only=True)
     rejected = serializers.IntegerField(read_only=True)
+    cancelled = serializers.IntegerField(read_only=True)
 
 
 class PublicStatsQueueSerializer(serializers.Serializer):
@@ -126,9 +153,9 @@ class PublicStatsQueueSerializer(serializers.Serializer):
 
 
 class PublicStatsJobsSerializer(serializers.Serializer):
-    completed = serializers.IntegerField(read_only=True)
-    status_counts = PublicStatsStatusCountsSerializer(read_only=True)
-    queue = PublicStatsQueueSerializer(read_only=True)
+    completed = serializers.IntegerField(read_only=True, allow_null=True)
+    status_counts = PublicStatsStatusCountsSerializer(read_only=True, allow_null=True)
+    queue = PublicStatsQueueSerializer(read_only=True, allow_null=True)
 
 
 class PublicStatsFilamentTrendSerializer(serializers.Serializer):
@@ -137,15 +164,15 @@ class PublicStatsFilamentTrendSerializer(serializers.Serializer):
 
 
 class PublicStatsPrintingSerializer(serializers.Serializer):
-    hours_all_time = serializers.FloatField(read_only=True)
-    hours_this_month = serializers.FloatField(read_only=True)
+    hours_all_time = serializers.FloatField(read_only=True, allow_null=True)
+    hours_this_month = serializers.FloatField(read_only=True, allow_null=True)
     busiest_printer = PublicStatsBusiestPrinterSerializer(
         read_only=True,
         required=False,
         allow_null=True,
     )
     per_printer = PublicStatsPrinterSerializer(many=True, read_only=True)
-    grams_all_time = serializers.FloatField(read_only=True)
+    grams_all_time = serializers.FloatField(read_only=True, allow_null=True)
     by_brand = PublicStatsBrandSerializer(many=True, read_only=True)
     jobs = PublicStatsJobsSerializer(read_only=True)
     filament_trend = PublicStatsFilamentTrendSerializer(many=True, read_only=True)
@@ -163,9 +190,9 @@ class PublicStatsToolsOutSerializer(serializers.Serializer):
 
 
 class PublicStatsLibrarySerializer(serializers.Serializer):
-    currently_out_count = serializers.IntegerField(read_only=True)
-    library_size = serializers.IntegerField(read_only=True)
-    available_count = serializers.IntegerField(read_only=True)
+    currently_out_count = serializers.IntegerField(read_only=True, allow_null=True)
+    library_size = serializers.IntegerField(read_only=True, allow_null=True)
+    available_count = serializers.IntegerField(read_only=True, allow_null=True)
 
 
 class PublicStatsRecentlyAddedSerializer(serializers.Serializer):
@@ -188,7 +215,7 @@ class PublicStatsCurrentLoanSerializer(serializers.Serializer):
 
 
 class PublicStatsMachinesSerializer(serializers.Serializer):
-    usage_hours = serializers.FloatField(read_only=True)
+    usage_hours = serializers.FloatField(read_only=True, allow_null=True)
 
 
 class PublicStatsSerializer(serializers.Serializer):

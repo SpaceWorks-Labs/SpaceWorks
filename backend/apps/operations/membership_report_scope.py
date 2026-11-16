@@ -1,7 +1,7 @@
 """Use the reader's report action for manual reads, scheduled scope for internal work.
 
-Hidden makerspaces remain readable by their own authorized staff. Applying background
-fan-out eligibility to a manual read would silently erase those staff's report rows.
+A manual read is authorized by the reader's own action; background fan-out has no
+reader, so it uses the scheduled-work eligibility instead.
 """
 
 from apps.accounts import rbac

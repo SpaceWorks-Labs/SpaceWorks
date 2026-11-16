@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.operations.serializers_reports_base import ReportRowsFieldMixin, TypedReportBaseSerializer
 
@@ -57,8 +58,8 @@ class MaintenanceActivityRowSerializer(TypedReportBaseSerializer):
     is_active = serializers.BooleanField()
     log_count = serializers.IntegerField()
     costed_log_count = serializers.IntegerField()
-    total_cost = serializers.DecimalField(max_digits=20, decimal_places=2)
-    average_cost = serializers.DecimalField(max_digits=20, decimal_places=2, allow_null=True)
+    total_cost = MoneyField(max_digits=21, decimal_places=3)
+    average_cost = MoneyField(max_digits=21, decimal_places=3, allow_null=True)
     last_performed_at = serializers.DateTimeField(allow_null=True)
     average_interval_days = serializers.FloatField(allow_null=True)
     active_schedules = serializers.IntegerField()
@@ -66,6 +67,7 @@ class MaintenanceActivityRowSerializer(TypedReportBaseSerializer):
 
 
 class FabLabHealthRowSerializer(TypedReportBaseSerializer):
+    makerspace_id = serializers.IntegerField(help_text="Tenant dimension included in both local and aggregate health reports.")
     events_enabled = serializers.BooleanField()
     events_available = serializers.BooleanField()
     events_in_period = serializers.IntegerField(allow_null=True)
@@ -87,7 +89,7 @@ class FabLabHealthRowSerializer(TypedReportBaseSerializer):
     maintenance_enabled = serializers.BooleanField()
     maintenance_available = serializers.BooleanField()
     maintenance_logs = serializers.IntegerField(allow_null=True)
-    maintenance_total_cost = serializers.DecimalField(max_digits=20, decimal_places=2, allow_null=True)
+    maintenance_total_cost = MoneyField(max_digits=21, decimal_places=3, allow_null=True)
     maintenance_overdue_schedules = serializers.IntegerField(allow_null=True)
 
 

@@ -44,6 +44,10 @@ class ReturnEvent(models.Model):
 
 class RequesterAccountability(models.Model):
     """Immutable record of requester damage or loss accountability."""
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "lost or damaged item"
+        verbose_name_plural = "lost or damaged items"
 
     class IssueType(models.TextChoices):
         DAMAGED = "damaged", "Damaged"

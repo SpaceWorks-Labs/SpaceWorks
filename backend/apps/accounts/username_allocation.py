@@ -49,3 +49,23 @@ def _is_username_collision(exc: IntegrityError) -> bool:
     cause = exc.__cause__
     constraint = getattr(getattr(cause, "diag", None), "constraint_name", "") or ""
     return constraint.endswith("_username_key")
+
+
+def allocate_staff_username(handle: str, slug: str, *, create: Callable[[str], Created]) -> Created:
+    """Capture the tenant slug once; retry only username collisions under savepoints."""
+    from django.contrib.auth.validators import UnicodeUsernameValidator
+
+    handle = (handle or "staff").strip()
+    UnicodeUsernameValidator()(handle)
+    suffix = f".{slug}"
+    with transaction.atomic():
+        for attempt in range(MAX_ATTEMPTS):
+            discriminator = f"-{get_random_string(6, ALPHABET)}" if attempt else ""
+            candidate = f"{handle[:150 - len(suffix) - len(discriminator)]}{discriminator}{suffix}"
+            try:
+                with transaction.atomic():
+                    return create(candidate)
+            except IntegrityError as exc:
+                if not _is_username_collision(exc):
+                    raise
+    raise UsernameAllocationError("Could not allocate a staff username.")

@@ -58,3 +58,45 @@ def registrations_for_space(makerspace, user, *, include_disabled_hosts=False):
         if module_enabled(host, "events")
     ]
     return registrations.filter(event__makerspace_id__in=enabled)
+
+
+HISTORY_LIMIT = 50
+
+
+def _history_event(event):
+    return {"id": event.pk, "title": event.title, "starts_at": event.starts_at, "ends_at": event.ends_at,
+            "location": event.location, "status": event.status}
+
+
+def history_for_space(makerspace, user):
+    """Registrations, attendance and speaking for one person in one space (newest first).
+
+    Shared by the member's own event history and the staff member drawer so the two can
+    never disagree. Registrations reuse `registrations_for_space` (provenance, host
+    lifecycle, never email); speaking reuses `speaker_history.contributions_for`.
+    """
+    from django.db.models import Count, Q
+
+    from apps.events.models import EventRegistration
+    from apps.events.speaker_history import contributions_for
+
+    registrations = registrations_for_space(makerspace, user).select_related("event")
+    counts = registrations.aggregate(
+        registered=Count("pk", filter=Q(status__in=(EventRegistration.Status.REGISTERED,
+                                                    EventRegistration.Status.ATTENDED))),
+        attended=Count("pk", filter=Q(status=EventRegistration.Status.ATTENDED)),
+        cancelled=Count("pk", filter=Q(status=EventRegistration.Status.CANCELLED)),
+    )
+    speaking = list(contributions_for(user, makerspace))
+    return {
+        "counts": {**{key: value or 0 for key, value in counts.items()}, "speaking": len(speaking)},
+        "registrations": [
+            {"registration_id": row.pk, "status": row.status, "event": _history_event(row.event)}
+            for row in registrations.order_by("-event__starts_at", "-pk")[:HISTORY_LIMIT]
+        ],
+        "speaking": [
+            {"speaker_id": row.speaker_id, "role": row.role, "occurred_at": row.occurred_at,
+             "event": _history_event(row.event)}
+            for row in speaking[:HISTORY_LIMIT]
+        ],
+    }

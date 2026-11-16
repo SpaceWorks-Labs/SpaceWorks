@@ -1,0 +1,39 @@
+/* Theme switch (see themeTransition.ts). Only active while the transition classes are on <html>,
+   so other view transitions keep their own animation. */
+@property --sw-reveal {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.sw-theme-reveal::view-transition-old(root),
+.sw-theme-reveal::view-transition-new(root),
+.sw-theme-reveal-soft::view-transition-old(root),
+.sw-theme-reveal-soft::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.sw-theme-reveal::view-transition-new(root),
+.sw-theme-reveal-soft::view-transition-new(root) {
+  z-index: 1;
+}
+
+.sw-theme-reveal-soft::view-transition-new(root) {
+  -webkit-mask-image: radial-gradient(circle at var(--sw-reveal-x) var(--sw-reveal-y), #000 calc(var(--sw-reveal) - 160px), transparent var(--sw-reveal));
+  mask-image: radial-gradient(circle at var(--sw-reveal-x) var(--sw-reveal-y), #000 calc(var(--sw-reveal) - 160px), transparent var(--sw-reveal));
+}
+
+/* Fallback without View Transitions: every colour cross-fades together. */
+.sw-theme-fade,
+.sw-theme-fade *,
+.sw-theme-fade *::before,
+.sw-theme-fade *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 420ms !important;
+  transition-timing-function: cubic-bezier(0.45, 0, 0.2, 1) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-theme-fade, .sw-theme-fade *, .sw-theme-fade *::before, .sw-theme-fade *::after { transition: none !important; }
+}

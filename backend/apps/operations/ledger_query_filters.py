@@ -2,11 +2,12 @@ from django.db.models import Q
 
 from apps.accounts import rbac
 from apps.hardware_requests.models import HardwareRequest
+from apps.operations.ledger_due_window import due_window
 from apps.operations.ledger_query_constants import SORT_FIELDS, SOURCE_DIRECT
 
 
 def _filter_item_rows(queryset, filters, makerspace_id=None):
-    queryset = _filter_common(queryset, filters)
+    queryset = _filter_common(queryset, filters, makerspace_id)
     search = (filters.get("search") or "").strip()
     if search:
         queryset = queryset.filter(
@@ -21,7 +22,7 @@ def _filter_container_rows(queryset, filters, makerspace_id=None):
     source = filters.get("source")
     if source and source != SOURCE_DIRECT:
         queryset = queryset.none()
-    queryset = _filter_common(queryset, {**filters, "source": None})
+    queryset = _filter_common(queryset, {**filters, "source": None}, makerspace_id)
     search = (filters.get("search") or "").strip()
     if search:
         queryset = queryset.filter(
@@ -30,19 +31,21 @@ def _filter_container_rows(queryset, filters, makerspace_id=None):
         )
     return queryset
 
-def _filter_common(queryset, filters):
+def _filter_common(queryset, filters, makerspace_id=None):
     source = filters.get("source")
     if source:
         queryset = queryset.filter(ledger_source=source)
     overdue = filters.get("overdue")
     if overdue is not None:
         queryset = queryset.filter(overdue=overdue)
+    window = due_window(makerspace_id, filters.get("due"))
+    if window:
+        queryset = queryset.filter(due_sort__gte=window[0], due_sort__lt=window[1])
     return queryset
 
 def _borrower_search_q(prefix, search, makerspace_id=None):
     native = (
         Q(**{f"{prefix}__requester__email__icontains": search})
-        | Q(**{f"{prefix}__requester__external_checkin_user_id__icontains": search})
         | Q(**{f"{prefix}__requester__username__icontains": search})
     )
     from django.conf import settings
@@ -72,8 +75,8 @@ def _pii_request_ids(term, makerspace_id):
     label = "hardware_requests.HardwareRequest"
     if makerspace_id is not None:
         space_ids = [makerspace_id]
-    else:  # superadmin aggregate: bound to the visible makerspaces owning requests
-        excluded = rbac.superadmin_hidden_makerspace_ids() | rbac.archived_makerspace_ids()
+    else:  # superadmin aggregate: bound to the servable makerspaces owning requests
+        excluded = rbac.archived_makerspace_ids()
         base = HardwareRequest.objects.all()
         if excluded:
             base = base.exclude(makerspace_id__in=excluded)

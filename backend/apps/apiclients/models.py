@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import secrets
 
 from django.conf import settings
@@ -34,6 +35,9 @@ class ApiClient(models.Model):
         choices=[
             ("browser", "Browser"),
             ("server", "Server"),
+            # Another space's backend reading this space's public catalogue, events and
+            # stats (docs/api-guide.md): signed like a server, never anything private.
+            ("peer", "Another space (public read-only)"),
         ],
         default="server",
     )
@@ -88,6 +92,23 @@ class ApiClient(models.Model):
         from django.core.exceptions import ValidationError
 
         from apps.apiclients.origin_validation import validate_exact_origins
+        from apps.apiclients.scope_registry_reads import read_scope_vocabulary
+        from apps.apiclients.scope_grants import validate_grantable_scopes
+
+        if self.client_type == "peer":
+            if self.makerspace_id is None:
+                raise ValidationError({"makerspace": gettext("A peer client belongs to the space whose public data it reads.")})
+            try:
+                validate_grantable_scopes(self.scopes, privileged=True, client_type="peer")
+            except ValueError as exc:
+                raise ValidationError({"scopes": str(exc)}) from exc
+        if set(self.scopes or ()) & read_scope_vocabulary():
+            if self.client_type != "server" or self.makerspace_id is None:
+                raise ValidationError({"scopes": gettext("Staff read scopes require a tenant-bound server client.")})
+            try:
+                validate_grantable_scopes(self.scopes, privileged=True)
+            except ValueError as exc:
+                raise ValidationError({"scopes": str(exc)}) from exc
 
         try:
             self.allowed_origins = validate_exact_origins(self.allowed_origins)
@@ -112,13 +133,15 @@ class ApiClient(models.Model):
         issued_scopes = list(scopes or [])
         if not issued_scopes:
             raise ValidationError(
-                {"scopes": "At least one API-client scope is required."}
+                {"scopes": gettext("At least one API-client scope is required.")}
             )
         # Every issuance path (including host-side tools) shares the supported catalog.
         from apps.apiclients.scope_grants import validate_grantable_scopes
 
         try:
-            issued_scopes = validate_grantable_scopes(issued_scopes, privileged=True)
+            issued_scopes = validate_grantable_scopes(
+                issued_scopes, privileged=True, client_type=client_type
+            )
         except ValueError as exc:
             raise ValidationError({"scopes": str(exc)}) from exc
         obj = cls(
@@ -213,3 +236,8 @@ class ApiClientImportApproval(models.Model):
 
     def delete(self, *args, **kwargs):
         raise RuntimeError("API-client import approvals are append-only.")
+
+# Release 2 (#196): credentials that act as a person. Kept in their own module.
+from apps.apiclients.models_tokens import (  # noqa: E402,F401
+    OAuthAppRegistration, OAuthConsent, PersonalAccessToken,
+)

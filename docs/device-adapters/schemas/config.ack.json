@@ -1,0 +1,28 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/config.ack.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "detail": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "applied",
+        "rejected"
+      ],
+      "type": "string"
+    },
+    "version": {
+      "maximum": 1000000000,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "outcome"
+  ],
+  "type": "object"
+}

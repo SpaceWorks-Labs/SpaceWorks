@@ -32,6 +32,14 @@ def assert_mapped_write_allowed(makerspace_id):
         raise
 
 
+def exclusive_tenant_key_fence(makerspace_id):
+    """Serialize key retirement with all mandatory-envelope writes."""
+    with connection.cursor() as cursor:
+        _execute_lock(cursor, "pg_advisory_xact_lock_shared", GLOBAL_LOCK_NAMESPACE, 0)
+        _execute_lock(cursor, "pg_advisory_xact_lock", TENANT_LOCK_NAMESPACE, makerspace_id)
+    assert_mapped_write_allowed(makerspace_id)
+
+
 @contextmanager
 def fence_operation(operation_id):
     with connection.cursor() as cursor:

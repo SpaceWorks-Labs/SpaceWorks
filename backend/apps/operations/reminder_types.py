@@ -42,3 +42,6 @@ class ReminderSource:
     # legacy callbacks returning None count attempts because they have no receipt.
     dispatch: Callable[[Makerspace, ReminderSchedule, ReminderMessage, datetime, tzinfo], NotificationResult | None] | None = None
     requires_notifications: bool = True
+    # Upgrade a locked pending candidate before committing its permanent claim.
+    # Return the canonical schedule; the claim service locks/rechecks it again.
+    normalize_claim: Callable[[Makerspace, ReminderSchedule], ReminderSchedule] | None = None

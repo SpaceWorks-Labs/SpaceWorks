@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -169,4 +170,4 @@ class PendingImportedMembership(models.Model):
         for field in ("accepted_waiver", "witnessed_waiver"):
             waiver = getattr(self, field, None)
             if waiver and waiver.makerspace_id != self.makerspace_id:
-                raise ValidationError({field: "Waiver must belong to the makerspace."})
+                raise ValidationError({field: gettext("Waiver must belong to the makerspace.")})

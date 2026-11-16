@@ -3,6 +3,9 @@
 from .unique_values_policy import REMAP, _policy
 
 BILLING_UNIQUE_RULES = {
+    ("payments.PaymentDocument", "document_bill_once"): _policy(
+        REMAP, "A bill follows its remapped payment exactly once.",
+    ),
     ("payments.PaymentDocument", "field:reverses"): _policy(
         REMAP, "An offsetting document follows the imported document identity exactly once.",
     ),

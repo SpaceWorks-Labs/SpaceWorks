@@ -4,7 +4,7 @@ Lives in apps.events rather than admin_api so an `events` tombstone withdraws it
 with the rest of the app's surfaces.
 """
 
-from django.db import transaction
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -20,8 +20,11 @@ from apps.admin_api.serializers_inventory import (
 from apps.events import services_images
 from apps.events.serializers_admin import EventAdminSerializer
 from apps.events.views_admin import _manageable_event
+from apps.events.event_permissions import EDIT_DETAILS
+from apps.events.programme.cover_finalize import claim_cover, convert_to_webp
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
+from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.inventory import public_image_storage
 
 IMAGE_PREFIX = "event"
@@ -41,14 +44,15 @@ class EventImageView(APIView):
         request=PublicImageUploadRequestSerializer,
         responses={
             201: PublicImageUploadResponseSerializer,
-            400: OpenApiResponse(description="Invalid image upload request."),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
             403: OpenApiResponse(description="Event management access is required."),
             404: OpenApiResponse(description="Event not found."),
             503: OpenApiResponse(description="Public image storage is unavailable."),
         },
     )
     def post(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         content_type = serializer.validated_data["content_type"]
@@ -61,8 +65,12 @@ class EventImageView(APIView):
             event.makerspace_id,
             ext,
         )
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(event.makerspace)  # #234: refuse before the upload when storage is full
         try:
-            upload = public_image_storage.presigned_upload(object_key, content_type)
+            upload = public_image_storage.presigned_upload(
+                object_key, content_type,
+                **({"exact_bytes": serializer.validated_data["size"]} if "size" in serializer.validated_data else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(
@@ -78,15 +86,15 @@ class EventImageView(APIView):
         request=PublicImageAttachRequestSerializer,
         responses={
             200: EventAdminSerializer,
-            400: OpenApiResponse(description="Invalid image object key or size."),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_limit (file/headroom) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
             403: OpenApiResponse(description="Event management access is required."),
             404: OpenApiResponse(description="Event not found."),
             503: OpenApiResponse(description="Public image storage is unavailable."),
         },
     )
-    @transaction.atomic
     def put(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageAttachRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
@@ -94,16 +102,18 @@ class EventImageView(APIView):
         # object, and it must run before anything touches storage.
         if not object_key.startswith(f"{IMAGE_PREFIX}/{event.makerspace_id}/"):
             raise ValidationError(
-                {"object_key": "Image object key is outside this makerspace."}
+                {"object_key": gettext("Image object key is outside this makerspace.")}
             )
         if not public_image_storage.is_safe_object_key(object_key):
-            raise ValidationError({"object_key": "Invalid image object key."})
+            raise ValidationError({"object_key": gettext("Invalid image object key.")})
         if public_image_storage.public_image_key_in_use(
             event.makerspace_id,
             object_key,
             event_id=event.pk,
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
+        # This destination claim commits before remote writes and survives attachment rollback.
+        claim_cover(object_key)
         try:
             result = public_image_storage.finalize_upload(object_key)
         except StorageUnavailable:
@@ -126,7 +136,13 @@ class EventImageView(APIView):
             public_image_storage.delete_object(
                 public_image_storage.staging_key(object_key)
             )
-            raise ValidationError({"object_key": "Uploaded file is not a valid image."})
+            raise ValidationError({"object_key": gettext("Uploaded file is not a valid image.")})
+        try:
+            from apps.makerspaces.limits import check_upload_size
+            check_upload_size(event.makerspace, result.size)
+            object_key = convert_to_webp(object_key)
+        except StorageUnavailable:
+            return storage_unavailable_response()
         event = services_images.update_image(event, request.user, object_key)
         return self._response(request, event)
 
@@ -140,6 +156,6 @@ class EventImageView(APIView):
         },
     )
     def delete(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, EDIT_DETAILS)
         event = services_images.remove_image(event, request.user)
         return self._response(request, event)

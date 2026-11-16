@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 from decimal import Decimal
 
@@ -5,7 +6,9 @@ from django.utils import timezone
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
+from apps.payments.serializers_l5 import LedgerFlagsSerializer
 from apps.payments.models import ManualSettlement, Payment, Refund
 from apps.payments.subjects import subject_label
 
@@ -60,6 +63,7 @@ class PaymentReconciliationSerializer(serializers.ModelSerializer):
     refunded_amount = serializers.SerializerMethodField()
     refunds = RefundSerializer(many=True, read_only=True)
     settlement = serializers.SerializerMethodField()
+    ledger_flags = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -75,10 +79,16 @@ class PaymentReconciliationSerializer(serializers.ModelSerializer):
             "refunded_amount",
             "refunds",
             "settlement",
+            "ledger_flags",
             "created_at",
             "updated_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(LedgerFlagsSerializer())
+    def get_ledger_flags(self, payment):
+        from apps.payments.payment_rows_l5 import staff_flags
+        return staff_flags(payment, self.context.get("payment_l5"))
 
     def get_due_state(self, payment) -> str:
         from apps.payments.due_dates import due_state
@@ -126,7 +136,7 @@ class PaymentBulkActionSerializer(serializers.Serializer):
 
     def validate_ids(self, value):
         if len(value) != len(set(value)):
-            raise serializers.ValidationError("Payment IDs must be unique.")
+            raise serializers.ValidationError(gettext("Payment IDs must be unique."))
         return value
 
 
@@ -149,7 +159,7 @@ class ManualSettlementSerializer(serializers.Serializer):
         # A receipt dated in the future is an operator slip, not a record of money that
         # has already changed hands. Small tolerance for clock skew between devices.
         if value > timezone.now() + timedelta(minutes=5):
-            raise serializers.ValidationError("A settlement cannot be received in the future.")
+            raise serializers.ValidationError(gettext("A settlement cannot be received in the future."))
         return value
 
 
@@ -162,8 +172,8 @@ class PaymentOfflineSerializer(serializers.Serializer):
 
 
 class PaymentRefundRequestSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=Decimal("0.01")
+    amount = MoneyField(
+        max_digits=13, decimal_places=3, min_value=Decimal("0.001")
     )
     reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 

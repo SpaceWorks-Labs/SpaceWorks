@@ -1,5 +1,6 @@
 """Typed, relation-free provenance carried across deployment boundaries."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_datetime
 
@@ -13,12 +14,12 @@ def validate_actor_snapshot(value):
     """Require the complete text snapshot used for an imported source actor."""
     if not isinstance(value, dict) or set(value) != ACTOR_SNAPSHOT_FIELDS:
         raise ValidationError(
-            "Actor provenance must contain username, display, source id, and time."
+            gettext("Actor provenance must contain username, display, source id, and time.")
         )
     if not all(isinstance(value[field], str) for field in ACTOR_SNAPSHOT_FIELDS):
-        raise ValidationError("Every actor provenance value must be text.")
+        raise ValidationError(gettext("Every actor provenance value must be text."))
     if not value["source_user_id"] or parse_datetime(value["recorded_at"]) is None:
-        raise ValidationError("Actor provenance needs a source id and ISO timestamp.")
+        raise ValidationError(gettext("Actor provenance needs a source id and ISO timestamp."))
 
 
 def normalized_actor_snapshot(value):

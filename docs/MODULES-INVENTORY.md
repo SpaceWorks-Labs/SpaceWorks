@@ -4,19 +4,19 @@
 
 ## Inventory
 
-The permanent heading. It absorbs all six core keys, so this area has no master switch — but nine of the
-thirteen modules under it are optional.
+The permanent heading. It absorbs all six core keys, so this area has no master switch — but six of the
+twelve modules under it are optional. The retired `procurement` key is kept below for reference only.
 
 ### public_inventory
 
 **Core — cannot be uninstalled.**
 
-- **What it is** — the public browse catalogue and item detail pages at `/m/<slug>`.
+- **What it is** — the public Inventory list at `/m/<slug>/inventory` (or `/inventory` on a single-space site), and item detail pages at `/m/<slug>/items/<id>` (or `/items/<id>`). The makerspace root is its overview, with links to enabled areas.
 - **What it adds** — the `catalog` workflow: the public product list and detail view.
 - **Without it** — not an option. It is the surface the whole system exists to publish. What you *can*
   control is per item: `is_public` removes a product from the public list entirely, and
   `public_availability_mode` (`exact_count` / `status_only` / `hidden`) decides how much of its stock
-  level a visitor sees. A space that wants no public catalogue publishes nothing.
+  level a visitor sees. **Show public inventory** can hide Inventory independently of **Publish public site**, keeping the published overview and other enabled areas. These publication controls do not uninstall the core module or remove its records.
 - **Data** — core; not separately purgeable.
 
 ### request_workflow
@@ -32,8 +32,8 @@ thirteen modules under it are optional.
   allowed to change.
 - **Who may submit is set by `membership`, not by this module.** Being core, this module is present in every
   makerspace and therefore must work with `membership` uninstalled: members only when `membership` is on,
-  any signed-in account when it is off, and account-less strangers only when an operator has explicitly
-  opted in (`manage.py set_request_access --mode anyone`, which is refused while `membership` is installed).
+  any signed-in account when it is off — while `member_accounts` is installed. Without `member_accounts`
+  a borrower asks with no account: name, phone and an email confirmed by a one-time code.
   See the `membership` module below, and **Who may submit a borrow request** in `docs/INVARIANTS.md`.
 - **Accept and reject are one request at a time.** There is no bulk accept or bulk reject anywhere —
   `/control/` serves a per-request review page, and Telegram alerts carry no buttons.
@@ -66,7 +66,7 @@ thirteen modules under it are optional.
   whole makerspace is purged. The *object bytes* are a separate question: an optional per-makerspace
   retention policy deletes the stored image once its window passes, keeping the immutable row, the
   remarks, the QR scans and the audit trail. An expired photo then reads as a truthful expired state
-  (410) rather than a broken link, so the accountability record survives the picture.
+ (410) rather than a broken link, so the accountability record survives the picture.
   Separately, a default-off abandoned-upload cleanup (deployment switch plus per-space opt-in) may
   delete an old upload slot that no workflow ever consumed; it never touches attached evidence or rows
   recorded before the feature, and it leaves a permanent receipt that keeps re-deleting a late upload.
@@ -96,9 +96,12 @@ thirteen modules under it are optional.
   of four drills".
 - **What it adds** — per-unit QR generation and asset-level status tracking; asset units become
   selectable at issue time.
-- **Without it** — products are tracked by **quantity only**. Availability maths, requests and handovers
-  all still work; you simply cannot say *which* physical unit went out, and per-unit QR labels are
-  unavailable.
+- **Without it** — new tracking uses **quantity only**: generation of new individual units and
+  per-unit QR labels is unavailable. Availability maths, requests and handovers still work. Existing
+  unit records, custody history and authorized servicing stay readable and actionable so disabling
+  the add-on never strands an issued tool or prevents its return. These retained operations cannot
+  create units or QR identities, or change the product tracking mode; stock changes still go through
+  the core availability owner with the existing role, scope, state and audit checks.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
 
 ### containers
@@ -116,7 +119,10 @@ thirteen modules under it are optional.
 ### bulk_import
 
 - **What it is** — spreadsheet import of inventory rows.
-- **What it adds** — the `bulk_import` workflow: upload a sheet, map columns, preview, commit.
+- **What it adds** — the `bulk_import` workflow: upload a sheet, map columns, preview, commit. An
+  `.xlsx` is read on the server for column matching (`POST …/inventory/import/sheet`, openpyxl,
+  first sheet, cached values only, size/row/column caps); the browser no longer ships a spreadsheet
+  parser.
 - **Without it** — inventory is created one product at a time in the console (or through the API). The
   most common reason to install it is the first week of migrating from a spreadsheet.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
@@ -135,7 +141,8 @@ thirteen modules under it are optional.
 - **What it adds** — the `qr_print_batch` workflow: select items or asset units, generate a sheet, keep
   the batch as a record.
 - **Without it** — QR codes still exist and still print one at a time from `qr_management`; what you
-  lose is generating and re-downloading a whole sheet at once.
+  lose is generating and re-downloading a whole sheet at once, and sending batches to an enrolled label
+  printer (the label adapter needs both `devices` and `qr_print_batches`).
 - **Data** — purgeable: print batches and their items.
 
 ### guest_handover
@@ -145,18 +152,22 @@ thirteen modules under it are optional.
 - **What it adds** — the `guest_issue` and `guest_return` workflows, and direct handouts at the counter.
 - **Without it** — handovers happen in the full staff console instead. Front-desk volunteers then need a
   role with wider access than they should have, which is the reason this module exists. The handover
-  **role** is a separate concept: a custom role holding the handout actions, editable per space.
+  **role** is a separate concept: the fixed built-in Handover, combinable with other staff roles.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately; the requests
   and evidence it produced belong to the core loan spine.
 
 ### procurement
+
+**Retired module key.** The To-Buy list is switched per parent: `inventory.tobuy`
+for inventory items, `machines.tobuy` for machine consumables. See
+[the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent).
 
 - **What it is** — the "to buy" list and the receipts attached to it.
 - **What it adds** — the `procurement` workflow: raise a to-buy item, track it, attach a receipt, and
   move a purchased item into stock.
 - **Without it** — restocking is tracked outside the system. Low-stock signals still show in inventory;
   there is just nowhere in-app to record what was ordered.
-- **Data** — purgeable: to-buy items and their receipts (including the uploaded receipt files).
+- **Data** — purged per parent from `/control/` (Purge capability data): one parent's rows and receipts only.
 
 ---
 

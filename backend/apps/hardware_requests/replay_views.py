@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.evidence.storage import StorageUnavailable
-from apps.backup.not_restored import TenantNotRestored
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.hardware_requests.replay_authorization import authenticate
 from apps.hardware_requests.replay_execute import execute
@@ -29,7 +28,8 @@ from apps.tenant_migration.gate_errors import SourceMigrationGateError
 logger = logging.getLogger(__name__)
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer, description=detail) for code, detail in (
-    (400, "Invalid command, target, module or feature disabled."),
+    (400, "Invalid command or target; upload_size_required (declare size in bytes on PUT-only storage), upload_limit or limit_reached."),
+    (404, "A required module or feature is turned off (`module_disabled` / `feature_disabled`)."),
     (403, "Station, origin, session, operator lease or live permission refused."),
     (409, "Ownership conflict, expired command, predecessor refusal or concurrent claim."),
     (423, "Tenant migration source gate is closed."),
@@ -44,7 +44,7 @@ class _ReplayView(APIView):
     parser_classes = [JSONParser]
 
     def handle_exception(self, exc):
-        if isinstance(exc, (SourceMigrationGateError, TenantNotRestored)):
+        if isinstance(exc, SourceMigrationGateError):
             return super().handle_exception(exc)
         if isinstance(exc, Throttled):
             exc = ReplayFailure("rate_limited")
@@ -57,6 +57,10 @@ class _ReplayView(APIView):
             if isinstance(exc, StorageUnavailable):
                 exc = ReplayFailure("storage_unavailable")
             elif isinstance(exc, ValidationError):
+                if isinstance(exc.detail, dict) and str(exc.detail.get("code")) in {
+                    "upload_size_required", "upload_limit", "limit_reached",
+                }:
+                    return no_store(Response(exc.detail, status=exc.status_code))
                 exc = ReplayFailure("invalid_command")
             elif isinstance(exc, PermissionDenied):
                 exc = ReplayFailure("session_mismatch")

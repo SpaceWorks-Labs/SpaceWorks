@@ -1,18 +1,47 @@
+import re
+
 from cryptography.fernet import InvalidToken
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import transaction
 
 from apps.payments import stripe_client
 from apps.payments.checkout_expiry import forget_closed_checkout
+from apps.payments.provider_settings import (
+    RAZORPAY_CREDENTIAL_FIELDS, validate_provider_change, validate_razorpay_rotation,
+)
 
 
 RAW_CREDENTIAL_FIELDS = ("stripe_secret_key", "stripe_webhook_secret")
+MAKERSPACE_CREDENTIAL_FIELDS = (
+    "stripe_publishable_key", *RAW_CREDENTIAL_FIELDS, *RAZORPAY_CREDENTIAL_FIELDS,
+)
 PENDING_RAW_CREDENTIAL_ERROR = (
     "Cannot change raw Stripe credentials while raw Stripe sessions are pending."
 )
 PENDING_CONNECT_CREDENTIAL_ERROR = (
     "Cannot change platform Stripe credentials while Connect sessions are pending."
 )
+
+
+def validate_makerspace_credential_changes(payment_settings, changes, *, persist_closed=False):
+    """Local format/rail checks; only the locked Stripe path may confirm closed sessions."""
+    errors = {}
+    key_id = changes.get("razorpay_key_id", "")
+    if key_id and not re.fullmatch(r"rzp_(test|live)_[A-Za-z0-9]+", key_id):
+        errors["razorpay_key_id"] = "Enter a valid Razorpay API key ID."
+    secret = changes.get("razorpay_key_secret", "")
+    if secret and not re.fullmatch(r"[A-Za-z0-9_-]+", secret):
+        errors["razorpay_key_secret"] = "Enter a valid Razorpay API key secret."
+    webhook = changes.get("razorpay_webhook_secret", "")
+    if webhook and (
+        not webhook.strip() or webhook.startswith("fernet:") or any(ord(c) < 32 for c in webhook)
+    ):
+        errors["razorpay_webhook_secret"] = "Enter a valid webhook signing secret."
+    if errors:
+        raise ValidationError(errors)
+    validate_provider_change(payment_settings, changes)
+    validate_razorpay_rotation(payment_settings, changes)
+    validate_raw_credential_changes(payment_settings, changes, persist_closed=persist_closed)
 
 
 def validate_raw_credential_changes(
@@ -37,6 +66,12 @@ def validate_raw_credential_changes(
 
     from apps.payments.models import Payment
 
+    if _pending_stripe_intents_exist(
+        provider=Payment.StripeProvider.RAW, makerspace=payment_settings.makerspace,
+    ):
+        raise ValidationError(
+            {field: PENDING_RAW_CREDENTIAL_ERROR for field in changed_fields}
+        )
     if persist_closed:
         possibly_live_sessions_exist = _potentially_live_sessions_exist(
             provider=Payment.StripeProvider.RAW,
@@ -48,6 +83,7 @@ def validate_raw_credential_changes(
         # performs the authoritative Stripe check for terminal sessions.
         possibly_live_sessions_exist = Payment.objects.filter(
             makerspace=payment_settings.makerspace,
+            provider=Payment.Provider.STRIPE,
             stripe_provider=Payment.StripeProvider.RAW,
             status=Payment.Status.PENDING,
             stripe_checkout_session_id__isnull=False,
@@ -85,15 +121,10 @@ def update_payment_settings(payment_settings, changes):
             )
         else:
             locked = payment_settings
-        credential_changes = {
-            field: changes[field] for field in RAW_CREDENTIAL_FIELDS if field in changes
-        }
-        validate_raw_credential_changes(
-            locked, credential_changes, persist_closed=True
-        )
+        validate_makerspace_credential_changes(locked, changes, persist_closed=True)
         for field, value in changes.items():
             setter = getattr(locked, f"set_{field}", None)
-            if field in RAW_CREDENTIAL_FIELDS and setter is not None:
+            if field in MAKERSPACE_CREDENTIAL_FIELDS and setter is not None:
                 setter(value)
             else:
                 setattr(locked, field, value)
@@ -108,6 +139,7 @@ def _potentially_live_sessions_exist(
     from apps.payments.resolution import source_for_payment
 
     sessions = Payment.objects.filter(
+        provider=Payment.Provider.STRIPE,
         stripe_provider=provider,
         stripe_checkout_session_id__isnull=False,
         stripe_checkout_session_expired_at__isnull=True,
@@ -137,6 +169,28 @@ def _potentially_live_sessions_exist(
             payment.save(update_fields=[*forget_closed_checkout(payment), "updated_at"])
     return False
 
+
+def _pending_stripe_intents_exist(*, provider, makerspace=None):
+    """Native PaymentIntents have no hosted session to inspect for closure.
+
+    The update path holds the same settings lock as native issuance, so rotating
+    a key cannot race a newly created intent. Boundary validation also uses this
+    local check. A bare debt has no handle and is safe.
+    """
+    from apps.payments.models import Payment
+
+    payments = Payment.objects.filter(
+        provider=Payment.Provider.STRIPE,
+        stripe_provider=provider,
+        status=Payment.Status.PENDING,
+        stripe_payment_intent_id__isnull=False,
+        stripe_checkout_session_expired_at__isnull=True,
+    )
+    if makerspace is not None:
+        payments = payments.filter(makerspace=makerspace)
+    return payments.exists()
+
+
 def validate_platform_credential_changes(
     platform_settings, changes, *, persist_closed=False
 ):
@@ -156,6 +210,10 @@ def validate_platform_credential_changes(
 
     from apps.payments.models import Payment
 
+    if _pending_stripe_intents_exist(provider=Payment.StripeProvider.CONNECT):
+        raise ValidationError(
+            {field: PENDING_CONNECT_CREDENTIAL_ERROR for field in changed_fields}
+        )
     if persist_closed:
         possibly_live_sessions_exist = _potentially_live_sessions_exist(
             provider=Payment.StripeProvider.CONNECT,
@@ -163,6 +221,7 @@ def validate_platform_credential_changes(
         )
     else:
         possibly_live_sessions_exist = Payment.objects.filter(
+            provider=Payment.Provider.STRIPE,
             stripe_provider=Payment.StripeProvider.CONNECT,
             status=Payment.Status.PENDING,
             stripe_checkout_session_id__isnull=False,

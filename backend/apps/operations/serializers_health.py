@@ -9,17 +9,9 @@ class HealthSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
-class ArchiveCustodyReadinessSerializer(serializers.Serializer):
-    below_floor_makerspaces = serializers.IntegerField(min_value=0)
-    zero_recipient_makerspaces = serializers.IntegerField(min_value=0)
-    undelivered_alarms = serializers.IntegerField(min_value=0)
-    alarms_with_no_operator_address = serializers.IntegerField(min_value=0)
-
-
 class ReadinessSerializer(serializers.Serializer):
     status = serializers.CharField()
     database = serializers.CharField()
-    archive_custody = ArchiveCustodyReadinessSerializer()
 
 
 class EmptySerializer(serializers.Serializer):

@@ -5,8 +5,10 @@ A neutral module so the visibility half (`recipient_rule_access`) and the valida
 circular-import shape that a barrel split otherwise walks straight into.
 """
 
+
 from dataclasses import dataclass
 
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
 from apps.integrations.models_recipients import NotificationRecipient
 from apps.machines import role_scope
@@ -93,11 +95,18 @@ def memberships_for(makerspace, *, assigned_role_id=None):
         "user__is_active": True,
         "user__access_status": User.AccessStatus.ACTIVE,
     }
+    from django.db.models import F, Q
+    from apps.accounts.rbac_roles import additional_role_exists
+
+    role_filter = Q()
     if assigned_role_id is not None:
-        filters["assigned_role_id"] = assigned_role_id
+        role_filter = Q(assigned_role_id=assigned_role_id,
+                        assigned_role__makerspace_id=F("makerspace_id")) | Q(
+            additional_role_exists(role_ids=[assigned_role_id])
+        )
     return (
-        MakerspaceMembership.objects.filter(**filters)
+        MakerspaceMembership.both_tracks().filter(role_filter, **filters)
         .exclude(user__is_superuser=True)
-        .select_related("user")
+        .select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
         .order_by("user__username")
     )

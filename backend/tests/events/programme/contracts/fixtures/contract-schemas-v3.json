@@ -1,0 +1,945 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:spaceworks:events-programme:contracts:3",
+  "$defs": {
+    "Command": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expected_version": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_version"
+      ],
+      "additionalProperties": true
+    },
+    "EmergencyContact": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "relationship": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        }
+      },
+      "required": [
+        "name",
+        "relationship",
+        "phone"
+      ],
+      "additionalProperties": false
+    },
+    "FormReference": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 2
+        },
+        "form_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "form_id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "Disclosure": {
+      "type": "object",
+      "properties": {
+        "organizer": {
+          "type": "boolean"
+        },
+        "reviewer": {
+          "type": "boolean"
+        },
+        "judge": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "organizer",
+        "reviewer",
+        "judge"
+      ],
+      "additionalProperties": false
+    },
+    "Question": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "short_text",
+            "long_text",
+            "number",
+            "date",
+            "date_of_birth",
+            "single_choice",
+            "multi_choice",
+            "yes_no",
+            "email",
+            "phone",
+            "url",
+            "asset_reference",
+            "age_at_event",
+            "emergency_contact"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "profile_field_key": {
+          "enum": [
+            "name",
+            "phone",
+            "institution",
+            "organization",
+            "study_level",
+            "country",
+            "skills",
+            "github_url",
+            "linkedin_url",
+            "portfolio_url",
+            "resume",
+            "shirt_size",
+            "dietary_needs",
+            "accessibility_needs",
+            "emergency_contact",
+            "date_of_birth",
+            "age_at_event"
+          ]
+        },
+        "help": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "bounds": {
+          "type": "object"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "other": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "disclosure": {
+          "$ref": "#/$defs/Disclosure"
+        },
+        "show_if": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "label",
+        "required"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "age_at_event"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "bounds"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "EventContext": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "event_date_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timezone_name": {
+          "type": "string"
+        },
+        "as_of_date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "event_id",
+        "event_date_revision",
+        "timezone_name",
+        "as_of_date"
+      ],
+      "additionalProperties": false
+    },
+    "FormV2": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 2
+        },
+        "form_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Question"
+          }
+        },
+        "event_context": {
+          "$ref": "#/$defs/EventContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "form_id",
+        "revision",
+        "questions"
+      ],
+      "additionalProperties": false
+    },
+    "Derivation": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "inline_dob"
+                },
+                "date_of_birth": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "required": [
+                "kind",
+                "date_of_birth"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "saved_detail"
+                },
+                "field_key": {
+                  "const": "date_of_birth"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "kind",
+                "field_key",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "reviewed_event_date_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reviewed_as_of_date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "source",
+        "reviewed_event_date_revision",
+        "reviewed_as_of_date"
+      ],
+      "additionalProperties": false
+    },
+    "MemberInput": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expected_version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "form": {
+          "$ref": "#/$defs/FormReference"
+        },
+        "answers": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "derivations": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Derivation"
+          }
+        },
+        "save_choices": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "name",
+              "phone",
+              "institution",
+              "organization",
+              "study_level",
+              "country",
+              "skills",
+              "github_url",
+              "linkedin_url",
+              "portfolio_url",
+              "resume",
+              "shirt_size",
+              "dietary_needs",
+              "accessibility_needs",
+              "emergency_contact",
+              "date_of_birth"
+            ]
+          },
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "saved_detail_versions": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "name",
+              "phone",
+              "institution",
+              "organization",
+              "study_level",
+              "country",
+              "skills",
+              "github_url",
+              "linkedin_url",
+              "portfolio_url",
+              "resume",
+              "shirt_size",
+              "dietary_needs",
+              "accessibility_needs",
+              "emergency_contact",
+              "date_of_birth"
+            ]
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "coc": {
+          "type": "object",
+          "properties": {
+            "revision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "accepted": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "revision",
+            "accepted"
+          ],
+          "additionalProperties": false
+        },
+        "optional_consents": {
+          "type": "object",
+          "properties": {
+            "mlh_data_sharing": {
+              "type": "boolean"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "event_date_revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_version",
+        "form",
+        "answers",
+        "derivations",
+        "save_choices",
+        "saved_detail_versions",
+        "event_date_revision"
+      ],
+      "additionalProperties": true
+    },
+    "AdmissionSelection": {
+      "type": "object",
+      "properties": {
+        "ticket_type_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "invite_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "promo_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "host_waiver_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "host_waiver_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "host_waiver_accepted": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "CanonicalAnswer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "short_text",
+            "long_text",
+            "number",
+            "date",
+            "date_of_birth",
+            "single_choice",
+            "multi_choice",
+            "yes_no",
+            "email",
+            "phone",
+            "url",
+            "asset_reference",
+            "age_at_event",
+            "emergency_contact"
+          ]
+        },
+        "value": {},
+        "derivation_id": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "type"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "age_at_event"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "derivation_id"
+            ],
+            "not": {
+              "required": [
+                "value"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "value"
+            ],
+            "not": {
+              "required": [
+                "derivation_id"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "CanonicalSnapshot": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "form_id": {
+          "type": "string"
+        },
+        "form_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "answers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CanonicalAnswer"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "form_id",
+        "form_revision",
+        "answers"
+      ],
+      "additionalProperties": false
+    },
+    "AnswerSubject": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "owner_member_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "enum": [
+            "registration",
+            "application",
+            "role_assignment"
+          ]
+        },
+        "subject_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "creation_operation_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "event_id",
+        "owner_member_id",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "subject_id"
+          ],
+          "not": {
+            "required": [
+              "creation_operation_id"
+            ]
+          }
+        },
+        {
+          "required": [
+            "creation_operation_id"
+          ],
+          "not": {
+            "required": [
+              "subject_id"
+            ]
+          }
+        }
+      ]
+    },
+    "PhotoSelection": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expected_version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "profile_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "membership_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "source_revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "print_photo_consent": {
+          "type": "boolean"
+        },
+        "public_card_consent": {
+          "type": "boolean"
+        },
+        "public_card_scopes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "team",
+              "mentor",
+              "judge"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_version",
+        "profile_id",
+        "membership_id",
+        "source_revision",
+        "print_photo_consent",
+        "public_card_consent",
+        "public_card_scopes"
+      ],
+      "additionalProperties": false
+    },
+    "ReadPurpose": {
+      "enum": [
+        "team_original",
+        "owner_history",
+        "application_review",
+        "judge_submission",
+        "organizer_asset",
+        "sponsor_track",
+        "sponsor_resume",
+        "help_attachment",
+        "public_gallery",
+        "public_member_photo",
+        "saved_resume",
+        "saved_details_export",
+        "personal_data_export",
+        "certificate_pdf",
+        "badge_pdf",
+        "print_resource",
+        "template_artwork",
+        "provider_pdf"
+      ]
+    },
+    "PreparedIntentMetadata": {
+      "type": "object",
+      "properties": {
+        "intent_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "subject": {
+          "$ref": "#/$defs/AnswerSubject"
+        },
+        "key_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "key_epoch": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "canonical_answer_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "form_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "intent_id",
+        "operation_id",
+        "subject",
+        "key_version",
+        "key_epoch",
+        "canonical_answer_sha256",
+        "form_sha256",
+        "expires_at"
+      ],
+      "additionalProperties": false,
+      "description": "Metadata fixture only. Ciphertext is an in-process bytes field. Never accepted from HTTP or logged."
+    },
+    "Layer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "enum": [
+            "text",
+            "image",
+            "logo",
+            "photo",
+            "certificate_id",
+            "certificate_qr",
+            "event_credential_qr"
+          ]
+        },
+        "x_mm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "y_mm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "width_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rotation": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360
+        },
+        "text": {
+          "type": "string"
+        },
+        "font_family": {
+          "enum": [
+            "Gilroy",
+            "Unbounded"
+          ]
+        },
+        "font_weight": {
+          "enum": [
+            400,
+            500,
+            600,
+            700
+          ]
+        },
+        "font_size_pt": {
+          "type": "number",
+          "minimum": 6
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "shrink_to_fit": {
+          "type": "boolean"
+        },
+        "resource_slot": {
+          "enum": [
+            "logo",
+            "selected_member_photo",
+            "certificate_verification_qr",
+            "event_credential_qr"
+          ]
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "uppercase": {
+          "type": "boolean"
+        },
+        "tracking_pt": {
+          "type": "number"
+        },
+        "line_height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "resource_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "colour_token": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "order",
+        "type",
+        "x_mm",
+        "y_mm",
+        "width_mm",
+        "height_mm",
+        "rotation"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateDocumentV2": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "page_width_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "page_height_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Layer"
+          },
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "version",
+        "page_width_mm",
+        "page_height_mm",
+        "layers"
+      ],
+      "additionalProperties": false
+    },
+    "HackathonMemberInput": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/MemberInput"
+        },
+        {
+          "required": [
+            "coc"
+          ]
+        }
+      ]
+    }
+  },
+  "description": "G1 structural schemas; providers additionally enforce ownership, ISO country validity, phone normalization, source revisions, conditional graph limits and cross-field constraints. Never a substitute for live service authorization."
+}

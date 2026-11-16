@@ -1,5 +1,6 @@
 """Tenant loan settings; a missing row preserves the legacy return policy."""
 
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -11,17 +12,17 @@ def default_reminder_offsets():
 
 def validate_reminder_offsets(value):
     if not isinstance(value, list) or len(value) > 100:
-        raise ValidationError("Use a list of at most 100 reminder offsets in hours.")
+        raise ValidationError(gettext("Use a list of at most 100 reminder offsets in hours."))
     if any(type(offset) is not int or not -8760 <= offset <= 8760 for offset in value):
-        raise ValidationError("Offsets must be whole hours between -8760 and 8760.")
+        raise ValidationError(gettext("Offsets must be whole hours between -8760 and 8760."))
     if len(set(value)) != len(value):
-        raise ValidationError("Reminder offsets must be unique.")
+        raise ValidationError(gettext("Reminder offsets must be unique."))
 
 
 class MakerspaceLoanPolicy(models.Model):
     class RenewalMode(models.TextChoices):
         OFF = "off", "Off"
-        AUTO = "auto", "Automatic within policy"
+        AUTO = "auto", gettext_noop("Automatic within policy")
 
     makerspace = models.OneToOneField(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="loan_policy",
@@ -38,6 +39,8 @@ class MakerspaceLoanPolicy(models.Model):
     loan_max_items = models.PositiveIntegerField(default=0)
     loan_reminder_offsets_hours = models.JSONField(default=default_reminder_offsets, validators=[validate_reminder_offsets])
     loan_escalate_overdue_days = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(365)])
+    # Decision 221(a): account-only borrowers (member accounts on, membership off) may self-renew.
+    account_self_renewal = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod

@@ -1,8 +1,10 @@
+import { t } from "@lingui/core/macro";
 import { StructuredApiError, staffRequest } from "../../lib/api";
 
 // Hand-written mirrors of `apps/admin_api/serializers_membership_plans.py`. Regenerate
 // `src/generated/api.ts` once the backend schema snapshot is refreshed and swap these out.
 export type PlanInterval = "monthly" | "yearly" | "custom_days";
+export type PlanType = "rolling" | "financial_year" | "fixed_end" | "lifetime";
 
 export const PLAN_INTERVALS: [PlanInterval, string][] = [
   ["monthly", "Monthly"],
@@ -24,11 +26,36 @@ export type MembershipPlan = {
   renewal_retries?: number;
   reminder_days_before?: number[];
   reminder_days_after?: number[];
+  // Release 2 (G16, X5, X6, X8, X9). Null overrides inherit the space default.
+  plan_type?: PlanType;
+  fixed_end_date?: string | null;
+  renewal_amount?: string | null;
+  renewal_price?: string;
+  joining_fee?: string | null;
+  rejoin_rule?: "never" | "once" | "each_join" | "after_lapse" | null;
+  rejoin_after_days?: number | null;
+  payment_timing?: "after_activation" | "before_activation" | null;
+  join_mode?: "open" | "approval" | "invite_only" | "vouch" | "closed" | null;
+  late_renewal?: "backdate" | "payment_day";
+  slug?: string;
+  description?: string;
+  sort_order?: number;
+  is_public?: boolean;
+  archived_at?: string | null;
+  // Decision 221(d): hours per term used before pricing (0..8784, default 0).
+  included_booking_hours?: number;
+  included_machine_hours?: number;
+  // Parity O-B3: the plan's own SAC (4-8 digits; blank = the space-wide code), used while `billing.plan_sac` is on.
+  sac_code?: string;
+  // Parity O-B2: what the join form collects besides its questions (`membership.join_photo`, `membership.join_contact_fields`).
+  join_photo?: "off" | "optional" | "required";
+  join_phone?: "hidden" | "optional" | "required";
+  join_state?: "hidden" | "optional" | "required";
   created_at: string;
   updated_at: string;
 };
 
-export type MembershipPlanInput = Omit<MembershipPlan, "id" | "created_at" | "updated_at">;
+export type MembershipPlanInput = Omit<MembershipPlan, "id" | "created_at" | "updated_at" | "renewal_price" | "archived_at">;
 
 export type MembershipTerm = {
   id: number;
@@ -41,6 +68,14 @@ export type MembershipTerm = {
   renewal_payment: number | null;
   created_by: number | null;
   created_at: string;
+  // Release 2 (X6, X7): what the term was sold for, its kind and derived standing.
+  kind?: "new" | "renewal" | "reinstatement";
+  price?: string | null;
+  joining_fee?: string;
+  currency?: string;
+  plan_type?: PlanType;
+  standing?: string;
+  is_lifetime?: boolean;
 };
 
 export type InvitationRequest = {
@@ -79,6 +114,10 @@ export function updatePlan(planId: number, input: Partial<MembershipPlanInput>) 
   });
 }
 
+export function setPlanArchived(planId: number, archived: boolean) {
+  return staffRequest<MembershipPlan>(`/admin/membership-plans/${planId}/archive`, { method: archived ? "POST" : "DELETE" });
+}
+
 export function listTerms(membershipId: number) {
   return staffRequest<MembershipTerm[]>(`/admin/memberships/${membershipId}/terms`);
 }
@@ -112,7 +151,7 @@ export function declineInvitationRequest(requestId: number) {
 }
 
 export function planIntervalLabel(plan: Pick<MembershipPlan, "interval" | "custom_days">) {
-  if (plan.interval === "custom_days") return `Every ${plan.custom_days ?? "?"} days`;
+  if (plan.interval === "custom_days") return t`Every ${plan.custom_days ?? "?"} days`;
   return PLAN_INTERVALS.find(([value]) => value === plan.interval)?.[1] ?? plan.interval;
 }
 

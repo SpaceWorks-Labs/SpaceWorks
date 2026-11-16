@@ -17,14 +17,14 @@ from apps.accounts.models_social import (
     SocialSurface,
 )
 from apps.accounts.attestation import (
+    AttestationRejected,
     consume_attestation_challenge,
     live_approved_challenge,
+    verify_attestation,
 )
 from apps.makerspaces.cors import (
     member_origin_is_registered,
-    staff_origin_is_registered,
 )
-from apps.makerspaces.origin_scope import AMBIGUOUS_STAFF_ORIGIN_SCOPE, staff_origin_scope
 
 
 class SocialAuthUnavailable(Exception):
@@ -37,6 +37,17 @@ class SocialNonceRejected(Exception):
 
 class SocialDeviceRestartRequired(Exception):
     """The burned pre-grant attempt must restart with new one-time material."""
+
+
+def verify_nonce_attestation(row, challenge, raw_challenge, payload):
+    """Keep the entire verification result, including key metadata, nonce-bound.
+
+    The nonce is already burned. The result travels in this request to the grant
+    issuer; persisting reusable proof on the consumed nonce would serve no purpose.
+    """
+    if row.attestation_challenge_id != challenge.pk:
+        raise AttestationRejected("Attestation was rejected.")
+    return verify_attestation(challenge, raw_challenge, payload)
 
 
 def nonce_digest(raw):
@@ -52,6 +63,10 @@ def request_origin(request):
 
 
 def provider_settings(provider, client_platform):
+    from apps.accounts.login_methods import provider_login_enabled
+
+    if not provider_login_enabled(provider):
+        raise SocialAuthUnavailable
     # A generic OIDC provider carries its own configuration rather than living on the
     # platform singleton, so it is resolved before that row is even consulted -- a
     # deployment can run OIDC without ever configuring Google or Apple.
@@ -80,35 +95,51 @@ def provider_settings(provider, client_platform):
     return row, audience
 
 
+def native_apple_audience(settings_row, identity):
+    """Apple's native audience is the exact approved iOS app, never the allowlist."""
+    if identity is None or identity.platform != "apple":
+        return ""
+    app_id = identity.app_id
+    return app_id if _audience_is_allowed(app_id, settings_row.apple_native_app_ids) else ""
+
+
+def device_anchor(request, client_platform, challenge):
+    """``(grant, attestation_challenge)`` a device nonce is bound to: the caller's live grant,
+    or else an unspent approved attestation challenge (a first grant). Shared with the native
+    GitHub exchange (`github_native.py`), so every provider binds a device the same way."""
+    grant = getattr(request, "device_grant", None)
+    attestation_challenge = None
+    if grant is None:
+        attestation_challenge = live_approved_challenge(challenge)
+        if attestation_challenge is None:
+            raise SocialNonceRejected
+    platform = (attestation_challenge or grant).platform
+    if client_platform != ("ios" if platform == "apple" else "android"):
+        raise SocialNonceRejected
+    return grant, attestation_challenge
+
+
 def create_social_nonce(
     request, *, provider, surface, delivery, client_platform, challenge=None
 ):
-    provider_settings(provider, client_platform)
+    if surface != SocialSurface.MEMBER:
+        raise SocialNonceRejected
+    settings_row, _audience = provider_settings(provider, client_platform)
     origin = request_origin(request)
     grant = getattr(request, "device_grant", None)
     attestation_challenge = None
     if delivery == SocialDelivery.WEB:
-        if surface == SocialSurface.STAFF:
-            if not staff_origin_is_registered(origin):
-                raise SocialNonceRejected
-            if staff_origin_scope(request) is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
-                raise SocialNonceRejected
-        elif not member_origin_is_registered(origin):
+        if not member_origin_is_registered(origin):
             raise SocialNonceRejected
         grant = None
     else:
-        if grant is None:
-            # Taken as an argument rather than re-read from request.data: the view
-            # splats the validated serializer data, so the parameter is the validated
-            # value and reaching back into the raw request would bypass that validation.
-            attestation_challenge = live_approved_challenge(challenge)
-            if attestation_challenge is None:
-                raise SocialNonceRejected
-            platform = attestation_challenge.platform
-        else:
-            platform = grant.platform
-        expected = "ios" if platform == "apple" else "android"
-        if client_platform != expected:
+        # Taken as an argument rather than re-read from request.data: the view
+        # splats the validated serializer data, so the parameter is the validated
+        # value and reaching back into the raw request would bypass that validation.
+        grant, attestation_challenge = device_anchor(request, client_platform, challenge)
+        if provider == SocialProvider.APPLE and not native_apple_audience(
+            settings_row, attestation_challenge or grant,
+        ):
             raise SocialNonceRejected
         origin = ""
     raw = secrets.token_urlsafe(48)
@@ -143,6 +174,7 @@ def consume_social_nonce(
         )
         valid = bool(
             row
+            and surface == SocialSurface.MEMBER
             and row.consumed_at is None
             and row.expires_at > now
             and row.provider == provider
@@ -172,6 +204,11 @@ def consume_social_nonce(
             getattr(request, "device_grant", None), "pk", None
         ):
             raise SocialNonceRejected
+        if provider == SocialProvider.APPLE:
+            settings_row, _audience = provider_settings(provider, client_platform)
+            expected = native_apple_audience(settings_row, row.device_grant)
+            if not _audience_is_allowed(provider_audience, expected):
+                raise SocialNonceRejected
     else:
         challenge = consume_attestation_challenge(
             raw_challenge,
@@ -187,7 +224,13 @@ def consume_social_nonce(
         # legitimate Google native login. It is checked against the platform-configured
         # audience for this provider and platform -- the same value token verification
         # used -- which is what "the audience is bound" actually means here.
+        if provider == SocialProvider.GITHUB:
+            # GitHub issues no ID token, so there is no provider audience to bind: its OAuth
+            # client id is fixed server-side and the PKCE challenge is bound into the digest.
+            return row, challenge
         _settings_row, expected_audience = provider_settings(provider, client_platform)
+        if provider == SocialProvider.APPLE:
+            expected_audience = native_apple_audience(_settings_row, challenge)
         if not _audience_is_allowed(provider_audience, expected_audience):
             raise SocialDeviceRestartRequired
         return row, challenge

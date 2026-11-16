@@ -1,0 +1,21 @@
+/* Patch: the 404 pet (NotFoundPatch) and the public pages' still moments (PatchMoment). Patch is never
+   recoloured, mirrored, stretched or given effects (SpaceWorks-Design mascot/README.md); dark mode uses the dark/ sheets. */
+.sw-patch-pet { position: fixed; inset-inline: 0; bottom: 0; height: 112px; pointer-events: none; overflow: hidden; z-index: 30; }
+.sw-patch-pet-body { position: absolute; left: 0; bottom: 8px; will-change: transform; }
+.sw-patch-pet-sprite { display: block; width: 128px; height: 88px; background-repeat: no-repeat; background-size: 1024px 88px; background-position: var(--sw-patch-frame, 0px) 0; }
+.sw-patch-print { position: absolute; bottom: 6px; color: rgb(var(--color-muted)); animation: sw-patch-print 1600ms ease-out forwards; }
+@keyframes sw-patch-print { from { opacity: 0.7; } to { opacity: 0; } }
+.sw-patch-z { position: absolute; top: -10px; right: 22px; color: rgb(var(--color-muted)); font-weight: 600; animation: sw-patch-z 2400ms ease-in-out infinite; }
+@keyframes sw-patch-z { from { opacity: 0; transform: translateY(6px); } 50% { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) {
+  .sw-patch-print, .sw-patch-z { animation: none; }
+}
+
+/* PatchMoment: a 160x110 frame of the 256x176 sheet (never upscaled). Frame 0 stands; [data-trot] plays the
+   eight walk frames twice on the spot, once, and comes back to rest on frame 0. */
+.sw-patch-moment { display: block; width: 160px; height: 110px; flex-shrink: 0; pointer-events: none; background-repeat: no-repeat;
+  background-size: 1280px 110px; background-position: 0 0; }
+@keyframes sw-patch-trot { from { background-position: 0 0; } to { background-position: -1280px 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .sw-patch-moment[data-trot] { animation: sw-patch-trot 960ms steps(8) 2; }
+}

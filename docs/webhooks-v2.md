@@ -32,6 +32,7 @@ URLs or free-form audit metadata travel in v2.
 | members | membership_request_id, membership_id |
 | api_access | api_key_request_id |
 | devices | none |
+| presence | none |
 | payments | payment_id, refund_id, request_id, booking_id, registration_id, membership_id |
 | stock | to_buy_item_id, pool_id |
 | certifications | certification_grant_id, certification_type_id, membership_id |
@@ -55,3 +56,33 @@ secrets still apply.
 
 Changing the schema requires updating the runtime catalogue and snapshot together.
 Consumers should pin a schema version and deliberately opt in to future breaking formats.
+
+
+## Damaged-return handoff and `issue_reported`
+
+`issue_reported` is named per area family, not per source. A damaged-return handoff to repairs
+raises the same event as a member's own report, and it fires the event of the
+item's area, once, on first creation only (an idempotent replay never alerts twice):
+
+| Item's area | Event |
+|---|---|
+| Inventory item | `hardware_requests.issue_reported` |
+| Bookable room or space | `bookings.issue_reported` |
+| Machine | `maintenance.issue_reported` (the machines area's webhook family is `maintenance`) |
+
+The payload is the family's usual identifier set; consumers that handle all three families can
+subscribe to each name separately.
+
+## Signing secret: shown once, and rotation
+
+For a signed-webhook destination the server makes the signing secret, not you. It looks like `whsec_...` and is returned **once**, in the response that creates the destination (or that rotates it). It is stored encrypted and no screen or API ever shows it again, so copy it into your receiver straight away. If you lose it, rotate.
+
+Rotate from the destination in the space's notification settings, or with `POST /api/v1/admin/makerspace/{id}/notification-destinations/{destination_id}/rotate-secret`. It needs the manage-space permission and only applies to signed-webhook destinations. The optional body `grace_hours` is a whole number from 0 to 168, 24 by default.
+
+During the grace window the old secret keeps working next to the new one. Each delivery's `X-SpaceWorks-Signature` then carries one `v1=` value per live secret, newest first:
+
+```
+t=1760000000,v1=<hmac with the new secret>,v1=<hmac with the old secret>
+```
+
+A receiver can therefore deploy the new secret first and accept a delivery when **any** `v1=` value matches. When the window ends the header goes back to a single value. A grace of `0` retires the old secret immediately, so deliveries sign with the new secret only. Every rotation is written to the audit log (`notification_destination.secret_rotated`) with the grace hours, never the secret.

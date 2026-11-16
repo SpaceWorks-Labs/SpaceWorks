@@ -29,13 +29,13 @@ default_loan_days presence_preset_minutes""".split())
 HOURS_FIELDS = ("timezone", "opening_hours")
 
 SECTIONS = {
-    "roles": section("makerspaces.MakerspaceRole", "name granted_actions", "name"),
     "active_waiver": section("makerspaces.MakerspaceWaiver", "version body"),
     "loan_policy": section("makerspaces.MakerspaceLoanPolicy", """default_loan_days
         loan_renewal_mode loan_max_renewals loan_renewal_days loan_max_active loan_max_items
-        loan_reminder_offsets_hours loan_escalate_overdue_days""", module="request_workflow"),
+        loan_reminder_offsets_hours loan_escalate_overdue_days account_self_renewal""", module="request_workflow"),
     "membership_plans": section("makerspaces.MembershipPlan", """name interval custom_days
-        amount currency is_active loan_max_active loan_max_items""", "name", "membership"),
+        amount currency is_active loan_max_active loan_max_items included_booking_hours
+        included_machine_hours""", "name", "membership"),
     "admission_policy": section("makerspaces.MakerspaceMembershipSettings", """join_mode
         vouches_required voucher_min_tenure_days voucher_pending_limit vouch_expiry_days
         vouch_replaces_approval payment_timing application_schema default_plan joining_fee

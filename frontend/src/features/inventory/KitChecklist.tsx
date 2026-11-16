@@ -1,6 +1,9 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
+import { Field } from "../../components/ui";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export type KitComponent = { key: string; label: string; quantity: number };
 export type KitExpectation = KitComponent & { owner_label: string; issue_present?: number };
@@ -53,31 +56,31 @@ export function useSuppliedKitChecklist(components: KitExpectation[], token: str
 
 export function KitChecklistCapture({ checklist }: { checklist: Pick<ReturnType<typeof useKitChecklist>, "components" | "values" | "loading" | "error" | "update"> }) {
   return <div className="grid gap-2">
-    {checklist.loading ? <p role="status" className="text-sm text-muted">Loading kit checklist...</p> : null}
+    {checklist.loading ? <LogoLoader label={t`Loading kit checklist…`} size={48} className="min-h-16 py-3" /> : null}
     {checklist.error ? <p role="alert" className="text-sm text-danger">{checklist.error}</p> : null}
-    {checklist.components.length ? <fieldset className="grid gap-2 rounded-md border border-line p-3">
-      <legend className="text-sm font-medium text-ink">Kit component counts</legend>
-      <p className="text-xs text-muted">Count what is physically present. Enter 0 for a missing component.</p>
-      {checklist.components.map((row) => <label key={row.key} className="grid gap-1 text-sm">
-        <span>{row.owner_label}: {row.label} ({row.quantity} expected{row.issue_present !== undefined ? `, ${row.issue_present} at issue` : ""})</span>
+    {checklist.components.length ? <fieldset className="grid gap-4 rounded-xl border border-line bg-panel p-4">
+      <legend className="text-sm font-medium text-ink">{t`Kit component counts`}</legend>
+      <p className="text-sm text-muted">{t`Count what is physically present. Enter 0 for a missing component.`}</p>
+      {checklist.components.map((row) => <Field key={row.key}
+        label={t`${row.owner_label}: ${row.label} (${row.quantity} expected${row.issue_present !== undefined ? `, ${row.issue_present} at issue` : ""})`}>
         <input className="desk-input" type="number" required min="0" max={row.quantity} step="1"
           value={checklist.values[row.key] ?? ""} onChange={(event) => checklist.update(row.key, event.target.value)} />
-      </label>)}
+      </Field>)}
     </fieldset> : null}
   </div>;
 }
 
 export function KitDefinitionEditor({ value, onChange }: { value: KitComponent[]; onChange: (value: KitComponent[]) => void }) {
   return <fieldset className="grid gap-2 rounded-md border border-line p-3">
-    <legend className="text-sm font-medium text-ink">Kit components</legend>
+    <legend className="text-sm font-medium text-ink">{t`Kit components`}</legend>
     {value.map((row) => <div key={row.key} className="grid gap-2 sm:grid-cols-[1fr_6rem_auto]">
-      <label className="grid gap-1 text-sm">Component name<input className="desk-input" maxLength={200} value={row.label}
+      <label className="grid gap-1 text-sm">{t`Component name`}<input className="desk-input" maxLength={200} value={row.label}
         onChange={(event) => onChange(value.map((entry) => entry.key === row.key ? { ...entry, label: event.target.value } : entry))} /></label>
-      <label className="grid gap-1 text-sm">Quantity<input className="desk-input" type="number" min="1" max="999" step="1" value={row.quantity}
+      <label className="grid gap-1 text-sm">{t`Quantity`}<input className="desk-input" type="number" min="1" max="999" step="1" value={row.quantity}
         onChange={(event) => onChange(value.map((entry) => entry.key === row.key ? { ...entry, quantity: Number(event.target.value) } : entry))} /></label>
-      <button className="desk-button-danger self-end" type="button" onClick={() => onChange(value.filter((entry) => entry.key !== row.key))}>Remove</button>
+      <button className="desk-button-danger self-end" type="button" onClick={() => onChange(value.filter((entry) => entry.key !== row.key))}>{t`Remove`}</button>
     </div>)}
     <button className="desk-button-ghost" type="button" disabled={value.length >= 50}
-      onClick={() => onChange([...value, { key: crypto.randomUUID(), label: "", quantity: 1 }])}>Add component</button>
+      onClick={() => onChange([...value, { key: crypto.randomUUID(), label: "", quantity: 1 }])}>{t`Add component`}</button>
   </fieldset>;
 }

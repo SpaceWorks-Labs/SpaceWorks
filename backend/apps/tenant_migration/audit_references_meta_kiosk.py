@@ -74,3 +74,6 @@ for _field, _model in (
 for _field in ("replay_id", "operator_lease_id", "station_session_id", "aggregate_id"):
     KIOSK_AUDIT_EDGES.update(_edges(S, None, ((a, _field) for a in _REPLAY_ACTIONS)))
 KIOSK_AUDIT_EDGES[("kiosk.replay_resolved", "replacement_replay_id")] = AuditReference(S, None)
+# R4 audit B: ending a Station session is audited like starting one.
+KIOSK_AUDIT_EDGES[("kiosk.station_session_ended", "station_id")] = AuditReference(R, "makerspaces.Station")
+KIOSK_AUDIT_EDGES[("kiosk.station_session_ended", "station_session_id")] = AuditReference(S, None)

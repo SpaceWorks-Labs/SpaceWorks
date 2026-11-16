@@ -4,6 +4,7 @@ Split out of ``views_reports`` (phase 10) so the views stay under the file ceili
 names are re-exported there, where existing callers import them.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers
@@ -18,6 +19,19 @@ class RetentionFilterSerializer(serializers.Serializer):
     months = serializers.IntegerField(required=False, min_value=1, max_value=120)
 
 
+SUBJECT_REPORT_DESCRIPTION = (
+    "Subject reports require live resource management plus tenant VIEW_AUDIT. "
+    "For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; "
+    "bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, "
+    "bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; "
+    "reservation detail includes overlapping windows. No credentials are exported. "
+    "Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated. "
+    "Active-loan and return detail rows include count=1 for chart summaries of returned rows. "
+    "Event, booking and audit detail exports retain their explicit column allowlists and use table specs. "
+    "FabLab health rows include makerspace_id in tenant previews."
+)
+
+
 DATE_RANGE_PARAMETERS = [
     OpenApiParameter("start", OpenApiTypes.DATE, OpenApiParameter.QUERY),
     OpenApiParameter("end", OpenApiTypes.DATE, OpenApiParameter.QUERY),
@@ -28,6 +42,8 @@ PAYMENT_FILTER_PARAMETERS = [
     OpenApiParameter("subject_type", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=Payment.SubjectType.values),
 ]
 PREVIEW_PARAMETERS = [
+    OpenApiParameter("subject_kind", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."),
+    OpenApiParameter("subject_id", OpenApiTypes.INT, OpenApiParameter.QUERY),
     OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
     *DATE_RANGE_PARAMETERS,
     *PAYMENT_FILTER_PARAMETERS,
@@ -40,7 +56,7 @@ def _export_format(request, definition=None):
     fmt = (request.query_params.get("format") or "csv").strip().lower()
     allowed = definition.allowed_formats if definition is not None else ("csv", "xlsx")
     if fmt not in allowed:
-        raise ValidationError({"format": f"Use {' or '.join(allowed)}."})
+        raise ValidationError({"format": gettext('Use {value}.').format(value=' or '.join(allowed))})
     return fmt
 
 
@@ -56,17 +72,23 @@ FILTER_SERIALIZERS = {
 
 
 def _report_filters(request, report_key):
+    from .report_subjects import SubjectFilterSerializer, SUBJECTS
+    subjects = SubjectFilterSerializer(data=request.query_params)
+    subjects.is_valid(raise_exception=True)
+    values = dict(subjects.validated_data)
+    if values and not any(report_key in adapter.report_keys for adapter in SUBJECTS.values()):
+        raise ValidationError({"subject_kind": gettext("Unsupported subject for this report.")})
     serializer_class = FILTER_SERIALIZERS.get(report_key)
     if serializer_class is None:
-        return {}
+        return values
     serializer = serializer_class(data=request.query_params)
     serializer.is_valid(raise_exception=True)
-    return serializer.validated_data
+    return {**serializer.validated_data, **values}
 
 
 def _grain_param(request, definition):
     value = (request.query_params.get("grain") or (definition.grains or ("day",))[0]).strip().lower()
     allowed = definition.grains or ("day",)
     if value not in allowed:
-        raise ValidationError({"grain": f"Use one of: {', '.join(allowed)}."})
+        raise ValidationError({"grain": gettext('Use one of: {value}.').format(value=', '.join(allowed))})
     return value

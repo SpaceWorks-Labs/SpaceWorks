@@ -70,6 +70,7 @@ from apps.operations.views_qr_batches import (
     QrPrintBatchListCreateView,
 )
 from apps.operations.views_problem_reports import (
+    ProblemReportListView,
     ProblemReportResolveView,
     ProblemReportTriageView,
 )

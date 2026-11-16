@@ -3,11 +3,29 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from apps.accounts.models import User
+from apps.accounts.pii_presentation import PiiMaskingSerializerMixin, person_pii_visible
 from apps.admin_api.serializers_audit import AuditLogSerializer  # noqa: F401 - re-export
 from apps.makerspaces.models import MakerspaceMembership
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
+    """Account email and name are masked for a superadmin without a window (#114).
+
+    On a makerspace's staff route Lane D's response net (`platform_tenant_pii`) already
+    masks by that space's window, so this only decides on platform routes, where no one
+    space applies: the person's own reveal, or windows on every space they belong to.
+    """
+
+    pii_account_fields = ("email", "first_name", "last_name")
+    pii_masked = serializers.BooleanField(read_only=True, required=False)
+
+    def pii_row_visible(self, viewer, instance):
+        from apps.accounts.platform_tenant_pii import admitted_spaces
+        request = self.context.get("request")
+        if request is not None and admitted_spaces(request) is not None:
+            return True
+        return person_pii_visible(viewer, instance)
+
     class Meta:
         model = User
         fields = [
@@ -20,8 +38,8 @@ class UserSerializer(serializers.ModelSerializer):
             "access_status",
             "restriction_reason",
             "telegram_user_id",
-            "external_checkin_user_id",
             "is_active",
+            "pii_masked",
         ]
         read_only_fields = ["id"]
 
@@ -42,15 +60,17 @@ class StaffCreateSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
     makerspace_id = serializers.IntegerField()
-    # Only the roles this legacy fixed-role surface can still attach a user to, i.e. the
-    # ones that are still seeded. Guest Admin went with migrations 0052/0053 (and is no
-    # longer an enum member at all) and PRINT_MANAGER with 0046; neither has a role row to
-    # point a membership at any more.
+    # Fixed staff roles only; Member uses the community admission surface.
     role = serializers.ChoiceField(
         choices=[
             MakerspaceMembership.Role.SPACE_MANAGER,
             MakerspaceMembership.Role.INVENTORY_MANAGER,
             MakerspaceMembership.Role.MACHINE_MANAGER,
+            MakerspaceMembership.Role.EVENT_MANAGER,
+            MakerspaceMembership.Role.BOOKING_MANAGER,
+            MakerspaceMembership.Role.HANDOVER,
+            MakerspaceMembership.Role.TECHNICIAN,
+            MakerspaceMembership.Role.SHOP_MANAGER,
         ]
     )
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)

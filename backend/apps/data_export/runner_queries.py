@@ -1,5 +1,7 @@
 from django.db.models import Q
 
+from apps.core.db import sqlstate
+
 from .external_refs import select_related_paths as external_paths
 from .pii_raw import select_related_paths as pii_paths
 from .types import Fidelity
@@ -36,8 +38,7 @@ def key_value(row, name):
 
 
 def is_statement_timeout(exc):
-    cause = getattr(exc, "__cause__", None)
     return (
-        getattr(cause, "sqlstate", None) == "57014"
+        sqlstate(exc) == "57014"
         or "statement timeout" in str(exc).lower()
     )

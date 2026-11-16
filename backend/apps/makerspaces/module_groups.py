@@ -9,6 +9,8 @@ of its own, because a second source of truth for "is this installed" is exactly 
 the registry exists to remove.
 """
 
+from django.utils.translation import gettext_noop
+
 from apps.makerspaces.module_install import module_status
 from apps.makerspaces.module_registry import (
     GROUPS,
@@ -19,21 +21,50 @@ from apps.makerspaces.module_registry import (
 )
 from apps.makerspaces.platform import MODULE_WORKFLOWS
 from apps.separability.tombstones import SEPARABLE_APPS, tombstoned_app_labels
+from config.locale_resolution import display
 
 # What each separable app actually costs an operator who does not use it. Written out
 # rather than derived, because "what does this app give me" is not something the registry
 # knows -- and an operator deciding whether to remove an app needs the answer in the
 # terms they think in, not a list of module keys.
 SEPARABLE_APP_NOTES = {
-    "warranty": "Warranty tracking for assets, printers and machines.",
+    "warranty": "Warranty tracking for assets and machines (inventory.warranty, machines.warranty).",
     "presence": "Geofenced check-in and presence sessions.",
     "payments": "Every online payment surface. Existing Payment rows are kept and stay readable.",
     "events": "Event scheduling and registrations.",
     "bookings": "Resource booking and public self-booking.",
-    "maintenance": "Maintenance schedules and work orders.",
-    "procurement": "The to-buy list.",
+    "maintenance": "Maintenance schedules and work orders (the machines.maintenance switch).",
+    "procurement": "The To-Buy list (the machines.tobuy and inventory.tobuy switches).",
     "roadmap": "Already tombstoned; retained for migration history only.",
 }
+
+
+# Display name of each separable app, the single source for `deployment.apps[].label`.
+# Declared with gettext_noop and translated at the presentation seam (`display`).
+SEPARABLE_APP_LABELS = {
+    "procurement": gettext_noop("Procurement"),
+    "notifications": gettext_noop("Notifications"),
+    "warranty": gettext_noop("Warranty"),
+    "maintenance": gettext_noop("Maintenance"),
+    "presence": gettext_noop("Presence"),
+    "events": gettext_noop("Events"),
+    "bookings": gettext_noop("Bookings"),
+    "payments_rail": gettext_noop("Online payments"),
+    "payments": gettext_noop("Payments"),
+    "event_reimbursements": gettext_noop("Event reimbursements"),
+    "tenant_migration": gettext_noop("Space migration"),
+    "devices": gettext_noop("Devices"),
+    "id_programmes": gettext_noop("ID programmes"),
+    "shop": gettext_noop("Shop"),
+    "roadmap": gettext_noop("Roadmap"),
+    "printing": gettext_noop("3D printing"),
+}
+
+
+def app_display_label(app):
+    """Translated name of a separable app; an unlisted one falls back to its humanised label."""
+    label = SEPARABLE_APP_LABELS.get(app)
+    return display(label) if label else app.replace("_", " ").capitalize()
 
 
 def grouped_module_status(makerspace):
@@ -63,8 +94,8 @@ def grouped_module_status(makerspace):
         groups.append(
             {
                 "key": group.key,
-                "label": group.label,
-                "description": group.description,
+                "label": display(group.label),
+                "description": display(group.description),
                 # A group holding a core key can never be switched off: core is added
                 # back on every write, so a master toggle offering "off" would be a
                 # control whose effect is silently undone.
@@ -91,6 +122,7 @@ def deployment_app_status():
         "apps": [
             {
                 "app_label": app,
+                "label": app_display_label(app),
                 "shipped": app not in tombstoned,
                 "note": SEPARABLE_APP_NOTES.get(app, ""),
             }

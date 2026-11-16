@@ -1,5 +1,6 @@
 """Audited mutation boundary for event collaboration invitations."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
@@ -56,7 +57,7 @@ def invite_collaborators(event, *, actor, slugs):
     require_module_locked(host.pk, "events")
     if host.slug in requested_slugs:
         raise ValidationError(
-            {"slugs": "The host makerspace cannot collaborate on its own event."}
+            {"slugs": gettext("The host makerspace cannot collaborate on its own event.")}
         )
     resolved = {
         row.slug: row
@@ -66,7 +67,7 @@ def invite_collaborators(event, *, actor, slugs):
     invalid = sorted(requested_slugs - resolved.keys())
     if invalid:
         raise ValidationError(
-            {"slugs": f"Unknown or archived makerspace slug(s): {', '.join(invalid)}."}
+            {"slugs": gettext('Unknown or archived makerspace slug(s): {value}.').format(value=', '.join(invalid))}
         )
 
     requested_ids = {row.pk for row in resolved.values()}
@@ -126,7 +127,7 @@ def remove_collaborator(collaborator_id, *, actor):
         .first()
     )
     if event_id is None:
-        raise NotFound("This collaboration no longer exists.")
+        raise NotFound(gettext("This collaboration no longer exists."))
     locked_event = Event.objects.select_for_update().get(pk=event_id)
     locked_row = (
         EventCollaborator.objects.select_for_update()
@@ -135,7 +136,7 @@ def remove_collaborator(collaborator_id, *, actor):
         .first()
     )
     if locked_row is None:
-        raise NotFound("This collaboration no longer exists.")
+        raise NotFound(gettext("This collaboration no longer exists."))
     require_module_locked(locked_event.makerspace_id, "events")
     slug = locked_row.makerspace.slug
     locked_row.delete()
@@ -170,7 +171,7 @@ def respond_to_invitation(collaborator, *, actor, accept: bool):
         # The host can remove the invitation between the view's lookup and this lock.
         # Without this the raced delete surfaces as an untyped 500 rather than the
         # documented 404.
-        raise NotFound("This collaboration invitation no longer exists.") from None
+        raise NotFound(gettext("This collaboration invitation no longer exists.")) from None
     # The collaborator's own module gate, re-checked under its now-locked row.
     require_module_locked(makerspace.pk, "events")
     locked.makerspace = makerspace

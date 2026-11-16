@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "keys": [
+    "SECRET_KEY",
+    "API_CLIENT_ENC_KEY",
+    "PII_MASTER_KEY",
+    "PII_MASTER_KEY_PREVIOUS",
+    "PII_SEARCH_HASH_KEY",
+    "HMAC_SECRET",
+    "PUSH_TOKEN_HMAC_KEY",
+    "CRON_SECRET",
+    "AUDIT_MAC_MASTER_KEY"
+  ],
+  "provider_credentials": "excluded; escrow separately",
+  "free_tick_secret": "deployment-local scheduling authority; rotate after rebuild"
+}

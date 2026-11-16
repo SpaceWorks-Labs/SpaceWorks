@@ -1,17 +1,20 @@
+from django.utils.translation import gettext
+from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.inventory import availability
 from apps.inventory.models import InventoryProduct, TrackingMode
+from apps.makerspaces import limits
 
 
 def move_quantity_stock(source_product, destination_container, quantity):
     if source_product.tracking_mode == TrackingMode.INDIVIDUAL:
         raise ValidationError(
-            {"product_id": "Individual-tracked products must be moved by asset."}
+            {"product_id": gettext("Individual-tracked products must be moved by asset.")}
         )
     if quantity > source_product.available_quantity:
         raise ValidationError(
-            {"quantity": "Cannot transfer more than the available stock."}
+            {"quantity": gettext("Cannot transfer more than the available stock.")}
         )
 
     destination_product = _destination_product(source_product, destination_container)
@@ -62,7 +65,11 @@ def _destination_product(source_product, destination_container):
     return queryset.exclude(pk=source_product.pk).first()
 
 
+@transaction.atomic
 def _create_destination_product(source_product, destination_container):
+    # A split consumes a product slot just like an API create. Keep the shared
+    # makerspace lock through the insert, including direct calls to this helper.
+    limits.check_quota(source_product.makerspace, "products", adding=1)
     return InventoryProduct.objects.create(
         makerspace=source_product.makerspace,
         box=destination_container,

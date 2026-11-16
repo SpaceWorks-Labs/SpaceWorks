@@ -20,11 +20,11 @@ def fingerprint(value):
     ).hexdigest()
 
 
-def record_auth_event(actor, action, *, target=None, meta=None):
+def record_auth_event(actor, action, *, target=None, meta=None, makerspace=None):
     clean_meta = {
         key: value for key, value in (meta or {}).items() if value not in (None, "")
     }
-    return audit.record(actor, action, target=target, meta=clean_meta)
+    return audit.record(actor, action, target=target, meta=clean_meta, makerspace=makerspace)
 
 
 def record_refresh_rejected(cookie, reason):

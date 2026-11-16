@@ -38,7 +38,7 @@ SEPARABLE_APPS = frozenset({
     # here and cannot be tombstoned -- money owed, its receipts and its reconciliation
     # must stay readable and settleable on any deployment, which is exactly what
     # splitting `payments_rail` out of `payments` bought.
-    "payments_rail",
+    "payments_rail", "event_reimbursements",
     # Superadmin-only release plumbing. A deployment updated by its own host tooling has
     # no use for the in-app control surface.
     # Deployments that never move tenants between servers ship none of these surfaces;
@@ -46,7 +46,46 @@ SEPARABLE_APPS = frozenset({
     "tenant_migration",
     # Enrolled printers/label printers: identity rows stay readable and purgeable.
     "devices",
+    # Release 2 L3: organisation ID programmes (no module key; `membership.id_programmes`).
+    "id_programmes",
+    # Release 2 L22: the per-space shop (module key `shop`); sales stay in the core ledger.
+    "shop",
 })
+
+
+# Every other first-party app, each with the reason it cannot be tombstoned (#183B(g)).
+# Declared so a new app is a decision, not an accident: the local completeness test
+# fails when an installed `apps.*` app sits in neither set. Analytics, managed hosting,
+# space controls and the OAuth/token surfaces in `apiclients` are switched per space or
+# per deployment by their own settings, not by removing their code.
+CORE_APPS = {
+    "accounts": "people, sign-in and RBAC: every request resolves through it",
+    "makerspaces": "the tenant root, its module registry and settings authority",
+    "organizations": "organisation accounts own spaces and programmes",
+    "payments": "the money LEDGER must stay readable and settleable (donations live here as a capability)",
+    "encryption": "scoped PII keys; tombstoning would strand ciphertext",
+    "apiclients": "API clients, personal tokens and OAuth apps authenticate requests (off = no credentials issued)",
+    "boxes": "core inventory: box QR codes",
+    "inventory": "core inventory: items and availability math",
+    "hardware_requests": "the request workflow state machine",
+    "printing": "legacy print queue kept inside the machines stack",
+    "audit": "append-only audit log",
+    "evidence": "immutable handover evidence",
+    "admin_api": "the staff console API every module mounts into",
+    "data_export": "the classification registry every model must join",
+    "integrations": "email, chat and notification delivery infrastructure",
+    "operations": "reports, reminders, the scheduler and the platform overview",
+    "machines": "machines, printing and machine service share one app",
+    "roadmap": "the public roadmap page",
+    "backup": "backups, restore and the deployment recovery gate",
+    "hosting_requests": "the onboarding request queue (inert on self-host)",
+    "card_designs": "the shared card engine used by member, event and programme cards",
+    "tenant_rls": "the row-level-security backstop is never removed",
+    "analytics": "per-space analytics logins; off unless a space turns the module on",
+    "space_controls": "pause, read-only and schedules guard every write",
+    "managed_hosting": "the limiter is dormant unless MANAGED_PLANS_ENABLED on a managed deployment",
+    "separability": "this registry itself",
+}
 
 
 def unavailable_apps():
@@ -90,7 +129,10 @@ def tombstoned_app_labels():
     """
     raw = os.environ.get("TOMBSTONED_APPS", "")
     labels = {label.strip() for label in raw.split(",") if label.strip()}
-    return frozenset(RENAMED_LABELS.get(label, label) for label in labels)
+    labels = {RENAMED_LABELS.get(label, label) for label in labels}
+    if "events" in labels:
+        labels.add("event_reimbursements")
+    return frozenset(labels)
 
 
 def app_is_tombstoned(app_label):
@@ -109,7 +151,8 @@ def app_is_tombstoned(app_label):
     """
     from django.conf import settings
 
-    return app_label in getattr(settings, "TOMBSTONED_APPS", frozenset())
+    labels = getattr(settings, "TOMBSTONED_APPS", frozenset())
+    return app_label in labels or (app_label == "event_reimbursements" and "events" in labels)
 
 
 def register_separable_app(app_label):

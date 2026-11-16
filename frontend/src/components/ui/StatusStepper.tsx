@@ -1,11 +1,23 @@
-const STAGES = ["Requested", "Approved", "Collected", "Returned"] as const;
+import { t } from "@lingui/core/macro";
+const STAGE_COUNT = 4;
+const stageLabels = () => [t`Requested`, t`Approved`, t`Collected`, t`Returned`];
 
-const STEP_TONE_CLASSES = [
-  "border-accent bg-accent text-on-accent",
-  "border-warn bg-warn text-on-warn",
-  "border-secondary bg-secondary text-on-secondary",
-  "border-success bg-success text-on-success",
-] as const;
+/** Translated wording for a `HardwareRequest.Status` value (member and staff screens alike). */
+export function requestStatusLabel(status: string): string {
+  switch (status) {
+    case "draft": return t`Draft`;
+    case "pending_approval": return t`Pending approval`;
+    case "accepted": return t`Accepted`;
+    case "rejected": return t`Rejected`;
+    case "issued": return t`Issued`;
+    case "partially_returned": return t`Partially returned`;
+    case "returned": return t`Returned`;
+    case "closed_with_issue": return t`Closed with issue`;
+    case "cancelled": return t`Cancelled`;
+    case "expired": return t`Expired`;
+    default: return status.replace(/_/g, " ");
+  }
+}
 
 function statusStageIndex(status: string): number {
   switch (status) {
@@ -26,8 +38,9 @@ function statusStageIndex(status: string): number {
 }
 
 export function statusStageLabel(status: string): string {
-  if (status === "rejected") return "Rejected";
-  return STAGES[statusStageIndex(status)] ?? STAGES[0];
+  if (status === "rejected") return t`Rejected`;
+  const stages = stageLabels();
+  return stages[statusStageIndex(status)] ?? stages[0];
 }
 
 function StepBox({
@@ -43,8 +56,10 @@ function StepBox({
 }) {
   const className = (rejected && step === 0) || state === "issue"
     ? "status-box status-box-danger"
-    : state === "completed" || state === "current"
-      ? `status-box ${STEP_TONE_CLASSES[step] ?? STEP_TONE_CLASSES[0]} shadow-soft`
+    : state === "completed"
+      ? "status-box status-box-done"
+      : state === "current"
+        ? "status-box status-box-accent"
       : "status-box";
 
   return (
@@ -52,14 +67,14 @@ function StepBox({
       className={`${className} w-full flex-col leading-tight`}
       aria-current={state === "current" ? "step" : undefined}
     >
-      <span className="font-bold opacity-70">{step + 1}</span>
+      <span className="font-bold">{step + 1}</span>
       <span className="min-w-0 break-words">{label}</span>
     </span>
   );
 }
 
 function RejectedBadge() {
-  return <span className="status-box status-box-danger">Rejected</span>;
+  return <span className="status-box status-box-danger">{t`Rejected`}</span>;
 }
 
 export function StatusStepper({ status }: { status: string }) {
@@ -73,11 +88,11 @@ export function StatusStepper({ status }: { status: string }) {
 
   return (
     <nav
-      aria-label={`Request status: ${statusStageLabel(status)}`}
+      aria-label={t`Request status: ${statusStageLabel(status)}`}
       className="w-full"
     >
       <ol className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-start gap-2">
-        {STAGES.map((stage, index) => {
+        {stageLabels().slice(0, STAGE_COUNT).map((stage, index) => {
           const state =
             index < activeIndex
               ? "completed"

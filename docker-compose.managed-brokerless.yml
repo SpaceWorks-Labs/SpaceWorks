@@ -1,0 +1,54 @@
+# Standalone full brokerless topology: web, scheduler and persisted-work worker; no Redis/beat.
+# Use the same protected runtime env from setup via --env-file for interpolation.
+# Release is finite, sequential and must exit before the steady-state services.
+x-spaceworks-preparation: true
+x-runtime: &runtime
+  SPACEWORKS_DEPLOYMENT_MODE: managed
+  SPACEWORKS_DEPLOYMENT_PROFILE: full
+  SPACEWORKS_DEPLOYMENT_ID: ${SPACEWORKS_DEPLOYMENT_ID:?set persistent deployment identity}
+  DATABASE_URL: ${DATABASE_URL:?set narrow runtime database URL}
+  DATABASE_CONNECTION_MODE: ${DATABASE_CONNECTION_MODE:-direct}
+  STORAGE_CAPABILITIES_FILE: ${STORAGE_CAPABILITIES_FILE:-}
+  STORAGE_CAPABILITY_TTL_SECONDS: ${STORAGE_CAPABILITY_TTL_SECONDS:-900}
+  SPACEWORKS_SECRET_FILE_MODE: ${SPACEWORKS_SECRET_FILE_MODE:-native}
+  SPACEWORKS_STORAGE_CAPABILITIES_B64: ${SPACEWORKS_STORAGE_CAPABILITIES_B64:-}
+  SPACEWORKS_EMAIL_PROVIDER_CONFIG_B64: ${SPACEWORKS_EMAIL_PROVIDER_CONFIG_B64:-}
+  EMAIL_PROVIDER_CONFIG_FILE: ${EMAIL_PROVIDER_CONFIG_FILE:-}
+  EMAIL_PROVIDER_WEBHOOKS_ENABLED: ${EMAIL_PROVIDER_WEBHOOKS_ENABLED:-False}
+  TRUSTED_EDGE_INGRESS_SECRET: ${TRUSTED_EDGE_INGRESS_SECRET:-}
+  TRUST_FORWARDED_HOST: ${TRUST_FORWARDED_HOST:-False}
+  TRUSTED_EDGE_CIDRS: ${TRUSTED_EDGE_CIDRS:-}
+  TRUSTED_EDGE_UPSTREAM_HOSTS: ${TRUSTED_EDGE_UPSTREAM_HOSTS:-}
+  UPLOAD_SCAN_POLICY: ${UPLOAD_SCAN_POLICY:-none}
+  CLOUD_TASK_PROFILE: brokerless
+  CLOUD_SCHEDULER: loop
+  CELERY_BROKER_URL: ""
+  CELERY_RESULT_BACKEND: ""
+  CELERY_TASK_ALWAYS_EAGER: "True"
+  CACHE_URL: ""
+  LIVE_REDIS_URL: ""
+x-service: &service
+  image: ${MAKERSPACE_BACKEND_IMAGE:?set reviewed immutable same-build backend image digest}
+  env_file: ${SPACEWORKS_RUNTIME_ENV_FILE:?set protected runtime-only env file, never maintenance credentials}
+  environment: *runtime
+  restart: unless-stopped
+services:
+  backend:
+    <<: *service
+    command: ["--role", "backend", "python", "-m", "scripts.run_cloud_role", "web"]
+    ports: ["127.0.0.1:${BACKEND_PORT:-8000}:8000"]
+  worker:
+    <<: *service
+    command: ["--role", "worker", "python", "-m", "scripts.run_cloud_role", "worker"]
+  cron:
+    <<: *service
+    command: ["--role", "cron", "python", "-m", "scripts.run_cloud_role", "scheduler"]
+  release:
+    <<: *service
+    profiles: [release]
+    restart: "no"
+    command: ["--role", "migrate", "python", "-m", "scripts.run_cloud_role", "release"]
+    environment:
+      <<: *runtime
+      DATABASE_MAINTENANCE_URL: ${DATABASE_MAINTENANCE_URL:-}
+      DATABASE_MAINTENANCE_CONNECTION_MODE: ${DATABASE_MAINTENANCE_CONNECTION_MODE:-direct}

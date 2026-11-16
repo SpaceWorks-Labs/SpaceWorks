@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff, require_action
 from apps.makerspaces.guards import require_module
-from apps.makerspaces.platform import module_enabled
 from apps.operations import accountability, reports
 from apps.operations.org_report_strategies import STRATEGIES
 from apps.operations.report_registry import (
@@ -24,11 +23,13 @@ from apps.operations.report_exports_provenance import (
 from apps.operations.schemas_reports import ANALYTICS_REPORT_RESPONSE
 from apps.operations.serializers import EmptySerializer, GenericObjectSerializer
 from apps.operations.serializers_reports import ReportErrorSerializer
+from apps.operations.serializers_problem_reports import AccountabilityReportSerializer
 from apps.operations.serializers_report_catalog import ReportCatalogSerializer
 from apps.operations.report_request_contract import (
     DATE_RANGE_PARAMETERS,
     PAYMENT_FILTER_PARAMETERS,
     PREVIEW_PARAMETERS,
+    SUBJECT_REPORT_DESCRIPTION,
     RETENTION_PARAMETERS,
     _export_format,
     _grain_param,
@@ -44,6 +45,12 @@ from apps.operations.views_report_helpers import (
     _require_source_modules,
     _require_superadmin,
 )
+from .report_retired import newly_schedulable
+from .report_render_throttles import ReportRenderThrottle
+from .report_download import _export_response
+from .report_definitions_machines import MACHINE_REPORT_KEYS
+from config.locale_resolution import display
+from .report_groups import catalog_group_fields
 
 
 ERROR_RESPONSES = {
@@ -53,6 +60,8 @@ ERROR_RESPONSES = {
     404: OpenApiResponse(ReportErrorSerializer, description="Makerspace or report not found."),
 }
 EXPORT_RESPONSES = {
+    429: OpenApiResponse(ReportErrorSerializer, description="Render rate limit exceeded."),
+    (200, "application/pdf"): OpenApiTypes.BINARY,
     (200, "text/csv"): OpenApiTypes.STR,
     (200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"): OpenApiTypes.BINARY,
     **ERROR_RESPONSES,
@@ -65,6 +74,7 @@ class AnalyticsView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="Get analytics report", request=None,
+        description=SUBJECT_REPORT_DESCRIPTION,
         parameters=PREVIEW_PARAMETERS,
         responses={200: ANALYTICS_REPORT_RESPONSE, **ERROR_RESPONSES},
     )
@@ -73,19 +83,28 @@ class AnalyticsView(APIView):
         # own action would turn "you may not run this report" into a 404 instead of a
         # 403, which is the contract pinned by
         # test_report_rbac_status_codes_match_inventory_first_resolution.
-        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key)
+        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key, request.query_params.get("subject_kind"))
         definition = reports.validate_report_key(report_key)
         if not definition.previewable:
             raise reports.ReportNotFound()
-        require_action(request.user, definition.required_action, makerspace.id)
+        from .report_subjects import require_report_action
+        from apps.payments.payout_session import is_payout_report, require_full_session
+        if is_payout_report(definition):
+            require_full_session(request)  # payee money is session-only (#224c)
+        require_report_action(request.user, definition, makerspace.id, request.query_params)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
-        return Response(reports.report_data(
+        # Membership/money builders resolve calendar labels per space, including
+        # organization runs; only subject adapters take pre-resolved instants.
+        response = Response(reports.report_data(
             report_key, makerspace.id,
             actor=request.user,
-            limit=_limit_param(request), date_range=_date_range(request, makerspace if report_key in {"member-retention", "membership-revenue"} else None),
+            limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in MACHINE_REPORT_KEYS else None),
             report_filters=_report_filters(request, report_key), grain=_grain_param(request, definition),
         ))
+        if definition.subject_kind or request.query_params.get("subject_kind"):
+            response["Cache-Control"] = "private, no-store"
+        return response
 
 
 class ReportCatalogView(APIView):
@@ -101,13 +120,30 @@ class ReportCatalogView(APIView):
         require_module(makerspace, "reports")
         entries = []
         for definition in REPORT_DEFINITIONS:
-            if not rbac.can(request.user, definition.required_action, makerspace.id):
+            if definition.key == "organization-membership":
                 continue
-            missing = [key for key in definition.required_modules if not module_enabled(makerspace, key)]
-            entries.append(_catalog_entry(
-                definition, available=not missing,
-                reason=f"Required module disabled: {', '.join(missing)}" if missing else None,
-            ))
+            if definition.key == "presence-top-visitors" and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
+                continue
+            # General report controls cannot supply an exact domain subject.
+            # Subject-only reports remain available from their resource's UI.
+            if definition.subject_kind or definition.platform_only:
+                continue
+            from .report_types import definition_actions
+            from apps.payments.payout_session import full_session, is_payout_report
+            if is_payout_report(definition) and not full_session(request):
+                continue
+            if not any(rbac.can(request.user, action, makerspace.id) for action in definition_actions(definition)):
+                continue
+            from .area_identity import named_rows_allowed  # decision 242(h)
+            if definition.key in {"machine-usage-members", "booking-top-members"} and not named_rows_allowed(
+                    request.user, definition, makerspace.id):
+                continue
+            # A report whose source module or capability is off is hidden, not listed
+            # as disabled (#183B): an off switch leaves no menu entry behind.
+            from .report_sources import definition_live
+            if not definition_live(makerspace, definition):
+                continue
+            entries.append(_catalog_entry(definition, available=True, reason=None))
         return Response({"results": entries})
 
 
@@ -121,6 +157,8 @@ class AggregateReportCatalogView(APIView):
     )
     def get(self, request, *args, **kwargs):
         _require_superadmin(request.user)
+        from .platform_scope import _platform_context_for_view
+        _platform_context_for_view(request)
         return Response({"results": [
             _catalog_entry(definition, available=None, reason=None)
             for definition in DEPLOYMENT_AGGREGATE_REPORT_DEFINITIONS
@@ -133,13 +171,11 @@ class AccountabilityReportView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="Requester accountability dashboard",
-        request=None, responses={200: OpenApiTypes.OBJECT, **ERROR_RESPONSES},
+        request=None, responses={200: AccountabilityReportSerializer, **ERROR_RESPONSES},
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        makerspace = _makerspace_for_inventory_view(request.user, makerspace_id)
-        require_action(request.user, rbac.Action.VIEW_AUDIT, makerspace.id)
-        require_module(makerspace, "reports")
-        return Response(accountability.accountability_data(makerspace.id))
+        from .accountability_access import accountability_for
+        return Response(accountability_for(request.user, makerspace_id))
 
 
 class AggregateAnalyticsView(APIView):
@@ -158,25 +194,33 @@ class AggregateAnalyticsView(APIView):
         responses={200: ANALYTICS_REPORT_RESPONSE, **ERROR_RESPONSES},
     )
     def get(self, request, report_key="summary", *args, **kwargs):
+        from .report_subjects import reject_aggregate
+        reject_aggregate(request.query_params)
         _require_superadmin(request.user)
-        definition = reports.validate_report_key(report_key, deployment_aggregate=True)
+        from .platform_scope import _platform_context_for_view
+        context = _platform_context_for_view(request)
+        definition = reports.validate_report_key(report_key, deployment_aggregate=True, platform_context=context)
         return Response(reports.report_data(
             report_key, limit=_limit_param(request), date_range=_date_range(request),
             actor=request.user,
             report_filters=_report_filters(request, report_key),
             grain=_grain_param(request, definition),
+            platform_context=context,
         ))
 
 
 class ReportExportView(APIView):
     permission_classes = [IsActiveStaff]
+    throttle_classes = [ReportRenderThrottle]
     serializer_class = EmptySerializer
 
     @extend_schema(
         tags=["Reports"], summary="Export report", request=None,
+        description=SUBJECT_REPORT_DESCRIPTION,
         parameters=[
             OpenApiParameter("report_key", OpenApiTypes.STR, OpenApiParameter.PATH, enum=reports.REPORT_KEYS),
-            OpenApiParameter("format", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["csv", "xlsx"]),
+            OpenApiParameter("format", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["csv", "xlsx", "pdf"]),
+            *PREVIEW_PARAMETERS[:2],
             *DATE_RANGE_PARAMETERS,
             *PAYMENT_FILTER_PARAMETERS,
             *RETENTION_PARAMETERS,
@@ -189,9 +233,13 @@ class ReportExportView(APIView):
         # own action would turn "you may not run this report" into a 404 instead of a
         # 403, which is the contract pinned by
         # test_report_rbac_status_codes_match_inventory_first_resolution.
-        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key)
+        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key, request.query_params.get("subject_kind"))
         definition = reports.validate_report_key(report_key, for_export=True)
-        require_action(request.user, definition.required_action, makerspace.id)
+        from .report_subjects import require_report_action
+        from apps.payments.payout_session import is_payout_report, require_full_session
+        if is_payout_report(definition):
+            require_full_session(request)  # payee money is session-only (#224c)
+        require_report_action(request.user, definition, makerspace.id, request.query_params)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
         return _export_response(request, definition, makerspace.id)
@@ -199,6 +247,7 @@ class ReportExportView(APIView):
 
 class AggregateReportExportView(APIView):
     permission_classes = [IsActiveStaff]
+    throttle_classes = [ReportRenderThrottle]
     serializer_class = EmptySerializer
 
     @extend_schema(
@@ -214,39 +263,15 @@ class AggregateReportExportView(APIView):
         responses=EXPORT_RESPONSES,
     )
     def get(self, request, report_key, *args, **kwargs):
+        from .report_subjects import reject_aggregate
+        reject_aggregate(request.query_params)
         _require_superadmin(request.user)
+        from .platform_scope import _platform_context_for_view
+        context = _platform_context_for_view(request)
         definition = reports.validate_report_key(
-            report_key, for_export=True, deployment_aggregate=True
+            report_key, for_export=True, deployment_aggregate=True, platform_context=context,
         )
-        return _export_response(request, definition, None)
-
-
-def _export_response(request, definition, makerspace_id):
-    """Build the file through the canonical row path and stamp its provenance.
-
-    Every input the builder saw is echoed into the provenance filters, so a reader of the
-    file can tell what subset it is without the URL that produced it.
-    """
-    fmt = _export_format(request, definition)
-    local_space = None
-    if makerspace_id is not None and definition.key in {"member-retention", "membership-revenue"}:
-        local_space = _makerspace_for_report_view(request.user, makerspace_id, definition.key)
-    date_range = _date_range(request, local_space)
-    report_filters = _report_filters(request, definition.key)
-    grain = _grain_param(request, definition)
-    rows = reports.report_rows(
-        definition.key, makerspace_id, date_range=date_range,
-        actor=request.user,
-        report_filters=report_filters, grain=grain,
-    )
-    provenance = build_provenance(
-        definition.key, version=definition.version, makerspace_id=makerspace_id,
-        generated_by=actor_label(request.user),
-        filters=export_filters(date_range=date_range, report_filters=report_filters, grain=grain),
-    )
-    if fmt == "xlsx":
-        return _xlsx_response(rows, f"{definition.key}.xlsx", provenance=provenance)
-    return _csv_response(rows, f"{definition.key}.csv", provenance=provenance)
+        return _export_response(request, definition, None, platform_context=context)
 
 
 def report_data(makerspace_id, report_key):
@@ -259,13 +284,15 @@ def report_rows(makerspace_id, report_key):
 
 def _catalog_entry(definition, *, available, reason):
     return {
-        "key": definition.key, "title": definition.title or definition.key.replace("-", " ").title(),
+        "key": definition.key, "title": display(definition.title) or definition.key.replace("-", " ").title(),
         "fields": list(definition.fields), "exportable": definition.exportable,
         "summary": definition.summary, "required_modules": list(definition.required_modules),
         "available": available, "unavailable_reason": reason,
         "grains": list(definition.grains or ("day",)), "chart_hint": definition.chart_hint,
+        "chart_spec": definition.chart_spec, "identity_bearing": definition.identity_bearing,
         "aggregate_supported": definition.key in STRATEGIES,
         "allowed_formats": list(definition.allowed_formats),
-        "schedulable": definition.schedulable, "previewable": definition.previewable,
+        "schedulable": newly_schedulable(definition), "previewable": definition.previewable,
         "condition_metrics": list(condition_metrics(definition)),
+        **catalog_group_fields(definition),
     }

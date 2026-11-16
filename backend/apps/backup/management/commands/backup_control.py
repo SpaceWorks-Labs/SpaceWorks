@@ -45,7 +45,7 @@ class Command(BaseCommand):
     _check_setting_policies = staticmethod(check_setting_policies)
     def add_arguments(self, parser):
         actions = parser.add_subparsers(dest="action", required=True)
-        for name in ("claim", "preflight", "quiesce", "decision", "complete", "fail", "quarantine", "validate", "pause"):
+        for name in ("claim", "preflight", "quiesce", "decision", "complete", "fail", "quarantine", "validate", "pause", "rotate-context-generations"):
             command = actions.add_parser(name)
             command.add_argument("restore_id")
         actions.choices["fail"].add_argument("--message", required=True)
@@ -151,6 +151,10 @@ class Command(BaseCommand):
                 "kind": restore.kind, "requested_by": restore.requested_by_id,
                 "stage": restore.stage,
             }))
+        elif action == "rotate-context-generations":
+            from apps.backup.loan_context_restore import rotate_after_restore
+            rotate_after_restore(restore_id)
+            self.stdout.write("context-generations-rotated")
         elif action == "rehydrate":
             rehydrate_control_record(restore_id, options)
             self.stdout.write("rehydrated")

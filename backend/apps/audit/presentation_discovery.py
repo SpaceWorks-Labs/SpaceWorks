@@ -83,10 +83,25 @@ def discover_dynamic_audit_sites(apps_dir=APPS_DIR):
             continue
         tree = ast.parse(path.read_text(encoding="utf-8-sig"))
         module_aliases, direct_names = _audit_record_imports(tree)
+        relative = _relative(path, apps_dir)
+        page_finish_names = {"finish"} if relative == "makerspaces/public_page_services.py" else set()
+        for item in ast.walk(tree):
+            if isinstance(item, ast.ImportFrom) and item.module in {
+                "public_page_services", "apps.makerspaces.public_page_services",
+            }:
+                page_finish_names.update(alias.asname or alias.name for alias in item.names if alias.name == "finish")
         for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and getattr(node.func, "id", None) in page_finish_names:
+                # This reviewed wrapper accepts action as its fifth positional
+                # argument. Enumerate its call sites; a parameter/new expression
+                # cannot silently expand the staff audit vocabulary.
+                actions = _constants(node.args[4]) if len(node.args) > 4 else None
+                if actions is None:
+                    raise ValueError("Public page audit wrapper action must be a closed literal expression")
+                sites.append(DynamicAuditSite(relative, "exact", frozenset(actions)))
+                continue
             if not _is_record_call(node, module_aliases, direct_names):
                 continue
-            relative = _relative(path, apps_dir)
             action_node = _argument(node, 1, "action")
             meta = _argument(node, None, "meta")
             literal = _constants(action_node) if isinstance(action_node, ast.Constant) else None

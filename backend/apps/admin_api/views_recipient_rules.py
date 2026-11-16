@@ -1,5 +1,6 @@
 """Staff CRUD for per-event notification recipient selection."""
 
+from django.utils.translation import gettext
 from types import SimpleNamespace
 
 from django.db import IntegrityError
@@ -27,7 +28,7 @@ from apps.admin_api.recipient_rule_serializers import (
     RecipientRulesPutSerializer,
     RecipientRulesResponseSerializer,
 )
-from apps.integrations import notification_catalog, recipients as recipient_selection
+from apps.integrations import notification_catalog, recipients as notification_recipients
 from apps.integrations.notification_enums import NotificationFeature
 from apps.integrations.recipient_rule_management import replace_recipient_rules
 from apps.machines import role_scope
@@ -86,16 +87,20 @@ class NotificationRecipientRulesView(APIView):
         feature = serializer.validated_data["feature"]
         event = serializer.validated_data["event"]
 
-        if feature not in recipient_selection.SELECTABLE_FEATURES:
+        if feature not in notification_recipients.SELECTABLE_FEATURES:
             return self._error("This feature does not support recipient selection.")
         if delegated and feature != NotificationFeature.MAINTENANCE:
             raise PermissionDenied(
-                "Delegated recipient management is limited to maintenance alerts."
+                gettext("Delegated recipient management is limited to maintenance alerts.")
             )
-        if not recipient_selection.feature_available(makerspace, feature):
+        if not notification_recipients.category_available(makerspace, feature):
             return self._error(f"The {feature} module is not installed.")
         if event not in notification_catalog.FEATURE_EVENTS.get(feature, ()):
             return self._error(f"Unknown event '{event}' for feature '{feature}'.")
+        from apps.integrations.recipients_staff_only import refusal
+        staff_only = refusal(feature, event, serializer.validated_data["rules"])
+        if staff_only:
+            return self._error(staff_only)
 
         # A mutable holder so `keep_row` below sees the reach `revalidate` resolved under
         # the lock, not the one captured at closure-creation time.
@@ -129,7 +134,7 @@ class NotificationRecipientRulesView(APIView):
             _, still_delegated, fresh_reach = _access(request, makerspace_id)
             if not still_delegated or fresh_reach is None:
                 raise PermissionDenied(
-                    "Your recipient-management access changed while saving."
+                    gettext("Your recipient-management access changed while saving.")
                 )
             keep.reach = fresh_reach
             # The identity gate is resolved from the actor's ASSIGNED ROLE, which a

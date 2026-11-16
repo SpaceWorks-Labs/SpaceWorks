@@ -1,8 +1,10 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { Field } from "../../components/ui";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Ack = { detail: string };
 
@@ -35,10 +37,10 @@ export function InvitationRequestForm({ slug }: { slug: string }) {
 
   return (
     <section className="desk-panel p-5" aria-labelledby="invitation-request-heading">
-      <h2 id="invitation-request-heading" className="title-panel">Ask for an invitation</h2>
-      <p className="mt-1 text-sm text-muted">Leave your details and the makerspace will get back to you.</p>
+      <h2 id="invitation-request-heading" className="title-panel">{t`Ask for an invitation`}</h2>
+      <p className="mt-1 text-sm text-muted">{t`Leave your details and the makerspace will get back to you.`}</p>
       {submit.isSuccess ? (
-        <p className="mt-4 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-ink" role="status">
+        <p className="mt-4 rounded-md border border-success/40 bg-success-soft px-3 py-2 text-sm text-ink" role="status">
           {submit.data.detail}
         </p>
       ) : (
@@ -50,27 +52,26 @@ export function InvitationRequestForm({ slug }: { slug: string }) {
           }}
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name">
+            <Field label={t`Name`}>
               <input className="desk-input" required maxLength={200} autoComplete="name" value={form.name} onChange={(event) => set("name", event.target.value)} />
             </Field>
-            <Field label="Email">
+            <Field label={t`Email`}>
               <input className="desk-input" required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={(event) => set("email", event.target.value)} />
             </Field>
-            <Field label="Phone (optional)" className="sm:col-span-2">
+            <Field label={t`Phone (optional)`} className="sm:col-span-2">
               <input className="desk-input" type="tel" maxLength={32} autoComplete="tel" value={form.phone} onChange={(event) => set("phone", event.target.value)} />
             </Field>
           </div>
-          <Field label="Message (optional)">
+          <Field label={t`Message (optional)`}>
             <textarea className="desk-input min-h-24" maxLength={1000} value={form.message} onChange={(event) => set("message", event.target.value)} />
           </Field>
           <div className="hidden" aria-hidden="true">
             <label>
-              Website
-              <input name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(event) => set("website", event.target.value)} />
+              {t`Website`}<input name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(event) => set("website", event.target.value)} />
             </label>
           </div>
-          <button className="desk-button-secondary w-fit" type="submit" disabled={!canSubmit}>
-            {submit.isPending ? "Sending…" : "Send request"}
+          <button className="desk-button-brand w-full sm:w-fit" type="submit" disabled={!canSubmit}>
+            {submit.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send request`}
           </button>
           {submit.error ? (
             <p className="text-sm text-danger" role="alert">{invitationErrorText(submit.error)}</p>
@@ -83,9 +84,9 @@ export function InvitationRequestForm({ slug }: { slug: string }) {
 
 function invitationErrorText(error: unknown) {
   if (error instanceof StructuredApiError) {
-    if (error.status === 429) return "Too many requests from this connection. Please try again later.";
-    if (error.status === 404) return "This makerspace is not taking invitation requests right now.";
+    if (error.status === 429) return t`Too many requests from this connection. Please try again later.`;
+    if (error.status === 404) return t`This makerspace is not taking invitation requests right now.`;
     return error.message;
   }
-  return error instanceof Error ? error.message : "Could not send your request.";
+  return error instanceof Error ? error.message : t`Could not send your request.`;
 }

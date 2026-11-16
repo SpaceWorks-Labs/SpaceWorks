@@ -10,21 +10,28 @@ from apps.encryption.services import unwrap_dek
 
 
 def assert_ready(*, strict=False):
-    if not settings.PII_ENCRYPTION_ENABLED:
-        return
-    generation = active_generation()
-    if PiiBlindIndex.objects.exclude(search_generation=generation).exists():
+    from .checks import check_pii_wrapping_configuration
+    if check_pii_wrapping_configuration(None):
         raise PiiUnavailable()
-    from apps.events.models import EventRegistration
-    if EventRegistration.objects.exclude(email_hash_generation__isnull=True).exclude(email_hash_generation=generation).exists():
-        raise PiiUnavailable()
+    generation = None
+    if settings.PII_ENCRYPTION_ENABLED:
+        generation = active_generation()
+        if PiiBlindIndex.objects.exclude(search_generation=generation).exists():
+            raise PiiUnavailable()
+        from apps.events.models import EventRegistration
+        if EventRegistration.objects.exclude(email_hash_generation__isnull=True).exclude(email_hash_generation=generation).exists():
+            raise PiiUnavailable()
     # Existing envelopes imply an owning tenant must have precisely one live DEK,
     # and every retained version needs an authenticated broker preflight.
     owners = set()
     for field in all_fields():
+        if not settings.PII_ENCRYPTION_ENABLED and not field.encryption_required:
+            continue
         model = __import__("django.apps", fromlist=["apps"]).apps.get_model(field.model_label)
         for row in model.objects.only("pk", field.field_name).iterator(chunk_size=200):
             raw = row.__dict__.get(field.field_name)
+            if field.encryption_required and raw not in ("", None) and not is_envelope(raw):
+                raise PiiUnavailable()
             if is_envelope(raw):
                 owners.add(makerspace_id_for(row, field))
     for makerspace_id in owners:
@@ -33,7 +40,7 @@ def assert_ready(*, strict=False):
             raise PiiUnavailable()
         for key in keys:
             unwrap_dek(key)
-    if strict:
+    if strict and settings.PII_ENCRYPTION_ENABLED:
         # Strict coverage is checked at source granularity by the reindex command;
         # this catches every present row that lacks an active provenance record.
         for field in all_fields():

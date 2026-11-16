@@ -1,0 +1,25 @@
+name = "spaceworks-web"
+main = "worker.mjs"
+compatibility_date = "2026-10-18"
+workers_dev = true
+
+[assets]
+directory = "../../../frontend/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# Guard crawler paths and encoded internal paths before assets/navigation.
+run_worker_first = true
+
+[vars]
+PUBLIC_ORIGIN = "https://app.example.org"
+BACKEND_ORIGIN = "https://api.example.org"
+SPACEWORKS_DEPLOYMENT_PROFILE = "full"
+ORIGIN_BOOTSTRAP = "false"
+CONNECT_ORIGINS = "https://storage.example.org"
+IMAGE_ORIGINS = "https://images.example.org"
+MEDIA_ORIGINS = "https://storage.example.org"
+ANALYTICS_SCRIPT_ORIGINS = ""
+
+[observability]
+# Bearer/share paths and signed queries must not enter automatic request logs.
+enabled = false

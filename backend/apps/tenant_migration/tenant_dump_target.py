@@ -4,11 +4,6 @@ from dataclasses import dataclass
 
 from .tenant_dump_errors import TenantDumpTargetError
 from .tenant_dump_lineage import FORMAT, canonical_digest
-from .tenant_dump_target_custody import (
-    assert_imported_part_a_operational_rows_absent,
-    prove_imported_tenant_recipients,
-    target_custody_readiness,
-)
 from .tenant_dump_target_deks import install_target_deks
 from .tenant_dump_target_identities import preflight_target_identities
 from .tenant_dump_target_readiness import (
@@ -84,24 +79,13 @@ def install_and_verify_target_encryption(
     return versions, readiness
 
 
-def reconstruct_target_recipient_custody(preflight, *, actor=None):
-    """Re-prove matching carried recipients and derive both target custody states."""
-    assert_imported_part_a_operational_rows_absent(
-        preflight.source_makerspace_id
-    )
-    proven = prove_imported_tenant_recipients(
-        preflight.source_makerspace_id,
-        preflight.identities,
-        actor=actor,
-    )
-    return proven, target_custody_readiness(preflight.source_makerspace_id)
-
-
 def assert_target_d5_activation_ready(makerspace_id):
-    """Re-run D5 readiness immediately before a future activation transition."""
-    encryption = run_target_encryption_readiness(makerspace_id)
-    custody = target_custody_readiness(makerspace_id)
-    return encryption, custody
+    """Re-run D5 encryption readiness immediately before the activation transition.
+
+    The tenant's one-shot recipients prove possession at DEK install; nothing about
+    them is kept on the target, so encryption readiness is the whole D5 gate.
+    """
+    return run_target_encryption_readiness(makerspace_id)
 
 
 def _require_bound_preflight(manifest, preflight):

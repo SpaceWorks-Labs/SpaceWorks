@@ -1,0 +1,23 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { expect, it, vi } from "vitest";
+import { StockTransferPanel } from "./StockTransferPanel";
+import type { Makerspace } from "./shared";
+const { request } = vi.hoisted(() => ({ request: vi.fn() }));
+vi.mock("../../../lib/api", () => ({ staffRequest: request }));
+it("keeps transfer inputs and reason validation in the two-step dialog", async () => {
+ request.mockImplementation(async (path, init) => init?.method === "POST" ? {} : { count: 0, results: path.includes("/inventory?") ? [{ id: 2, name: "Drill", available_quantity: 4 }] : [] });
+ render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><StockTransferPanel makerspace={{ id: 7, name: "Forge" } as Makerspace} makerspaces={[]} isSuperadmin={false} canEditInventory /></QueryClientProvider>);
+ fireEvent.click(screen.getAllByRole("button", { name: "New transfer" })[0]);
+ expect(screen.getByLabelText("Source container")).toBeInTheDocument();
+ expect(screen.queryByLabelText("Source makerspace")).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole("button", { name: "Next" }));
+ await screen.findByRole("option", { name: "Drill (4 available)" });
+ fireEvent.change(screen.getByLabelText("Product for transfer line 1"), { target: { value: "2" } });
+ fireEvent.click(screen.getByRole("button", { name: "Move stock" }));
+ expect(screen.getByText("Reason is required.")).toBeInTheDocument();
+ expect(request).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ method: "POST" }));
+ fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Restock the desk" } });
+ fireEvent.click(screen.getByRole("button", { name: "Move stock" }));
+ await waitFor(() => expect(request).toHaveBeenCalledWith("/admin/makerspace/7/stock-transfers", expect.objectContaining({ method: "POST", body: expect.stringContaining('"reason":"Restock the desk"') })));
+});

@@ -1,5 +1,6 @@
 """Audience checks shared by every registration caller."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from apps.makerspaces.platform import feature_enabled, module_enabled
@@ -12,13 +13,15 @@ def validate_event_audience(event):
     from .models_categories import EventCategory
     category_id = getattr(event, "category_id", None)
     if category_id and not EventCategory.objects.filter(pk=category_id, makerspace=event.makerspace).exists():
-        raise NotFound("Category not found.")
-    key = {"accounts": "events.account_registration", "invite": "events.invites"}.get(event.registration_audience)
+        raise NotFound(gettext("Category not found."))
+    key = {"accounts": "events.account_registration", "invite": "events.invites", "participating_organizations": "events.organization_audience"}.get(event.registration_audience)
     if key and not feature_enabled(event.makerspace, key):
-        raise ValidationError({"registration_audience": "Enable this event audience feature first."})
+        raise ValidationError({"registration_audience": gettext("Enable this event audience feature first.")})
 
 
 def require_registration_access(event, member, *, staff=False, collaborative=False, via=None):
+    from .organization_audience import require_organization_audience
+    require_organization_audience(event, member)
     # Keep the trusted legacy service seam for old imports/tests using contact-only
     # registrations. HTTP callers always supply an identified account.
     if member is None:
@@ -26,6 +29,8 @@ def require_registration_access(event, member, *, staff=False, collaborative=Fal
             raise MemberPresenceRequired()
         return
     validate_event_audience(event)
+    from apps.makerspaces.minors_guard import require_minor_clearance  # decision 223 (k)
+    require_minor_clearance(member, event.makerspace, "event")  # the host space decides
     if collaborative:
         require_active_member(member, via or event.makerspace)
     elif event.registration_audience == "members":

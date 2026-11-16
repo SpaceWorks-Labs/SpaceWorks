@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "common_base": "01ac3decc0d3f32817cbf8956bf8b26cc5d7e7e7",
+  "status": "reviewed_current_tree",
+  "runtime_plugin_system": false,
+  "final_gate": "Enable only programmes whose required packages and actual hooks validate in the current tree.",
+  "pages": {
+    "status": "not_present_in_current_tree",
+    "incoming_commit": null,
+    "required_tasks": [
+      {
+        "key": "cleanup-public-page-assets",
+        "path": "apps.makerspaces.tasks.cleanup_public_page_assets_task",
+        "interval_seconds": 3600
+      }
+    ],
+    "required_data": [
+      "actual models/migrations",
+      "private/public object ownership and retention",
+      "final/staging late-write cleanup",
+      "quota accounting",
+      "upload path regex",
+      "/share/pages/<handle>/ and /e/<uuid> crawler mappings"
+    ],
+    "actual_hooks": []
+  },
+  "events": {
+    "status": "not_present_in_current_tree",
+    "incoming_commit": null,
+    "required_tasks": [
+      {
+        "key": "event-admission-deadlines",
+        "path": "apps.events.tasks_programme.sweep_admission_deadlines_task",
+        "interval_seconds": 300
+      },
+      {
+        "key": "event-asset-work",
+        "path": "apps.events.tasks_cloud.process_asset_work_task",
+        "interval_seconds": 60
+      },
+      {
+        "key": "event-asset-lifecycle",
+        "path": "apps.events.tasks_cloud.sweep_asset_lifecycle_task",
+        "interval_seconds": 300
+      },
+      {
+        "key": "event-certificate-resume",
+        "path": "apps.events.tasks_cloud.resume_certificates_task",
+        "interval_seconds": 300
+      },
+      {
+        "key": "event-print-cleanup",
+        "path": "apps.events.tasks_cloud.cleanup_print_jobs_task",
+        "interval_seconds": 3600
+      },
+      {
+        "key": "event-scheduled-broadcasts",
+        "path": "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts",
+        "interval_seconds": 60
+      },
+      {
+        "key": "event-programme-receipts",
+        "path": "apps.events.tasks_cloud.cleanup_programme_receipts_task",
+        "interval_seconds": 86400
+      }
+    ],
+    "required_data": [
+      "B2 completion handoff",
+      "query-free SubmissionRuntime installation",
+      "source/account/PII/reader/admin/public/Saved-resume adapters",
+      "bounded domain chunk signatures",
+      "fixed probe sandbox tuple",
+      "ffprobe/age/fonts and scan readiness",
+      "private prefixes/actual bytes/quota/retention",
+      "task discovery"
+    ],
+    "actual_hooks": []
+  },
+  "reimbursement": {
+    "status": "not_present_in_current_tree",
+    "incoming_commit": null,
+    "required_tasks": [
+      {
+        "key": "stage-forms",
+        "path": "apps.events.staged_forms.tasks.reconcile_stage_forms_task",
+        "interval_seconds": 300
+      },
+      {
+        "key": "reimbursement-deadlines",
+        "path": "apps.event_reimbursements.tasks.sweep_deadlines_task",
+        "interval_seconds": 300
+      },
+      {
+        "key": "finance-recovery",
+        "path": "apps.payments.event_payouts.tasks.recover_finance_work_task",
+        "interval_seconds": 300
+      },
+      {
+        "key": "finance-retention",
+        "path": "apps.payments.event_payouts.tasks.sweep_retention_task",
+        "interval_seconds": 86400
+      },
+      {
+        "key": "stage-file-retention",
+        "path": "apps.events.tasks_cloud.sweep_stage_file_retention_task",
+        "interval_seconds": 86400,
+        "alternative": "one declared bounded stage-retention call in event lifecycle; never both"
+      }
+    ],
+    "reminder_sources": [
+      "stage_forms",
+      "events.rsvp_deadline",
+      "event_reimbursements.award_accept",
+      "event_reimbursements.claim_due",
+      "finance.event_payout_details"
+    ],
+    "required_data": [
+      "actual finance migrations",
+      "PiiField.encryption_required=True",
+      "mandatory encryption optional-PII-off readiness",
+      "core ledger and retained cleanup locators",
+      "shared scanner reuse",
+      "six env consumers",
+      "bounded chunk signatures"
+    ],
+    "actual_hooks": []
+  },
+  "integration_evidence": {
+    "head": "f9f9fa6ca88e8de4b937abc0f3a1d6e514c7e3e9",
+    "active_programmes": [],
+    "absent_required_packages": [
+      "backend/apps/events/submissions",
+      "backend/apps/events/staged_forms",
+      "backend/apps/event_reimbursements",
+      "backend/apps/payments/event_payouts"
+    ],
+    "existing_scheduled_hooks": [
+      "apps.events.tasks.extend_event_series_task",
+      "apps.payments.tasks.issue_missing_bills_task",
+      "apps.makerspaces.tasks_membership.run_membership_renewals_task"
+    ],
+    "absent_page_task": "apps.makerspaces.tasks.cleanup_public_page_assets_task",
+    "reason": "No enabled programme imports missing packages; existing events/billing/membership schedules remain in the legacy catalog."
+  }
+}

@@ -33,7 +33,7 @@ def _makerspace(actor, pk, action=rbac.Action.EDIT_INVENTORY):
     space = get_object_or_404(rbac.scope_by_action(
         actor, action, Makerspace.objects.all(), field="id",
     ), pk=pk)
-    require_module(space, "staff_admin")
+    require_module(space, "public_inventory")
     require_action(actor, action, pk)
     return space
 

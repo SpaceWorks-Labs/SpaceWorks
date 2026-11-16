@@ -1,11 +1,17 @@
-"""Resolve role-linked machine scopes and test their coverage."""
+"""Resolve per-membership machine scopes (types plus individual machines) and test their coverage."""
 
 from collections import defaultdict
 
+from django.db.models import F, Q
+
 from apps.accounts import rbac
 from apps.accounts.rbac import Action
+from apps.accounts.membership_context import valid_membership_context, valid_staff_membership_q
 
-from .models_role_scope import RoleMachineScope, RoleMachineTypeScope
+from apps.accounts.rbac_roles import additional_role_exists, stored_actions_for_membership
+from apps.makerspaces.models import MakerspaceMembership
+
+from .models_membership_scope import MembershipMachineScope, MembershipMachineTypeScope
 
 
 # Scoping does not restrict this actor here. A distinct object rather than None/True so a
@@ -18,75 +24,42 @@ NOTHING = (frozenset(), frozenset())
 
 
 def _scope_for_membership(membership):
-    """EXEMPT, a role id to look links up for, or NOTHING. No queries beyond the FK."""
-    if membership.assigned_role_id is None:
-        # The frozen legacy fallback (`rbac._MEMBERSHIP_ROLE_ACTIONS`) is not a role row,
-        # so there is nothing to hang links on. Scoping it would silently strip a legacy
-        # Machine Manager of every machine at upgrade time, which is precisely the
-        # regression the backfill exists to prevent.
-        return EXEMPT, None
+    """EXEMPT, a membership id to look links up for, or NOTHING."""
+    valid = getattr(membership, "_valid_account_context", None)
+    if valid is None:
+        valid = valid_membership_context(membership)
+    if not valid or (not hasattr(membership, "_valid_account_context")
+                     and membership.track != MakerspaceMembership.Track.STAFF):
+        return NOTHING, None
     role = membership.assigned_role
     if role.makerspace_id != membership.makerspace_id:
-        # Same tenant-mismatch fail-closed rule as `rbac.actions_for_membership`.
         return NOTHING, None
     granted = role.granted_actions if isinstance(role.granted_actions, list) else []
-    if Action.MANAGE_MAKERSPACE in rbac.expand_implied_actions(
-        action for action in granted if isinstance(action, str)
-    ):
-        # Locked decision: a space manager always covers every machine, including types
-        # that do not exist yet. Making them enumerate types to keep administering their
-        # own lab is a worse failure than the broad grant this mechanism narrows.
+    if Action.MANAGE_MAKERSPACE in granted:
         return EXEMPT, None
-    return None, role.pk
+    additional = getattr(membership, "_additional_manage_machines", None)
+    if additional is None:
+        holds_machines = Action.MANAGE_MACHINES in stored_actions_for_membership(membership)
+    else:
+        holds_machines = Action.MANAGE_MACHINES in granted or additional
+    if not holds_machines:
+        return NOTHING, None
+    return None, membership.pk
 
 
 def manage_scopes_for(actor, makerspace_ids):
-    """Map each makerspace id to EXEMPT or ``(type_ids, machine_ids)``.
-
-    Two queries regardless of how many makerspaces are asked about, because the callers
-    that matter are list endpoints -- resolving this per row would put an N+1 behind
-    every machine list in the console.
-
-    A makerspace with no membership row resolves to EXEMPT for a superadmin (their grant
-    does not come from a role, so no role can scope it) and to NOTHING otherwise. The
-    latter is unreachable through the normal callers, which only ask about makerspaces
-    where ``MANAGE_MACHINES`` is already granted, but it is the safe answer if it ever is.
-    """
+    """Map makerspace ids to EXEMPT or (type ids, machine ids): reach is the union of both."""
     ids = {ms_id for ms_id in makerspace_ids if ms_id is not None}
     ids -= rbac.archived_makerspace_ids()
     if not ids or actor is None or not getattr(actor, "is_authenticated", False):
         return {}
-
-    resolved = {}
-    role_to_makerspace = {}
-    memberships = actor.makerspace_memberships.select_related("assigned_role").filter(
-        status="active", makerspace_id__in=ids
-    )
-    for membership in memberships:
-        answer, role_id = _scope_for_membership(membership)
-        if answer is not None:
-            resolved[membership.makerspace_id] = answer
-        else:
-            role_to_makerspace[role_id] = membership.makerspace_id
-
-    if role_to_makerspace:
-        role_ids = list(role_to_makerspace)
-        types = defaultdict(set)
-        machines = defaultdict(set)
-        for role_id, type_id in RoleMachineTypeScope.objects.filter(
-            role_id__in=role_ids
-        ).values_list("role_id", "machine_type_id"):
-            types[role_id].add(type_id)
-        for role_id, machine_id in RoleMachineScope.objects.filter(
-            role_id__in=role_ids
-        ).values_list("role_id", "machine_id"):
-            machines[role_id].add(machine_id)
-        for role_id, ms_id in role_to_makerspace.items():
-            resolved[ms_id] = (
-                frozenset(types[role_id]),
-                frozenset(machines[role_id]),
-            )
-
+    memberships = list(MakerspaceMembership.staff_tracks.select_related("assigned_role").filter(
+        user_id=actor.pk, status="active", makerspace_id__in=ids,
+    ).annotate(_valid_account_context=valid_staff_membership_q(), _additional_manage_machines=additional_role_exists(
+        actions=[Action.MANAGE_MACHINES],
+    )))
+    by_membership = manage_scopes_for_memberships(memberships)
+    resolved = {row.makerspace_id: by_membership[row.pk] for row in memberships}
     superadmin = rbac._is_superadmin(actor)
     for ms_id in ids - set(resolved):
         resolved[ms_id] = EXEMPT if superadmin else NOTHING
@@ -94,49 +67,84 @@ def manage_scopes_for(actor, makerspace_ids):
 
 
 def manage_scope_for(actor, makerspace_id):
-    """Single-makerspace form of :func:`manage_scopes_for`."""
     return manage_scopes_for(actor, [makerspace_id]).get(makerspace_id, NOTHING)
 
 
 def manage_scopes_for_memberships(memberships):
-    """Map membership id -> EXEMPT or ``(type_ids, machine_ids)``.
+    """Resolve any membership batch in at most two authority/scope queries.
 
-    The membership-keyed twin of :func:`manage_scopes_for`, for callers that already hold
-    the rows and would otherwise resolve one actor at a time. Notification recipient
-    resolution is exactly that shape: it has already selected the memberships and needs
-    each one's machine reach, so a per-actor call would put an N+1 behind every alert.
-
-    Two link queries regardless of how many memberships are passed, and the same answers
-    as the per-actor path -- it is the same `_scope_for_membership` underneath, so the two
-    cannot drift.
+    Each answer is keyed by PERSON, so two people holding the same built-in role
+    cannot inherit each other's assigned machines. The answer is the stable
+    ``(type ids, machine ids)`` pair: a role reaches every machine of the listed
+    types PLUS the listed individual machines; neither listed means nothing.
     """
     memberships = list(memberships)
-    resolved = {}
-    role_to_memberships = defaultdict(list)
+    # A caller may provide plain memberships rather than select_related/prefetched
+    # rows. Reload just those authority snapshots in ONE query, using Exists for
+    # additional machine authority rather than introducing two lazy FK queries.
+    unloaded = {row.pk for row in memberships if not hasattr(row, "_valid_account_context")}
+    snapshots = {}
+    if unloaded:
+        snapshots = {row.pk: row for row in MakerspaceMembership.staff_tracks.filter(
+            pk__in=unloaded,
+        ).select_related("assigned_role").annotate(
+            _valid_account_context=valid_staff_membership_q(),
+            _additional_manage_machines=additional_role_exists(actions=[Action.MANAGE_MACHINES]),
+        )}
+    resolved, scoped = {}, []
     for membership in memberships:
-        answer, role_id = _scope_for_membership(membership)
+        if membership.pk in unloaded:
+            membership = snapshots.get(membership.pk)
+            if membership is None:
+                continue
+        answer, membership_id = _scope_for_membership(membership)
         if answer is not None:
             resolved[membership.pk] = answer
         else:
-            role_to_memberships[role_id].append(membership.pk)
-
-    if role_to_memberships:
-        role_ids = list(role_to_memberships)
-        types = defaultdict(set)
-        machines = defaultdict(set)
-        for role_id, type_id in RoleMachineTypeScope.objects.filter(
-            role_id__in=role_ids
-        ).values_list("role_id", "machine_type_id"):
-            types[role_id].add(type_id)
-        for role_id, machine_id in RoleMachineScope.objects.filter(
-            role_id__in=role_ids
-        ).values_list("role_id", "machine_id"):
-            machines[role_id].add(machine_id)
-        for role_id, membership_ids in role_to_memberships.items():
-            scope = (frozenset(types[role_id]), frozenset(machines[role_id]))
-            for membership_id in membership_ids:
-                resolved[membership_id] = scope
+            scoped.append(membership_id)
+    types, machines = link_reach(scoped)
+    for membership_id in scoped:
+        resolved[membership_id] = (frozenset(types[membership_id]), frozenset(machines[membership_id]))
+    for membership_id in unloaded - set(snapshots):
+        resolved[membership_id] = NOTHING
     return resolved
+
+
+def link_reach(membership_ids):
+    """Per-membership type ids and machine ids from the link tables, in two queries."""
+    types, machines = defaultdict(set), defaultdict(set)
+    if not membership_ids:
+        return types, machines
+    for membership_id, type_id in MembershipMachineTypeScope.objects.filter(
+        membership_id__in=membership_ids,
+    ).filter(
+        # Corrupt cross-tenant links must not confer authority.
+        Q(machine_type__makerspace_id=F("membership__makerspace_id"))
+        | Q(machine_type__makerspace__isnull=True, machine_type__is_builtin=True)
+    ).values_list("membership_id", "machine_type_id"):
+        types[membership_id].add(type_id)
+    for membership_id, machine_id in MembershipMachineScope.objects.filter(
+        membership_id__in=membership_ids, machine__makerspace_id=F("membership__makerspace_id"),
+    ).values_list("membership_id", "machine_id"):
+        machines[membership_id].add(machine_id)
+    return types, machines
+
+
+def link_scope_for(actor, makerspace_id):
+    """(type ids, machine ids) the actor's active staff row links, whatever its actions.
+
+    Used by roles that are scoped without holding MANAGE_MACHINES (the Technician). A
+    Space Manager is not scoped, so callers test EXEMPT separately; no row -> NOTHING.
+    """
+    if actor is None or not getattr(actor, "is_authenticated", False):
+        return NOTHING
+    row = MakerspaceMembership.staff_tracks.filter(
+        user_id=actor.pk, status="active", makerspace_id=makerspace_id,
+    ).annotate(_valid_account_context=valid_staff_membership_q()).first()
+    if row is None or not row._valid_account_context:
+        return NOTHING
+    types, machines = link_reach([row.pk])
+    return frozenset(types[row.pk]), frozenset(machines[row.pk])
 
 
 def scope_covers_machine(scope, machine):
@@ -144,7 +152,7 @@ def scope_covers_machine(scope, machine):
     if scope is EXEMPT:
         return True
     type_ids, machine_ids = scope
-    return machine.pk in machine_ids or machine.machine_type_id in type_ids
+    return machine.machine_type_id in type_ids or machine.pk in machine_ids
 
 
 def scope_covers_type(scope, machine_type):

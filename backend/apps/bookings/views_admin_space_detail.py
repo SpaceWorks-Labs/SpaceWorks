@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -31,6 +32,7 @@ from apps.hardware_requests.view_helpers import (
 )
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 
 SCOPED_ERROR_RESPONSES = {400: ERROR_400, 401: ERROR_401, 403: ERROR_403, 404: ERROR_404}
@@ -44,45 +46,38 @@ class _SpacePagination(PageNumberPagination):
     max_page_size = 200
 
 
-def _visible_makerspace(actor, makerspace_id):
-    makerspace = get_object_or_404(
-        rbac.scope_by_visibility_or_action(
-            actor,
-            rbac.Action.MANAGE_BOOKINGS,
-            Makerspace.objects.all(),
-            field='id',
-        ),
-        pk=makerspace_id,
-    )
-    require_module(makerspace, 'bookings')
-    if not rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, makerspace.pk):
-        raise PermissionDenied()
+def _visible_makerspace(actor, makerspace_id, permission=None):
+    from django.db.models import Q
+    from .booking_authority import spaces_for, require_tenant
+    visible = rbac.scope_by_visibility_or_action(
+        actor, rbac.Action.MANAGE_BOOKINGS, Makerspace.objects.all(), field="id")
+    granted = spaces_for(actor, "view").values("makerspace_id")
+    makerspace = get_object_or_404(Makerspace.objects.filter(
+        Q(pk__in=visible.values("pk")) | Q(pk__in=granted)), pk=makerspace_id)
+    require_module(makerspace, "bookings")
+    if permission != "view" or not spaces_for(actor, "view").filter(makerspace=makerspace).exists():
+        require_tenant(actor, makerspace)
     return makerspace
 
 
-def manageable_space(actor, pk):
-    space = get_object_or_404(
-        rbac.scope_by_visibility_or_action(
-            actor,
-            rbac.Action.MANAGE_BOOKINGS,
-            BookableSpace.objects.select_related('makerspace'),
-            field='makerspace_id',
-        ),
-        pk=pk,
-    )
-    require_module(space.makerspace, 'bookings')
-    if not rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, space.makerspace_id):
-        raise PermissionDenied()
-    return space
+def manageable_space(actor, pk, permission=None):
+    from .booking_authority import get_space
+    return get_space(actor, pk, permission)
 
 
-def _page_response(paginator, page, serializer):
+def _page_response(paginator, page, serializer, actor=None):
+    from .booking_authority_page import authority_for_page, features_for_page
+    context = {
+        "actor": actor,
+        "booking_authority": authority_for_page(actor, page),
+        "booking_features": features_for_page(page),
+    }
     return Response(
         {
             'count': paginator.page.paginator.count,
             'next': paginator.get_next_link(),
             'previous': paginator.get_previous_link(),
-            'results': serializer(page, many=True).data,
+            'results': serializer(page, many=True, context=context).data,
         }
     )
 
@@ -90,7 +85,7 @@ def _page_response(paginator, page, serializer):
 def _require_active(space):
     if not space.is_active:
         raise ValidationError(
-            {'space': 'Inactive spaces cannot have images changed.'}
+            {'space': gettext('Inactive spaces cannot have images changed.')}
         )
 
 
@@ -107,21 +102,23 @@ class BookableSpaceDetailView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         return Response(
-            BookableSpaceAdminSerializer(manageable_space(request.user, pk)).data
+            BookableSpaceAdminSerializer(manageable_space(request.user, pk, "view"), context={"actor": request.user}).data
         )
 
     @extend_schema(
         tags=['Admin bookings'],
         summary='Update a bookable space',
         request=BookableSpaceWriteSerializer,
+        parameters=[PREVIEW_PARAMETER],
         responses={
             200: BookableSpaceAdminSerializer,
             **VALIDATED_ERROR_RESPONSES,
             409: ERROR_409,
         },
     )
+    @previewable
     def patch(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "edit_details")
         serializer = BookableSpaceWriteSerializer(
             space,
             data=request.data,
@@ -133,7 +130,7 @@ class BookableSpaceDetailView(APIView):
             actor=request.user,
             **serializer.validated_data,
         )
-        return Response(BookableSpaceAdminSerializer(space).data)
+        return Response(BookableSpaceAdminSerializer(space, context={"actor": request.user}).data)
 
 
 class BookableSpaceDeactivateView(APIView):
@@ -154,7 +151,7 @@ class BookableSpaceDeactivateView(APIView):
         serializer = EmptyActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         space = services.deactivate_space(space, actor=request.user)
-        return Response(BookableSpaceAdminSerializer(space).data)
+        return Response(BookableSpaceAdminSerializer(space, context={"actor": request.user}).data)
 
 
 class BookableSpaceImagePresignView(APIView):
@@ -167,13 +164,15 @@ class BookableSpaceImagePresignView(APIView):
         responses={201: SpaceImagePresignResponseSerializer, **IMAGE_ERROR_RESPONSES},
     )
     def post(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "edit_details")
         _require_active(space)
         serializer = SpaceImagePresignRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         content_type = serializer.validated_data['content_type']
         ext = storage.ext_for(content_type, serializer.validated_data['filename'])
         object_key = storage.build_object_key(space.makerspace_id, space.pk, ext)
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(space.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = storage.presigned_upload(object_key, content_type)
         except StorageUnavailable:
@@ -203,14 +202,14 @@ class BookableSpaceImageFinalizeView(APIView):
         responses={200: BookableSpaceAdminSerializer, **IMAGE_ERROR_RESPONSES},
     )
     def post(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "edit_details")
         _require_active(space)
         serializer = SpaceImageFinalizeRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data['object_key']
         services.validate_space_image_key(space, object_key)
         if storage.public_image_key_in_use(space.makerspace_id, object_key):
-            raise ValidationError({'object_key': 'This image is already in use.'})
+            raise ValidationError({'object_key': gettext('This image is already in use.')})
         try:
             result = storage.finalize_upload(object_key)
         except StorageUnavailable:
@@ -228,7 +227,7 @@ class BookableSpaceImageFinalizeView(APIView):
             return storage_unavailable_response()
         if not valid_image:
             _cleanup_new_upload(space, object_key)
-            raise ValidationError({'object_key': 'Uploaded file is not a valid image.'})
+            raise ValidationError({'object_key': gettext('Uploaded file is not a valid image.')})
         try:
             space = services.set_space_image(
                 space,
@@ -239,7 +238,7 @@ class BookableSpaceImageFinalizeView(APIView):
         except Exception:
             _cleanup_new_upload(space, object_key)
             raise
-        return Response(BookableSpaceAdminSerializer(space).data)
+        return Response(BookableSpaceAdminSerializer(space, context={"actor": request.user}).data)
 
 
 class BookableSpaceImageDeleteView(APIView):
@@ -252,6 +251,6 @@ class BookableSpaceImageDeleteView(APIView):
         responses={204: None, **IMAGE_ERROR_RESPONSES},
     )
     def delete(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "edit_details")
         services.remove_space_image(space, actor=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)

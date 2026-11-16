@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "status": "planning values from official sources; live/account signup validation remains required",
+  "checked_on": "2026-10-18",
+  "primary": {
+    "web": {
+      "provider": "Render Free",
+      "ram_bytes": 512000000,
+      "workspace_hours_per_month": 750,
+      "hours_in_31_days": 744,
+      "cold_start": true,
+      "smtp": "use HTTP provider",
+      "release": "external finite tool; no free predeploy/shell",
+      "source": "https://render.com/docs/free"
+    },
+    "database": {
+      "provider": "Supabase Free",
+      "planning_cap_bytes": 500000000,
+      "connection": "IPv4 session pooler 5432; actual server PG16/17 probe required",
+      "local_server_image_major": 17,
+      "automatic_backups": "not included as a verified recovery guarantee",
+      "source": "https://supabase.com/pricing"
+    },
+    "objects": {
+      "provider": "Cloudflare R2",
+      "planning_cap_bytes": 10000000000,
+      "also_verify": [
+        "Class A/B requests",
+        "account-wide storage",
+        "egress and connected services",
+        "billing method/overage controls"
+      ],
+      "staging": "private bucket; only finalized public images go to public delivery bucket",
+      "presign": "PUT directly to S3 API host, not r2.dev",
+      "source": "https://developers.cloudflare.com/r2/pricing/"
+    },
+    "mail": {
+      "provider": "Resend",
+      "daily": 100,
+      "monthly": 3000,
+      "alternative": "Brevo: verify current daily/monthly limits and recipient counting at signup",
+      "requires": "verified controlled sender domain; domain registration/delegation may cost extra",
+      "source": "https://resend.com/pricing"
+    },
+    "trigger": {
+      "provider": "Cloudflare Worker",
+      "cron": "*/10 * * * *",
+      "free_cpu_ms": 10,
+      "cron_wall_time_minutes": 15,
+      "source": "https://developers.cloudflare.com/workers/platform/limits/"
+    }
+  },
+  "alternatives": {
+    "neon": {
+      "endpoint": "direct; never -pooler",
+      "minimum_recommended_tick_seconds": 1800,
+      "planning_compute_cu_hours": 100,
+      "idle_minutes": 5,
+      "warning": "Measure actual usage including work and users; a 10-minute tick has little headroom. No keepalive.",
+      "source": "https://neon.com/pricing"
+    },
+    "cloud_run": {
+      "billing_card_required": true,
+      "min_instances": 0,
+      "max_instances": 1,
+      "concurrency": 1,
+      "verify": [
+        "region compute allowance",
+        "Cloud Scheduler free jobs per billing account",
+        "image registry storage/build/egress",
+        "Secret Manager/network costs",
+        "spend controls; alerts are not hard caps"
+      ],
+      "source": "https://cloud.google.com/scheduler/pricing"
+    }
+  },
+  "recovery": "Daily external encrypted DB backup plus object/key custody or separately eligible portable export; no ordinary-archive restore or H1 guarantee.",
+  "live_validation": null
+}

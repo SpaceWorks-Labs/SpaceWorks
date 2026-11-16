@@ -1,0 +1,16 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/command.door.access.unlock.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "seconds": {
+      "maximum": 120,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "seconds"
+  ],
+  "type": "object"
+}

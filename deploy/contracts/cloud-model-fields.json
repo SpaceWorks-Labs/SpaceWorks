@@ -1,0 +1,117 @@
+{
+  "backup.ManagedDeploymentState": [
+    "id",
+    "deployment_id",
+    "database_uuid",
+    "created_at"
+  ],
+  "backup.ManagedCaptureState": [
+    "id",
+    "generation",
+    "paused_by",
+    "paused_at",
+    "drain_until"
+  ],
+  "backup.ManagedWriterBoundary": [
+    "id",
+    "generation",
+    "category",
+    "started_at",
+    "finished_at",
+    "uncertain"
+  ],
+  "operations.CloudTaskState": [
+    "id",
+    "key",
+    "token",
+    "generation",
+    "status",
+    "checkpoint",
+    "last_attempt_at",
+    "heartbeat_at",
+    "last_completed_at",
+    "next_due_at",
+    "failure_code"
+  ],
+  "operations.CloudTickRun": [
+    "id",
+    "started_at",
+    "finished_at",
+    "duration_ms",
+    "status",
+    "completed",
+    "deferred",
+    "failed"
+  ],
+  "operations.CloudTickRateWindow": [
+    "key",
+    "window",
+    "hits"
+  ],
+  "operations.CloudEmailBudgetAccount": [
+    "id",
+    "key",
+    "provider",
+    "reset_timezone"
+  ],
+  "operations.CloudEmailReservation": [
+    "id",
+    "account",
+    "log",
+    "attempt_key",
+    "provider",
+    "day",
+    "month",
+    "accepted_day",
+    "accepted_month",
+    "recipients",
+    "state",
+    "provider_message_id",
+    "created_at",
+    "updated_at"
+  ],
+  "operations.StorageCapabilityState": [
+    "id",
+    "identity_fingerprint",
+    "identity",
+    "logical_role",
+    "generation",
+    "configuration_fingerprint",
+    "history_possible",
+    "facts",
+    "verified_at"
+  ],
+  "operations.CloudUsageSample": [
+    "id",
+    "metric",
+    "makerspace",
+    "scope",
+    "used",
+    "uncertain",
+    "sampled_at",
+    "source",
+    "reason_code",
+    "checkpoint",
+    "configured_cap",
+    "cap_source",
+    "cap_verified_on"
+  ],
+  "operations.CloudObjectUsageReceipt": [
+    "id",
+    "operation_key",
+    "makerspace",
+    "bucket_alias",
+    "object_key_digest",
+    "generation",
+    "bytes",
+    "operation",
+    "created_at"
+  ],
+  "integrations.EmailProviderWebhookReceipt": [
+    "id",
+    "makerspace",
+    "log",
+    "event_key",
+    "created_at"
+  ]
+}

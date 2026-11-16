@@ -1,0 +1,793 @@
+{
+  "lane": "B",
+  "schema_version": 1,
+  "migrations_created": true,
+  "models": [
+    {
+      "model": "AssetFields",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')"
+        },
+        {
+          "name": "public_id",
+          "definition": "models.UUIDField(default=uuid4, unique=True, editable=False)"
+        },
+        {
+          "name": "kind",
+          "definition": "models.CharField(max_length=32)"
+        },
+        {
+          "name": "purpose",
+          "definition": "models.CharField(max_length=32, default='project')"
+        },
+        {
+          "name": "public_requested",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "original_filename",
+          "definition": "models.CharField(max_length=240)"
+        },
+        {
+          "name": "extension",
+          "definition": "models.CharField(max_length=16)"
+        },
+        {
+          "name": "subtype",
+          "definition": "models.CharField(max_length=32)"
+        },
+        {
+          "name": "policy_name",
+          "definition": "models.CharField(max_length=64, default='hackathon-maker-v1')"
+        },
+        {
+          "name": "policy_version",
+          "definition": "models.PositiveIntegerField(default=1)"
+        },
+        {
+          "name": "effective_cap",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "declared_mime",
+          "definition": "models.CharField(max_length=160)"
+        },
+        {
+          "name": "declared_bytes",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "canonical_mime",
+          "definition": "models.CharField(max_length=160, blank=True)"
+        },
+        {
+          "name": "actual_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "staging_key",
+          "definition": "models.CharField(max_length=512, editable=False, unique=True)"
+        },
+        {
+          "name": "verification_key",
+          "definition": "models.CharField(max_length=512, editable=False, unique=True)"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, editable=False, unique=True)"
+        },
+        {
+          "name": "source_version_id",
+          "definition": "models.CharField(max_length=256, blank=True, editable=False)"
+        },
+        {
+          "name": "verification_version_id",
+          "definition": "models.CharField(max_length=256, blank=True, editable=False)"
+        },
+        {
+          "name": "final_version_id",
+          "definition": "models.CharField(max_length=256, blank=True, editable=False)"
+        },
+        {
+          "name": "source_etag",
+          "definition": "models.CharField(max_length=256, blank=True, editable=False)"
+        },
+        {
+          "name": "sha256",
+          "definition": "models.CharField(max_length=64, blank=True, editable=False)"
+        },
+        {
+          "name": "original_sha256",
+          "definition": "models.CharField(max_length=64, blank=True, editable=False)"
+        },
+        {
+          "name": "state",
+          "definition": "models.CharField(max_length=24, default='reserved', db_index=True)"
+        },
+        {
+          "name": "scan_backend",
+          "definition": "models.CharField(max_length=16, default='none')"
+        },
+        {
+          "name": "scan_status",
+          "definition": "models.CharField(max_length=24, default='pending')"
+        },
+        {
+          "name": "scan_version",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "scanned_at",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "manifest",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "media_metadata",
+          "definition": "models.JSONField(default=dict)"
+        },
+        {
+          "name": "uploaded_by",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')"
+        },
+        {
+          "name": "multipart_upload_id",
+          "definition": "models.TextField(blank=True, editable=False)"
+        },
+        {
+          "name": "part_size",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "generation",
+          "definition": "models.PositiveIntegerField(default=1)"
+        },
+        {
+          "name": "claim",
+          "definition": "models.UUIDField(default=uuid4, editable=False)"
+        },
+        {
+          "name": "version",
+          "definition": "models.PositiveIntegerField(default=1)"
+        },
+        {
+          "name": "last_activity_at",
+          "definition": "models.DateTimeField(default=timezone.now)"
+        },
+        {
+          "name": "upload_not_after",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "reserved_bytes",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "charged_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "failure_code",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "ready_at",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "expires_at",
+          "definition": "models.DateTimeField(null=True, db_index=True)"
+        },
+        {
+          "name": "expired_at",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "deleted_at",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "expired_size_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(default=timezone.now)"
+        }
+      ],
+      "meta": "class Meta:\n    abstract = True\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=Q(declared_bytes__gt=0), name='%(class)s_declared_positive'), models.CheckConstraint(condition=Q(declared_bytes__lte=F('effective_cap')), name='%(class)s_cap'), models.CheckConstraint(condition=~Q(state='ready') | Q(ready_at__isnull=False, actual_bytes__gt=0, expired_at__isnull=True) & ~Q(sha256='') & Q(scan_status__in=['clean', 'skipped']), name='%(class)s_ready_shape'), models.CheckConstraint(condition=Q(state__in=['reserved', 'uploading', 'uploaded', 'validating', 'promoting', 'ready', 'rejected', 'quarantined', 'aborted', 'expiring', 'expired', 'deleting', 'copying']), name='%(class)s_valid_state')]"
+    },
+    {
+      "model": "SubmissionAsset",
+      "bases": [
+        "AssetFields"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "submission",
+          "definition": "models.ForeignKey('events.HackathonSubmission', on_delete=models.CASCADE, related_name='assets')"
+        },
+        {
+          "name": "team",
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.PROTECT, related_name='+')"
+        }
+      ],
+      "meta": "class Meta(AssetFields.Meta):\n    abstract = False"
+    },
+    {
+      "model": "HackathonParticipantAsset",
+      "bases": [
+        "AssetFields"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "member",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')"
+        },
+        {
+          "name": "purpose",
+          "definition": "models.CharField(max_length=32, default='resume', editable=False)"
+        }
+      ],
+      "meta": "class Meta(AssetFields.Meta):\n    abstract = False\n    constraints = AssetFields.Meta.constraints + [models.CheckConstraint(condition=Q(purpose='resume', extension='pdf', kind='resume'), name='participant_asset_resume_only')]"
+    },
+    {
+      "model": "EventAssetUsage",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='asset_usage')"
+        },
+        {
+          "name": "budget_bytes",
+          "definition": "models.PositiveBigIntegerField(null=True)"
+        },
+        {
+          "name": "reserved_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "used_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "failed_cleanup_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "first_results_published_at",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "retention_anchor",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "retention_anchor_kind",
+          "definition": "models.CharField(max_length=16, blank=True)"
+        },
+        {
+          "name": "expires_at",
+          "definition": "models.DateTimeField(null=True)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'"
+    },
+    {
+      "model": "SubmissionAssetWork",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "asset",
+          "definition": "models.OneToOneField(SubmissionAsset, null=True, on_delete=models.CASCADE, related_name='work')"
+        },
+        {
+          "name": "participant_asset",
+          "definition": "models.OneToOneField(HackathonParticipantAsset, null=True, on_delete=models.CASCADE, related_name='work')"
+        },
+        {
+          "name": "state",
+          "definition": "models.CharField(max_length=24, default='pending', db_index=True)"
+        },
+        {
+          "name": "attempts",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "next_attempt_at",
+          "definition": "models.DateTimeField(default=timezone.now, db_index=True)"
+        },
+        {
+          "name": "lease_token",
+          "definition": "models.UUIDField(null=True)"
+        },
+        {
+          "name": "lease_until",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "last_code",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "saved_asset_id",
+          "definition": "models.PositiveBigIntegerField(null=True)"
+        },
+        {
+          "name": "saved_detail_version",
+          "definition": "models.PositiveIntegerField(null=True)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=Q(asset__isnull=False, participant_asset__isnull=True) | Q(asset__isnull=True, participant_asset__isnull=False), name='asset_work_one_subject')]"
+    },
+    {
+      "model": "EventAssetObligation",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "asset_uuid",
+          "definition": "models.UUIDField(unique=True)"
+        },
+        {
+          "name": "asset_label",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "asset_id_snapshot",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "event_id_snapshot",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "makerspace_id_snapshot",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "staging_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "verification_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "multipart_upload_id",
+          "definition": "models.TextField(blank=True)"
+        },
+        {
+          "name": "initial_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "canonical_extra_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "reserved_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "charged_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "temporary_released",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "fully_released",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "managed",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "write_not_after",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "next_attempt_at",
+          "definition": "models.DateTimeField(default=timezone.now, db_index=True)"
+        },
+        {
+          "name": "lease_token",
+          "definition": "models.UUIDField(null=True)"
+        },
+        {
+          "name": "lease_until",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "attempts",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "last_code",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "last_cleaned_at",
+          "definition": "models.DateTimeField(null=True)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'"
+    },
+    {
+      "model": "EventProgrammeSweepCursor",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "namespace",
+          "definition": "models.CharField(max_length=64, unique=True)"
+        },
+        {
+          "name": "last_id",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'"
+    },
+    {
+      "model": "HackathonSubmission",
+      "bases": [
+        "PrivateDocumentMixin",
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='submissions')"
+        },
+        {
+          "name": "team",
+          "definition": "models.OneToOneField('events.HackathonTeam', on_delete=models.PROTECT, related_name='submission')"
+        },
+        {
+          "name": "state",
+          "definition": "models.CharField(max_length=24, default='draft')"
+        },
+        {
+          "name": "version",
+          "definition": "models.PositiveIntegerField(default=1)"
+        },
+        {
+          "name": "links_version",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "title",
+          "definition": "models.CharField(max_length=200, blank=True)"
+        },
+        {
+          "name": "tagline",
+          "definition": "models.CharField(max_length=300, blank=True)"
+        },
+        {
+          "name": "problem",
+          "definition": "models.TextField(blank=True)"
+        },
+        {
+          "name": "description",
+          "definition": "models.TextField(blank=True)"
+        },
+        {
+          "name": "challenges",
+          "definition": "models.TextField(blank=True)"
+        },
+        {
+          "name": "tech_tags",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "ai_declaration",
+          "definition": "models.JSONField(default=dict)"
+        },
+        {
+          "name": "reuse_declaration",
+          "definition": "models.JSONField(default=dict)"
+        },
+        {
+          "name": "form_answers",
+          "definition": "models.TextField(default='{}')"
+        },
+        {
+          "name": "track_ids",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "prize_ids",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "asset_ids",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "public_asset_ids",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "public_requested",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "current_snapshot",
+          "definition": "models.ForeignKey('events.SubmissionSnapshot', null=True, on_delete=models.PROTECT, related_name='+')"
+        },
+        {
+          "name": "triage",
+          "definition": "models.CharField(max_length=16, default='pending')"
+        },
+        {
+          "name": "triage_reason",
+          "definition": "models.TextField(max_length=1000, blank=True)"
+        },
+        {
+          "name": "submitted_at",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "locked_at",
+          "definition": "models.DateTimeField(null=True)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=models.Q(state__in=['draft', 'submitted', 'locked', 'under_review', 'judged', 'disqualified', 'withdrawn']), name='submission_valid_state'), models.CheckConstraint(condition=models.Q(triage__in=['pending', 'eligible', 'ineligible', 'hidden']), name='submission_valid_triage')]"
+    },
+    {
+      "model": "SubmissionSnapshot",
+      "bases": [
+        "PrivateDocumentMixin",
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "submission",
+          "definition": "models.ForeignKey(HackathonSubmission, on_delete=models.CASCADE, related_name='snapshots')"
+        },
+        {
+          "name": "sequence",
+          "definition": "models.PositiveIntegerField()"
+        },
+        {
+          "name": "submitted_by",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')"
+        },
+        {
+          "name": "submitted_at",
+          "definition": "models.DateTimeField(default=timezone.now)"
+        },
+        {
+          "name": "sealed_member_ids",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "project",
+          "definition": "models.TextField()"
+        },
+        {
+          "name": "content_sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "source_content_sha256",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "late",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "amendment_of",
+          "definition": "models.ForeignKey('self', null=True, on_delete=models.PROTECT, related_name='+')"
+        },
+        {
+          "name": "amendment_reason",
+          "definition": "models.TextField(max_length=1000, blank=True)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=['submission', 'sequence'], name='snapshot_sequence_unique')]"
+    },
+    {
+      "model": "SubmissionLink",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "submission",
+          "definition": "models.ForeignKey(HackathonSubmission, on_delete=models.CASCADE, related_name='links')"
+        },
+        {
+          "name": "kind",
+          "definition": "models.CharField(max_length=16)"
+        },
+        {
+          "name": "url",
+          "definition": "models.URLField(max_length=2048)"
+        },
+        {
+          "name": "provider",
+          "definition": "models.CharField(max_length=32)"
+        },
+        {
+          "name": "public_requested",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "version",
+          "definition": "models.PositiveIntegerField(default=1)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'"
+    },
+    {
+      "model": "SnapshotAsset",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "snapshot",
+          "definition": "models.ForeignKey(SubmissionSnapshot, on_delete=models.CASCADE, related_name='asset_refs')"
+        },
+        {
+          "name": "asset",
+          "definition": "models.ForeignKey('events.SubmissionAsset', on_delete=models.PROTECT, related_name='snapshot_refs')"
+        },
+        {
+          "name": "public_requested",
+          "definition": "models.BooleanField(default=False)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=['snapshot', 'asset'], name='snapshot_asset_unique')]"
+    },
+    {
+      "model": "SnapshotLink",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "snapshot",
+          "definition": "models.ForeignKey(SubmissionSnapshot, on_delete=models.CASCADE, related_name='link_refs')"
+        },
+        {
+          "name": "link",
+          "definition": "models.ForeignKey(SubmissionLink, on_delete=models.PROTECT, related_name='snapshot_refs')"
+        },
+        {
+          "name": "kind",
+          "definition": "models.CharField(max_length=16)"
+        },
+        {
+          "name": "url",
+          "definition": "models.URLField(max_length=2048)"
+        },
+        {
+          "name": "provider",
+          "definition": "models.CharField(max_length=32)"
+        },
+        {
+          "name": "public_requested",
+          "definition": "models.BooleanField(default=False)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=['snapshot', 'link'], name='snapshot_link_unique')]"
+    },
+    {
+      "model": "SnapshotTrack",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "snapshot",
+          "definition": "models.ForeignKey(SubmissionSnapshot, on_delete=models.CASCADE, related_name='track_refs')"
+        },
+        {
+          "name": "track",
+          "definition": "models.ForeignKey('events.HackathonTrack', on_delete=models.PROTECT, related_name='+')"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=['snapshot', 'track'], name='snapshot_track_unique')]"
+    },
+    {
+      "model": "SnapshotPrize",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "snapshot",
+          "definition": "models.ForeignKey(SubmissionSnapshot, on_delete=models.CASCADE, related_name='prize_refs')"
+        },
+        {
+          "name": "prize",
+          "definition": "models.ForeignKey('events.HackathonPrize', on_delete=models.PROTECT, related_name='+')"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=['snapshot', 'prize'], name='snapshot_prize_unique')]"
+    },
+    {
+      "model": "SubmissionIntegrityFlag",
+      "bases": [
+        "PrivateDocumentMixin",
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_projects.py",
+      "fields": [
+        {
+          "name": "snapshot",
+          "definition": "models.ForeignKey(SubmissionSnapshot, on_delete=models.CASCADE, related_name='integrity_flags')"
+        },
+        {
+          "name": "rule_key",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "severity",
+          "definition": "models.CharField(max_length=16, default='informational', editable=False)"
+        },
+        {
+          "name": "evidence",
+          "definition": "models.JSONField(default=dict)"
+        },
+        {
+          "name": "checked_at",
+          "definition": "models.DateTimeField(default=timezone.now)"
+        },
+        {
+          "name": "state",
+          "definition": "models.CharField(max_length=16, default='open')"
+        },
+        {
+          "name": "reviewer",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')"
+        },
+        {
+          "name": "reason",
+          "definition": "models.TextField(max_length=1000, blank=True)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=models.Q(severity='informational'), name='submission_flag_information_only'), models.UniqueConstraint(fields=['snapshot', 'rule_key'], name='submission_integrity_rule_unique')]"
+    }
+  ],
+  "integration_lane": "EV2-C"
+}

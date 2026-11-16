@@ -16,39 +16,24 @@ logger = logging.getLogger(__name__)
 
 
 def capture_database_image(snapshot_id, destination):
+    from apps.backup.cloud_database_tools import configuration_spec
+    from apps.backup.postgres_client import run_client
+    from apps.backup.cloud_continuity import guarded_effect
     destination = Path(destination)
-    database = settings.DATABASES["default"]
-    environment = os.environ.copy()
-    values = {
-        "PGDATABASE": database.get("NAME"),
-        "PGUSER": database.get("USER"),
-        "PGPASSWORD": database.get("PASSWORD"),
-        "PGHOST": database.get("HOST"),
-        "PGPORT": database.get("PORT"),
-    }
-    environment.update(
-        {key: str(value) for key, value in values.items() if value not in (None, "")}
-    )
     try:
-        subprocess.run(
-            [
-                client_binary("pg_dump"),
-                "--format=custom",
-                "--no-owner",
-                "--no-acl",
-                f"--snapshot={snapshot_id}",
-                f"--file={destination}",
-            ],
-            env=environment,
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
+        selectors = []
+        if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+            from .cloud_portable import registered_tables
+            selectors = ["--data-only"]
+            selectors += [f'--table=public."{table}"' for table in sorted(registered_tables())]
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT n.nspname,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_depend d ON d.objid=c.oid JOIN pg_class t ON t.oid=d.refobjid WHERE c.relkind='S' AND t.relname=ANY(%s) AND n.nspname='public'", [sorted(registered_tables())])
+                selectors += [f'--table="{schema}"."{name}"' for schema, name in cursor.fetchall()]
+        guarded_effect(run_client, "pg_dump", ["--format=custom", "--no-owner", "--no-acl", *selectors,
+            f"--snapshot={snapshot_id}", f"--file={destination}"],
+            spec=configuration_spec(settings.DATABASES["default"]))
         destination.chmod(0o600)
-    except (OSError, subprocess.CalledProcessError) as exc:
-        logger.error(
-            "tenant_dump_capture_database_failed",
-            extra={"returncode": getattr(exc, "returncode", None)},
-        )
-        raise TenantDumpBuildError("The Lane D database image could not be captured.") from exc
+    except Exception:
+        raise TenantDumpBuildError("The Lane D database image could not be captured.") from None
     return destination

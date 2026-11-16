@@ -11,21 +11,23 @@ that depends on nothing in this app cannot be caught in that cycle.
 NotificationFeature` keeps resolving and no call site had to change.
 """
 
+from django.utils.translation import gettext_noop
 from django.db import models
 
 
 class NotificationFeature(models.TextChoices):
-    HARDWARE_REQUESTS = "hardware_requests", "Hardware requests"
+    HARDWARE_REQUESTS = "hardware_requests", gettext_noop("Hardware requests")
     PRINTING = "printing", "Printing"
     EVENTS = "events", "Events"
     BOOKINGS = "bookings", "Bookings"
     MAINTENANCE = "maintenance", "Maintenance"
     MEMBERS = "members", "Members"
-    API_ACCESS = "api_access", "API access"
+    API_ACCESS = "api_access", gettext_noop("API access")
     DEVICES = "devices", "Devices"
     PAYMENTS = "payments", "Payments"
-    STOCK = "stock", "Stock and procurement"
+    STOCK = "stock", gettext_noop("Stock and procurement")
     CERTIFICATIONS = "certifications", "Certifications"
+    PRESENCE = "presence", "Presence"
 
 
 class NotificationChannel(models.TextChoices):
@@ -35,24 +37,29 @@ class NotificationChannel(models.TextChoices):
     SLACK = "slack", "Slack"
     MATTERMOST = "mattermost", "Mattermost"
     DISCORD = "discord", "Discord"
-    WEBHOOK = "webhook", "Signed webhook"
-    NATIVE_PUSH = "native_push", "Native push"
+    WEBHOOK = "webhook", gettext_noop("Signed webhook")
+    NATIVE_PUSH = "native_push", gettext_noop("Native push")
+    SMS = "sms", "SMS"
+    WHATSAPP = "whatsapp", "WhatsApp"
 
 
 class NonEmailNotificationChannel(models.TextChoices):
+    # Addressed SMS/WhatsApp and device push are never room destinations.
+    WHATSAPP = "whatsapp", "WhatsApp"
     TELEGRAM = "telegram", "Telegram"
     SLACK = "slack", "Slack"
     MATTERMOST = "mattermost", "Mattermost"
     DISCORD = "discord", "Discord"
-    WEBHOOK = "webhook", "Signed webhook"
-    NATIVE_PUSH = "native_push", "Native push"
+    WEBHOOK = "webhook", gettext_noop("Signed webhook")
+    NATIVE_PUSH = "native_push", gettext_noop("Native push")
+    SMS = "sms", "SMS"
 
 
 class ChatNotificationChannel(models.TextChoices):
     """The channels that post into a room, i.e. the ones a destination can name.
 
-    `NonEmailNotificationChannel` minus `native_push`: push is delivered per device to a
-    named user, so there is no room to address and no credential to store.
+    Excludes addressed SMS/WhatsApp and native push: those channels target a named
+    person or device, so a room cannot supply their recipient identity.
     """
 
     TELEGRAM = "telegram", "Telegram"
@@ -61,7 +68,7 @@ class ChatNotificationChannel(models.TextChoices):
     DISCORD = "discord", "Discord"
     # Not a chat room: a machine endpoint that receives the SAME notification a room would,
     # as JSON, signed with a per-destination secret (apps/integrations/webhooks.py).
-    WEBHOOK = "webhook", "Signed webhook"
+    WEBHOOK = "webhook", gettext_noop("Signed webhook")
 
 
 # Hard per-provider message ceilings, in characters. One table because the failure mode
@@ -105,6 +112,8 @@ class NotificationDeliveryStatus(models.TextChoices):
 # out — overstating what the toggle does. Tenant email is gated by
 # `dispatch.email_module_blocks`, which knows about the exemptions; this table does not.
 CHANNEL_MODULE_KEYS = {
+    "sms": "sms",
+    "whatsapp": "whatsapp",
     "in_app": "notifications",
     "telegram": "telegram",
     "slack": "slack",

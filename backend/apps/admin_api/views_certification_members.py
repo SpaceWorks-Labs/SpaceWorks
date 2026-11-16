@@ -4,7 +4,9 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.makerspaces.models import MakerspaceMembership
@@ -30,7 +32,7 @@ class CertificationMemberPageSerializer(serializers.Serializer):
     results = CertificationMemberSerializer(many=True)
 
 
-class CertificationMembersView(APIView):
+class CertificationMembersView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin machines"], summary="List active members eligible for training grants",
@@ -39,7 +41,7 @@ class CertificationMembersView(APIView):
     def get(self, request, pk):
         row = _resolved_type(request.user, pk)
         rows = rbac.scope_by_makerspace(request.user, MakerspaceMembership.objects.select_related("user")).filter(
-            makerspace_id=row.makerspace_id, status="active", user__is_active=True,
+            person_q("user__"), makerspace_id=row.makerspace_id, status="active", user__is_active=True,
             user__access_status="active",
         ).order_by("user__display_name", "user__username", "pk")
         paginator = PageNumberPagination()

@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
@@ -9,7 +11,7 @@ from rest_framework.views import APIView
 from apps.apiclients.throttling import ClientTierRateThrottle
 from apps.bookings import services_bookings
 from apps.bookings.models import BookableSpace, Booking
-from apps.bookings.services_schedule import occupied_window, published_open_intervals
+from apps.bookings.services_schedule import confirmed_occupancy, occupied_window, published_open_intervals
 from apps.bookings.serializers_public import (
     PublicBookableSpaceSerializer,
     PublicBookingInputSerializer,
@@ -21,6 +23,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module_for_servable
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.bookings.access import require_booking_account
+from .website_visibility import public_spaces as _public_spaces
 
 
 LOOSE_ERROR_SCHEMA = {'type': 'object', 'additionalProperties': {}}
@@ -38,14 +41,6 @@ PUBLIC_BOOKING_SUBMISSION_ERRORS = {
     423: OpenApiResponse(ErrorSerializer, description='Tenant frozen for migration.'),
     503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.'),
 }
-
-
-def _public_spaces(makerspace):
-    return BookableSpace.objects.filter(
-        makerspace=makerspace,
-        is_public=True,
-        is_active=True,
-    )
 
 
 class PublicBookableSpaceListView(APIView):
@@ -66,7 +61,7 @@ class PublicBookableSpaceListView(APIView):
     def get(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, 'bookings')
-        spaces = _public_spaces(makerspace).order_by('name', 'id')
+        spaces = _public_spaces(makerspace).order_by('name', 'id').prefetch_related('photos')
         return Response(PublicBookableSpaceSerializer(spaces, many=True).data)
 
 
@@ -101,25 +96,24 @@ class PublicSpaceAvailabilityView(APIView):
         availability = None
         if space.show_public_availability:
             # Busy windows contain occupancy only; cleanup settings remain private.
-            from datetime import timedelta
-
-            bookings = Booking.objects.filter(
-                space=space,
-                status=Booking.Status.CONFIRMED,
-                starts_at__lt=ends_at + timedelta(minutes=space.buffer_before_minutes),
-                ends_at__gt=starts_at - timedelta(minutes=space.buffer_after_minutes),
-            ).only('starts_at', 'ends_at', 'name').order_by('starts_at', 'id')
+            bookings = confirmed_occupancy(space, starts_at, ends_at).only('starts_at', 'ends_at', 'name', 'status')
             availability = [
                 {
                     'starts_at': occupied_window(space, booking.starts_at, booking.ends_at)[0],
                     'ends_at': occupied_window(space, booking.starts_at, booking.ends_at)[1],
+                    # A pending event hold is tentative: it never names its booker, even where
+                    # the room publishes booker names (the request is not yet approved).
                     'booker_name': (
-                        booking.name if space.show_public_booker_names else None
+                        booking.name
+                        if space.show_public_booker_names and booking.status == Booking.Status.CONFIRMED
+                        else None
                     ),
+                    'tentative': booking.status != Booking.Status.CONFIRMED,
                 }
                 for booking in bookings
             ]
 
+        from .busy_overlay import public_busy_blocks
         payload = {
             'public_token': space.public_token,
             'starts_at': starts_at,
@@ -127,8 +121,14 @@ class PublicSpaceAvailabilityView(APIView):
             'timezone': makerspace.timezone,
             'opening_intervals': published_open_intervals(makerspace, starts_at, ends_at),
             'availability': availability,
+            # Closures always show; an outage's bare `unavailable` only where the room publishes
+            # its availability (decision 219c).
+            'unavailable': public_busy_blocks(space, starts_at, ends_at),
         }
         return Response(PublicSpaceAvailabilitySerializer(payload).data)
+
+
+from .serializers_confirmation_result import BOOKING_SUBMISSION_RESPONSE
 
 
 class PublicBookingSubmissionView(APIView):
@@ -140,7 +140,7 @@ class PublicBookingSubmissionView(APIView):
         tags=['Public bookings'],
         request=PublicBookingInputSerializer,
         responses={
-            201: PublicBookingResponseSerializer,
+            201: BOOKING_SUBMISSION_RESPONSE,
             **PUBLIC_BOOKING_SUBMISSION_ERRORS,
         },
     )
@@ -154,7 +154,7 @@ class PublicBookingSubmissionView(APIView):
         require_booking_account(request.user, makerspace)
 
         if not isinstance(request.data, Mapping):
-            raise serializers.ValidationError({'non_field_errors': ['Expected an object.']})
+            raise serializers.ValidationError({'non_field_errors': [gettext('Expected an object.')]})
         website = request.data.get('website')
         if website and str(website).strip():
             expected_status = (
@@ -169,13 +169,22 @@ class PublicBookingSubmissionView(APIView):
 
         serializer = PublicBookingInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        booking = services_bookings.create_booking(
-            space,
-            member=request.user,
-            actor=request.user,
-            **serializer.validated_data,
-        )
+        from apps.payments.pricing.submit_guard import check_submitted_digest  # L15 (A8): 409 price_changed
+        check_submitted_digest(request, makerspace, "bookings", space, {
+            "starts_at": serializer.validated_data.get("starts_at"), "ends_at": serializer.validated_data.get("ends_at")})
+        values = dict(serializer.validated_data)
+        event_id = values.pop('event_id', None)
+        with transaction.atomic():
+            booking = services_bookings.create_booking(
+                space,
+                member=request.user,
+                actor=request.user,
+                **values,
+            )
+            from apps.machines import event_use
+            event_use.attach(booking, event_id, actor=request.user)  # decision 342: optional, strict when given
         return Response(
             PublicBookingResponseSerializer(booking).data,
             status=status.HTTP_201_CREATED,
+            headers={"Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer"},
         )

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 
 from django.conf import settings
@@ -8,27 +9,51 @@ from apps.integrations.smtp_validation import smtp_timeout_seconds, validate_smt
 logger = logging.getLogger(__name__)
 
 
-def makerspace_mail_connection(makerspace):
+class PlatformCredentialsDisabled(Exception):
+    """The space has no mail account of its own and switched the platform fallback off (decision 281)."""
+
+
+def _space_platform_mail(makerspace):
+    from apps.managed_hosting.platform_switch import platform_allowed
+    if not platform_allowed(makerspace, "email"):
+        raise PlatformCredentialsDisabled()
+    return platform_mail_connection()
+
+
+def makerspace_mail_connection(makerspace, *, skip_smtp_gate=False):
+    from .mail_providers.connections import connection_for
+    from .mail_providers.selection import stored_config
+    from .space_smtp_gate import own_smtp_in_use, smtp_verified
+    # Parity E-B8: a space's own SMTP account is used only once a test message from it was accepted. Until then
+    # the space sends as it would with no account (platform fallback, still subject to decision 281's switch).
+    # Only the test itself (`skip_smtp_gate`) may reach an unverified account.
+    if own_smtp_in_use(makerspace) and not skip_smtp_gate and not smtp_verified(makerspace):
+        return _space_platform_mail(makerspace)
+    # Explicit inheritance ignores stale SMTP fields; explicit broken config raises.
+    provider = getattr(makerspace, "email_provider", "")
+    if provider:
+        config = stored_config(makerspace, tenant=True)
+        return connection_for(config, makerspace) if config else _space_platform_mail(makerspace)
     smtp_host = (makerspace.smtp_host or "").strip()
     if not smtp_host:
-        return platform_mail_connection()
+        return _space_platform_mail(makerspace)
     # use_ssl (implicit SSL, port 465) and use_tls (STARTTLS, port 587) are
     # mutually exclusive in Django's SMTP backend; prefer SSL when both are set.
     validate_smtp_endpoint(smtp_host, makerspace.smtp_port)
     use_ssl = makerspace.smtp_use_ssl
     use_tls = makerspace.smtp_use_tls and not use_ssl
-    return (
-        get_connection(
-            host=smtp_host,
-            port=makerspace.smtp_port,
-            username=makerspace.smtp_username or None,
-            password=makerspace.get_smtp_password() or None,
-            use_tls=use_tls,
-            use_ssl=use_ssl,
-            timeout=smtp_timeout_seconds(),
-        ),
-        makerspace.smtp_from_email or settings.DEFAULT_FROM_EMAIL,
+    connection = get_connection(
+        _guarded_smtp_backend(),
+        host=smtp_host,
+        port=makerspace.smtp_port,
+        username=makerspace.smtp_username or None,
+        password=makerspace.get_smtp_password() or None,
+        use_tls=use_tls,
+        use_ssl=use_ssl,
+        timeout=smtp_timeout_seconds(),
     )
+    connection.provider_source = "own"
+    return connection, makerspace.smtp_from_email or settings.DEFAULT_FROM_EMAIL
 
 
 def platform_mail_connection():
@@ -42,30 +67,47 @@ def platform_mail_connection():
     from apps.integrations.models import PlatformEmailSettings
 
     cfg = PlatformEmailSettings.load()
+    from .mail_providers.connections import connection_for
+    from .mail_providers.selection import environment_config, stored_config
+    if getattr(cfg, "email_provider", ""):
+        return connection_for(stored_config(cfg), cfg)
+    # A legacy DB SMTP host remains authoritative over environment provider config.
+    if not (cfg.smtp_host or "").strip():
+        config = environment_config()
+        if config:
+            return connection_for(config)
     smtp_host = (cfg.smtp_host or "").strip()
     if not smtp_host:
         return None, settings.DEFAULT_FROM_EMAIL
     validate_smtp_endpoint(smtp_host, cfg.smtp_port)
     use_ssl = cfg.smtp_use_ssl
     use_tls = cfg.smtp_use_tls and not use_ssl
-    return (
-        get_connection(
-            host=smtp_host,
-            port=cfg.smtp_port,
-            username=cfg.smtp_username or None,
-            password=cfg.get_smtp_password() or None,
-            use_tls=use_tls,
-            use_ssl=use_ssl,
-            timeout=smtp_timeout_seconds(),
-        ),
-        cfg.from_email or settings.DEFAULT_FROM_EMAIL,
+    connection = get_connection(
+        _guarded_smtp_backend(),
+        host=smtp_host,
+        port=cfg.smtp_port,
+        username=cfg.smtp_username or None,
+        password=cfg.get_smtp_password() or None,
+        use_tls=use_tls,
+        use_ssl=use_ssl,
+        timeout=smtp_timeout_seconds(),
     )
+    connection.provider_source = "platform"
+    return connection, cfg.from_email or settings.DEFAULT_FROM_EMAIL
 
 
 def platform_email_configured() -> bool:
     from apps.integrations.models import PlatformEmailSettings
 
     cfg = PlatformEmailSettings.load()
+    if getattr(cfg, "email_provider", "") or getattr(settings, "EMAIL_PROVIDER", ""):
+        try:
+            connection, _ = platform_mail_connection()
+            return connection is not None and (
+                hasattr(connection, "spaceworks_mail_config") or _is_smtp_backend())
+        except Exception:
+            logger.warning("platform_email_configuration_unavailable")
+            return False
     if not (cfg.smtp_host or "").strip():
         return False
     # A host whose stored password no longer decrypts (API_CLIENT_ENC_KEY changed) cannot
@@ -83,7 +125,18 @@ def _is_smtp_backend() -> bool:
     return settings.EMAIL_BACKEND.endswith("smtp.EmailBackend")
 
 
+def _guarded_smtp_backend():
+    """The peer-checking SMTP backend when real SMTP is configured, else the default."""
+    from .mail_providers.config import BACKENDS
+    return BACKENDS["smtp"] if _is_smtp_backend() else None
+
+
 def email_enabled() -> bool:
+    from apps.integrations.models import PlatformEmailSettings
+    # Only explicit provider mode overrides legacy backend semantics.
+    cfg = PlatformEmailSettings.load()
+    if getattr(cfg, "email_provider", "") or getattr(settings, "EMAIL_PROVIDER", ""):
+        return platform_email_configured()
     # Can we actually DELIVER mail? platform_mail_connection()/makerspace_mail_connection()
     # build the connection via Django get_connection(), which uses settings.EMAIL_BACKEND as
     # the backend CLASS. So a configured SMTP *host* (platform DB row or env EMAIL_HOST) only
@@ -102,12 +155,12 @@ def email_enabled() -> bool:
 def send_password_reset_email(recipient, reset_url):
     from apps.integrations.dispatch import dispatch_email
 
-    subject = "Reset your password"
-    body = (
+    subject = gettext("Reset your password")
+    body = gettext(
         "We received a request to reset your password.\n\n"
-        f"Reset it here:\n{reset_url}\n\n"
+        "Reset it here:\n%(url)s\n\n"
         "If you did not request this, you can ignore this email."
-    )
+    ) % {"url": reset_url}
     log = dispatch_email(
         to_email=recipient,
         subject=subject,
@@ -120,20 +173,25 @@ def send_password_reset_email(recipient, reset_url):
         persist_body=False,
         sync=True,
     )
-    return 1 if log.status == log.Status.SENT else 0
+    from apps.integrations.transient_mail import accepted
+    return 1 if accepted(log) else 0
 
 
-def send_password_reset_otp(recipient, code, *, expires_in_minutes):
+def send_password_reset_otp(recipient, code, *, expires_in_minutes, reset_url="", account_label=""):
     """Deliver a recovery code without persisting it or crossing a queue."""
     from apps.integrations.dispatch import dispatch_email
 
-    subject = "Your password reset code"
-    body = (
+    subject = gettext("Your password reset code")
+    recovery_page = (gettext(
+        "Reset your %(account)s password at %(url)s\n"
+        "Enter your username or email, the code and your new password.\n\n"
+    ) % {"account": account_label, "url": reset_url} if reset_url else "")
+    body = gettext(
         "We received a request to reset your password.\n\n"
-        f"Your password reset code is: {code}\n\n"
-        f"This code expires in {expires_in_minutes} minutes and can be used once.\n\n"
+        "%(page)sYour password reset code is: %(code)s\n\n"
+        "This code expires in %(minutes)s minutes and can be used once.\n\n"
         "If you did not request this, you can ignore this email."
-    )
+    ) % {"page": recovery_page, "code": code, "minutes": expires_in_minutes}
     log = dispatch_email(
         to_email=recipient,
         subject=subject,
@@ -146,7 +204,8 @@ def send_password_reset_otp(recipient, code, *, expires_in_minutes):
         persist_body=False,
         sync=True,
     )
-    return 1 if log.status == log.Status.SENT else 0
+    from apps.integrations.transient_mail import accepted
+    return 1 if accepted(log) else 0
 
 
 def send_email_verification_otp(recipient, code):
@@ -154,11 +213,9 @@ def send_email_verification_otp(recipient, code):
 
     log = dispatch_email(
         to_email=recipient,
-        subject="Verify your email",
+        subject=gettext("Verify your email"),
         text_body=(
-            "Use this code to verify your email address:\n\n"
-            f"{code}\n\n"
-            "This code expires in 10 minutes."
+            gettext('Use this code to verify your email address:\n\n{code}\n\nThis code expires in 10 minutes.').format(code=code)
         ),
         makerspace=None,
         stream="account",
@@ -168,7 +225,8 @@ def send_email_verification_otp(recipient, code):
         persist_body=False,
         sync=True,
     )
-    return 1 if log.status == log.Status.SENT else 0
+    from apps.integrations.transient_mail import accepted
+    return 1 if accepted(log) else 0
 
 
 def send_makerspace_email(

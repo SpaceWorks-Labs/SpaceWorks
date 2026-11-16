@@ -1,4 +1,6 @@
 """Bounded retries for Lane D unpublished bytes retained after refusal."""
+from apps.operations.cloud_jobs import bounded
+
 
 from django.utils import timezone
 
@@ -8,6 +10,7 @@ from .models import TenantDumpCapture
 
 
 def cleanup_refused_tenant_dump_artifacts(*, limit=100):
+    limit = bounded.limit(limit)
     rows = tuple(
         TenantDumpCapture.objects.filter(
             status__in=(
@@ -20,7 +23,7 @@ def cleanup_refused_tenant_dump_artifacts(*, limit=100):
         .values_list("pk", "unpublished_object_key")[:limit]
     )
     removed = 0
-    for capture_id, key in rows:
+    for capture_id, key in bounded.items(rows):
         if not storage.delete_archive(key):
             continue
         removed += TenantDumpCapture.objects.filter(

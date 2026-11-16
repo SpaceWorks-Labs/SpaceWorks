@@ -10,7 +10,7 @@ def collect_private_object_keys(makerspace, add):
 
 def delete_for_makerspace(makerspace, cursor):
     """Clear N1 rows in dependency order inside the authorized purge context."""
-    from apps.payments.models import Payment, ProcessedStripeEvent, Refund
+    from apps.payments.models import Payment, ProcessedStripeEvent, Refund, RefundCase
 
     from apps.machines.models import (
         MachineServiceRequest,
@@ -40,12 +40,15 @@ def delete_for_makerspace(makerspace, cursor):
         "WHERE request.makerspace_id = %s)",
         [makerspace.id],
     )
+    cursor.execute("DELETE FROM machines_servicerequestconsumableusage WHERE makerspace_id = %s", [makerspace.id])
     cursor.execute("DELETE FROM machines_machineconsumableadjustment WHERE makerspace_id = %s", [makerspace.id])
     cursor.execute("DELETE FROM machines_machineusageentry WHERE machine_id IN (SELECT id FROM machines_machine WHERE makerspace_id = %s)", [makerspace.id])
     ServiceRequestFile.objects.filter(makerspace=makerspace).delete()
     # Manual settlements cascade with their payments (triggers are suspended for
     # this transaction), so the cash book needs no separate pass. Refunds are PROTECT
     # and must go first, or a space that ever refunded can never be purged.
+    # Refund cases PROTECT both their payment and their refund, so they go first.
+    RefundCase.objects.filter(payment__makerspace=makerspace).delete()
     Refund.objects.filter(payment__makerspace=makerspace).delete()
     Payment.objects.filter(makerspace=makerspace).delete()
     ProcessedStripeEvent.objects.filter(makerspace=makerspace).delete()

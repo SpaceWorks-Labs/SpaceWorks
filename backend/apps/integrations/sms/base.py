@@ -15,10 +15,6 @@ challenge row behind so the generic acknowledgement stays honest.
 from typing import Protocol
 
 
-class SmsDeliveryError(Exception):
-    """Raised only for a misconfigured provider, never for a rejected send."""
-
-
 class SmsProvider(Protocol):
     #: Stable key stored in PlatformSmsSettings.provider.
     key: str

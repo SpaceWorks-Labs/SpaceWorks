@@ -11,11 +11,12 @@ from apps.evidence import storage
 from apps.evidence.consumption import mark_consumed
 from apps.evidence.finalization import charge_storage_once, lock_evidence_for_attachment
 from apps.evidence.models import EvidencePhoto
-from apps.hardware_requests import loan_payments, notifications
+from apps.hardware_requests import guest_lending, loan_payments, notifications
 from apps.hardware_requests.handover_issue_helpers import (
     issue_individual_assets,
     validate_broken_rejects,
 )
+from apps.hardware_requests.due_policy import effective_due
 from apps.hardware_requests.models import HardwareRequest
 from apps.hardware_requests.self_checkout_models import PublicToolLoan
 from apps.hardware_requests.workflow_errors import (
@@ -29,6 +30,7 @@ from apps.hardware_requests.workflow_utils import constraint_name, locked_reques
 from apps.inventory import availability
 from apps.makerspaces.loan_policy import loan_days
 from apps.makerspaces.models import Makerspace
+from apps.separability import equipment_context_bridge as bridge
 from apps.hardware_requests import kit_checklists as kits
 
 
@@ -101,6 +103,7 @@ def issue_request(actor, request, evidence_id, remark="", asset_qr_payloads=None
     # reported before a missing photo, so staff are not asked for evidence of a handover
     # that cannot happen yet. It never refuses unless the makerspace opted into blocking.
     loan_payments.require_deposit_settled(request, actor)
+    guest_lending.guest_issue_gate(request, actor)  # decision 223 (c): a pass holder's mode, waiver, deposit
     evidence = EvidencePhoto.objects.filter(
         pk=evidence_id,
         makerspace_id=request.makerspace_id,
@@ -164,9 +167,13 @@ def issue_request(actor, request, evidence_id, remark="", asset_qr_payloads=None
         locked.issued_by = actor
         locked.issued_at = timezone.now()
         if locked.return_due_at is None:
-            locked.return_due_at = locked.issued_at + timedelta(
+            # An event-linked loan is due back when its event ends (decision 214);
+            # otherwise, and with Events off, the ordinary loan-days policy applies.
+            locked.return_due_at = effective_due(locked.makerspace, bridge.event_return_due(locked, locked.issued_at) or locked.issued_at + timedelta(
                 days=loan_days(locked.makerspace, [item.product for item in locked.items.filter(issued_quantity__gt=0).select_related("product__category")])
-            )
+            ))
+        # An on-site guest pass makes the loan due by the pass end, whatever the policy computed.
+        locked.return_due_at = guest_lending.cap_due(locked.makerspace, locked.requester, locked.return_due_at, at=locked.issued_at)
         locked.status = HardwareRequest.Status.ISSUED
         try:
             locked.save(
@@ -199,7 +206,7 @@ def issue_request(actor, request, evidence_id, remark="", asset_qr_payloads=None
         )
         notifications.notify_request_issued(locked)
         request_id = locked.pk
-        transaction.on_commit(lambda: loan_payments.raise_deposit(request_id, actor))
+        transaction.on_commit(lambda: loan_payments.on_request_issued(request_id, actor))
         return locked
 
 def set_return_due(actor, request, return_due_at):
@@ -217,7 +224,7 @@ def set_return_due(actor, request, return_due_at):
         rbac.scope_by_action(actor, rbac.Action.ACCEPT_REQUEST, PublicToolLoan.objects.all()).filter(
             request=locked, status=PublicToolLoan.Status.CHECKED_OUT,
         ).update(due_at=return_due_at)
-        locked.return_due_at = return_due_at
+        locked.return_due_at = guest_lending.cap_due(locked.makerspace, locked.requester, return_due_at, staff_entered=True)
         locked.return_reminder_sent_at = None
         locked.save(
             update_fields=["return_due_at", "return_reminder_sent_at", "updated_at"]

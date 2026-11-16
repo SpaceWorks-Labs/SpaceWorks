@@ -1,16 +1,18 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.accounts import mfa_challenges, mfa_policy
+from apps.accounts import device_memory, mfa_challenges, mfa_policy
+from apps.accounts.attestation import AttestationUnavailable
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.mfa_sessions import context
 from apps.accounts.serializers_mfa import (
     MFAChallengeSerializer, MFAChallengeResponseSerializer, MFACompletedSerializer,
     MFAEnrollmentSerializer, MFAPasswordSerializer, MFARecoverySerializer,
-    MFAStatusSerializer, MFAVerifySerializer,
+    MFAStatusSerializer, MFAVerifySerializer, MFAEnrollmentStartSerializer,
 )
 from apps.accounts.services_mfa import change
 from apps.accounts.throttles_mfa import MFAChallengeThrottle, MFAUserThrottle
@@ -31,21 +33,36 @@ class MFAStatusView(APIView):
     @extend_schema(tags=["MFA"], responses={200: MFAStatusSerializer, **errors(401, 403, 429)})
     def get(self, request):
         row = mfa_policy.credential(request.user)
-        return Response({"enabled": bool(row and row.enabled_at), "required": mfa_policy.required(request.user)})
+        return Response({"available": mfa_policy.available(request.user), "enabled": bool(row and row.enabled_at),
+                         "required": mfa_policy.required(request.user),
+                         "password_available": request.user.has_usable_password()})
 
-    @extend_schema(tags=["MFA"], request=MFAPasswordSerializer,
+    @extend_schema(tags=["MFA"], request=MFAEnrollmentStartSerializer,
                    responses={200: MFAChallengeResponseSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
-        from rest_framework.exceptions import AuthenticationFailed
-        data = _validated(MFAPasswordSerializer, request)
-        if not request.user.check_password(data["password"]):
-            raise AuthenticationFailed("Password verification failed.")
-        from rest_framework.exceptions import PermissionDenied
-        if getattr(request, "device_grant", None):
-            raise PermissionDenied("Enroll through browser sign-in, then sign in on this device again.")
+        from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+        mfa_policy.assert_available(request.user)
+        grant = getattr(request, "device_grant", None)
+        if grant is not None and grant.authority in ("staff", "event"):
+            # A native staff grant is only ever issued behind an enrolled factor.
+            raise PermissionDenied({"detail": gettext("Staff enroll an authenticator during device sign-in."),
+                                    "code": "native_staff_mfa_managed"})
+        if grant is not None:
+            # Starting invalidates this device's tokens; never strand it where confirm cannot re-issue.
+            from apps.accounts.services_device_tokens import assert_mobile_grant_creation_enabled
+            assert_mobile_grant_creation_enabled()
+        data = _validated(MFAEnrollmentStartSerializer, request)
+        if not request.user.has_usable_password():
+            from apps.accounts.reauthentication import require_enrollment_proof
+            require_enrollment_proof(request)
+        elif not request.user.check_password(data["password"]):
+            raise AuthenticationFailed(gettext("Password verification failed."))
         token = request.auth
+        # A device enrollment re-issues tokens on this grant, never a new one.
+        device = {"grant_id": str(grant.pk), "login_method": grant.login_method,
+                  "purpose": mfa_challenges.SETTINGS_ENROLL} if grant else None
         response = Response(mfa_challenges.start(request.user, context=context(
-            request, surface=token.get("surface"), staff_scope=token.get("staff_scope"))))
+            request, surface=token.get("surface"), device=device)))
         response["Cache-Control"] = "no-store"
         return response
 
@@ -53,6 +70,7 @@ class MFAStatusView(APIView):
 class MFAEnrollmentView(APIView):
     # Presented claim credentials still go through the central refusal registry.
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, MFAChallengeThrottle, MFAUserThrottle]
     throttle_scope = "mfa_verify"
 
@@ -69,14 +87,20 @@ class MFAVerifyView(MFAEnrollmentView):
     enrolling = False
 
     @extend_schema(tags=["MFA"], auth=[], request=MFAVerifySerializer,
+                   description="Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff role in the grant's fixed makerspace, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                    responses={200: MFACompletedSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         data = _validated(MFAVerifySerializer, request)
-        result = mfa_challenges.finish(data["challenge"], data["code"], request, enrolling=self.enrolling)
+        try:
+            result = mfa_challenges.finish(data["challenge"], data.get("code", ""), request, enrolling=self.enrolling,
+                                           factor=data.get("factor"), webauthn=data.get("webauthn"))
+        except AttestationUnavailable:
+            return Response({"detail": gettext("Device attestation is unavailable."), "code": "attestation_unavailable"}, status=503)
         raw = result.pop("refresh") if "device_grant" not in result else None
         response = Response(result)
         if raw:
             set_refresh_cookies(response, raw, request)
+            device_memory.attach(response, request)  # S-B: the remembered-device cookie
         response["Cache-Control"] = "no-store"
         return response
 
@@ -104,4 +128,5 @@ class MFADisableView(MFAStatusView):
                    responses={200: MFAStatusSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         change(request.user, _validated(MFAPasswordSerializer, request)["password"], disable=True)
-        return Response({"enabled": False, "required": False})
+        return Response({"available": mfa_policy.available(request.user), "enabled": False,
+                         "required": mfa_policy.required(request.user)})

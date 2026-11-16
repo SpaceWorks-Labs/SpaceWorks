@@ -4,6 +4,7 @@ import logging
 
 from django.db.models import Q
 
+from .staff_identity import person_q
 from .rbac_actions import (
     ORGANIZATION_GRANTABLE_ACTIONS,
     actions_for_organization_membership,
@@ -17,12 +18,21 @@ def _organization_authority_memberships(actor, *, makerspace_ids=None):
     from apps.makerspaces.servability import servable_q
     from apps.organizations.models import OrganizationMembership
 
+    # Native device sessions are membership-only (INVARIANTS: "Native device payloads stay
+    # membership-only"). Cutting org authority here, the single source every org branch
+    # reads, closes body-targeted requests too -- not just the URL/header pinning that
+    # SpaceWorksJWTAuthentication can check.
+    from apps.accounts.native_session import is_native_session
+
+    if is_native_session(actor):
+        return OrganizationMembership.objects.none()
+    # Organization authority belongs to the person, never a platform account or shell.
     filters = (
-        Q(
+        person_q("user__")
+        & Q(
             user=actor,
             status=OrganizationMembership.Status.ACTIVE,
             organization__is_active=True,
-            organization__makerspace_links__makerspace__superadmin_access_enabled=True,
         )
         & servable_q("organization__makerspace_links__makerspace")
     )
@@ -48,14 +58,8 @@ def has_any_org_authority(actor) -> bool:
 def _org_actions_for(actor, makerspace_id) -> set:
     """Return actions active organization grants confer in one makerspace.
 
-    Hard-hidden makerspaces are excluded here, not at the call sites, so every
-    consumer of organization authority inherits the exclusion. Reason: an
-    OrganizationMembership has no makerspace FK, so it sits in
-    `GLOBAL_ADMIN_MODELS` and the admin hide-scoping never narrows it. Without
-    this a superadmin could use the global membership admin to grant a third
-    party authority inside a makerspace that is hard-hidden FROM that superadmin
-    -- a proxy around the hide invariant. A real local MakerspaceMembership in a
-    hidden space still confers authority; an organization grant never does.
+    Grants reach every servable linked makerspace; the servability filter lives in
+    `_organization_authority_memberships`, so every consumer inherits it.
     """
     if actor is None or not getattr(actor, "is_authenticated", False):
         return set()

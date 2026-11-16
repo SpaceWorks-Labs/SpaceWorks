@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.accounts import rbac
 from apps.makerspaces.platform import feature_enabled
 from .models_materials import MachineMaterial
@@ -24,4 +25,4 @@ def validate_selection(space, machine_type, material, colour):
     rows = catalogue(space, machine_type)
     if not any(row["name"].casefold() == material.casefold() and
                colour.casefold() in {c.casefold() for c in row["colours"]} for row in rows):
-        raise ValidationError("Material and colour are not accepted by this makerspace.")
+        raise ValidationError(gettext("Material and colour are not accepted by this makerspace."))

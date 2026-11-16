@@ -2,9 +2,11 @@
 // path-bound, so the browser sends it with `credentials: "include"`; the operator lease
 // is sent as a header. The offline adapter encrypts a loaded lease/package; this
 // transport never persists cookies, normal login credentials or responses.
-import { API_V1_URL, staffRequest, StructuredApiError } from "../../lib/api";
+import { API_V1_URL, staffRequest } from "../../lib/api";
+import { apiError } from "../../lib/api/errors";
 import type { UploadResponse } from "../staff/panels/EvidenceUpload";
 import type { KitExpectation } from "../inventory/KitChecklist";
+import { currentSessionContext } from "../../lib/api/sessionContext";
 
 export type KioskBootstrap = {
   station: { id: number; name: string; kind: "scanner" | "handover" };
@@ -40,6 +42,12 @@ export type KioskWorkPackage = {
 
 const STATION_HEADERS = { "Content-Type": "application/json", "X-Station-CSRF": "1" };
 
+function operatorRequest<T>(path: string, options: RequestInit) {
+  // One account per person: the operator's own session; the server checks the station
+  // cookie and the operator's staff role in the station's makerspace.
+  return staffRequest<T>(path, { ...options, credentials: "include", cache: "no-store" }, currentSessionContext());
+}
+
 function stationPath(token: string, suffix: string) {
   return `/kiosk-stations/${encodeURIComponent(token)}/${suffix}`;
 }
@@ -52,7 +60,7 @@ export async function startKioskSession(token: string, pin: string, makerspaceSl
     headers: STATION_HEADERS,
     body: JSON.stringify(makerspaceSlug ? { pin, makerspace_slug: makerspaceSlug } : { pin }),
   });
-  if (!response.ok) throw new StructuredApiError(response.status, {});
+  if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   return (await response.json()) as KioskBootstrap;
 }
 
@@ -63,13 +71,13 @@ export async function endKioskSession(token: string) {
 }
 
 export function takeOperatorLease(token: string) {
-  return staffRequest<KioskLease>(stationPath(token, "operator-lease/"), {
+  return operatorRequest<KioskLease>(stationPath(token, "operator-lease/"), {
     method: "POST", headers: STATION_HEADERS,
   });
 }
 
 export function runOnlineCommand<T>(token: string, lease: string, kind: string, payload: object) {
-  return staffRequest<{ kind: string; result: T }>(stationPath(token, "commands/online/"), {
+  return operatorRequest<{ kind: string; result: T }>(stationPath(token, "commands/online/"), {
     method: "POST",
     headers: leaseHeaders(lease),
     body: JSON.stringify({ version: 1, kind, payload }),
@@ -81,13 +89,13 @@ function leaseHeaders(lease: string) {
 }
 
 export function loadWorkPackage(token: string, lease: string, kind: KioskWorkPackage["kind"], id: number) {
-  return staffRequest<KioskWorkPackage>(stationPath(token, "work-package/"), {
+  return operatorRequest<KioskWorkPackage>(stationPath(token, "work-package/"), {
     method: "POST", headers: leaseHeaders(lease), body: JSON.stringify({ kind, id }),
   });
 }
 
 export function prepareEvidence(token: string, lease: string, body: object) {
-  return staffRequest<UploadResponse>(stationPath(token, "evidence/prepare/"), {
+  return operatorRequest<UploadResponse>(stationPath(token, "evidence/prepare/"), {
     method: "POST", headers: leaseHeaders(lease), body: JSON.stringify(body),
   });
 }

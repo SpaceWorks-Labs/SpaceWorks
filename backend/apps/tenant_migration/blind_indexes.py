@@ -13,6 +13,7 @@ from apps.encryption.registry import all_fields
 from django.apps import apps
 
 from .insertion_errors import ImportVerificationError
+from apps.backup.capture_managers import every_row
 
 
 def rebuild_blind_indexes(target, *, batch_size=500):
@@ -25,7 +26,7 @@ def rebuild_blind_indexes(target, *, batch_size=500):
         model = apps.get_model(mapped.model_label)
         tenant_lookup = mapped.makerspace_path.replace(".", "__")
         field = model._meta.get_field(mapped.field_name)
-        rows = model.objects.filter(**{tenant_lookup: target.pk}).only(
+        rows = every_row(model).filter(**{tenant_lookup: target.pk}).only(
             model._meta.pk.name, mapped.field_name
         )
         for instance in rows.iterator(chunk_size=batch_size):

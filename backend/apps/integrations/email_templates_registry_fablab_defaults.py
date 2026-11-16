@@ -12,11 +12,12 @@ Two rules these defaults follow, and a reader changing them should keep:
   the person the notification is about, and it is the body a member reads — so no other
   member's name, no internal ids beyond their own, no staff notes.
 """
+from django.utils.translation import gettext_noop
 
 # --- events ---------------------------------------------------------------------------
 
-EVENTS_STAFF_SUBJECT = "{{ makerspace.name }} event #{{ event.id }} {{ event_name }}"
-EVENTS_STAFF_TEXT = """Event #{{ event.id }} {{ event_name }}.
+EVENTS_STAFF_SUBJECT = gettext_noop("{{ makerspace.name }} event #{{ event.id }} {{ event_label }}")
+EVENTS_STAFF_TEXT = gettext_noop("""Event #{{ event.id }} {{ event_label }}.
 Title: {{ event.title }}
 Time: {{ event.when }}
 Status: {{ event.status }}
@@ -24,110 +25,127 @@ Status: {{ event.status }}
 {% endif %}{% if registration %}Registration: #{{ registration.id }}
 Registrant: {{ registration.name }}
 Registration status: {{ registration.status }}
-{% endif %}"""
+{% endif %}""")
 
 EVENTS_REQUESTER_SUBJECTS = {
-    "published": "{{ event.title }} is open for registration",
-    "cancelled": "{{ event.title }} has been cancelled",
-    "completed": "Thank you for attending {{ event.title }}",
-    "registration_created": "You are registered for {{ event.title }}",
-    "registration_pending_approval": "Your application for {{ event.title }} is awaiting approval",
-    "registration_waitlisted": "You are on the waitlist for {{ event.title }}",
-    "registration_approved": "Your application for {{ event.title }} was approved",
-    "registration_rejected": "Your application for {{ event.title }} was not approved",
-    "registration_cancelled": "Your registration for {{ event.title }} was cancelled",
-    "registration_promoted": "A place has opened up for {{ event.title }}",
-    "registration_attended": "Your attendance at {{ event.title }} is recorded",
-    "series_published": "{{ event.title }} recurring schedule published",
-    "series_cancelled": "{{ event.title }} recurring schedule cancelled",
-    "series_completed": "{{ event.title }} recurring schedule completed",
-    "series_generation_failed": "{{ event.title }} needs schedule attention",
-    "reminder": "Reminder: {{ event.title }} is coming up",
+    "published": gettext_noop("{{ event.title }} is open for registration"),
+    "cancelled": gettext_noop("{{ event.title }} has been cancelled"),
+    "completed": gettext_noop("Thank you for attending {{ event.title }}"),
+    "registration_created": gettext_noop("You are registered for {{ event.title }}"),
+    "registration_pending_approval": gettext_noop("Your application for {{ event.title }} is awaiting approval"),
+    "registration_waitlisted": gettext_noop("You are on the waitlist for {{ event.title }}"),
+    "registration_approved": gettext_noop("Your application for {{ event.title }} was approved"),
+    "registration_rejected": gettext_noop("Your application for {{ event.title }} was not approved"),
+    "registration_cancelled": gettext_noop("Your registration for {{ event.title }} was cancelled"),
+    "registration_restored": gettext_noop("Your registration for {{ event.title }} was restored"),
+    "registration_promoted": gettext_noop("A place has opened up for {{ event.title }}"),
+    "registration_attended": gettext_noop("Your attendance at {{ event.title }} is recorded"),
+    "series_published": gettext_noop("{{ event.title }} recurring schedule published"),
+    "series_cancelled": gettext_noop("{{ event.title }} recurring schedule cancelled"),
+    "series_completed": gettext_noop("{{ event.title }} recurring schedule completed"),
+    "series_generation_failed": gettext_noop("{{ event.title }} needs schedule attention"),
+    "reminder": gettext_noop("Reminder: {{ event.title }} is coming up"),
 }
 
 EVENTS_REQUESTER_BODIES = {
-    "published": "Registration is now open.",
+    "published": gettext_noop("Registration is now open."),
     "cancelled": (
-        "This event has been cancelled. Please contact the makerspace if you have "
-        "questions."
+        gettext_noop("This event has been cancelled. Please contact the makerspace if you have "
+        "questions.")
     ),
-    "completed": "This event has finished. Thank you for taking part.",
-    "registration_created": "Your place is booked. We look forward to seeing you.",
+    "completed": gettext_noop("This event has finished. Thank you for taking part."),
+    "registration_created": gettext_noop("Your place is booked. We look forward to seeing you."),
     "registration_pending_approval": (
-        "Your application was received. No payment is due unless it is approved into "
-        "a confirmed place."
+        gettext_noop("Your application was received. No payment is due unless it is approved into "
+        "a confirmed place.")
     ),
     "registration_waitlisted": (
-        "Your registration is on the waiting list. No payment is due unless a place "
-        "is confirmed."
+        gettext_noop("Your registration is on the waiting list. No payment is due unless a place "
+        "is confirmed.")
     ),
     "registration_approved": (
-        "Your application was approved. The registration status above shows whether "
-        "your place is confirmed or waitlisted."
+        gettext_noop("Your application was approved. The registration status above shows whether "
+        "your place is confirmed or waitlisted.")
     ),
     "registration_rejected": (
-        "Your application was not approved. You were not charged."
+        gettext_noop("Your application was not approved. You were not charged.")
     ),
     "registration_cancelled": (
-        "Your registration has been cancelled. Contact the makerspace about any "
-        "settled payment or registering again for a paid event."
+        gettext_noop("Your registration has been cancelled. Contact the makerspace about any "
+        "settled payment or registering again for a paid event.")
     ),
     "registration_promoted": (
-        "You were on the waiting list and a place has opened up. Your registration is "
-        "now confirmed."
+        gettext_noop("You were on the waiting list and a place has opened up. Your registration is "
+        "now confirmed.")
     ),
-    "registration_attended": "Your attendance has been recorded.",
-    "series_published": "The recurring schedule is now published.",
-    "series_cancelled": "The recurring schedule has been cancelled.",
-    "series_completed": "The recurring schedule is complete.",
-    "series_generation_failed": "Automatic occurrence generation needs staff attention.",
-    "reminder": "Your event is coming up. Please check the time and location above.",
+    "registration_attended": gettext_noop("Your attendance has been recorded."),
+    "registration_restored": (
+        gettext_noop("Your cancellation was undone. Your current registration status is shown above. "
+        "Registered means your place is confirmed; waitlisted means you are in the queue; "
+        "pending_approval means staff still need to approve your application.")
+    ),
+    "series_published": gettext_noop("The recurring schedule is now published."),
+    "series_cancelled": gettext_noop("The recurring schedule has been cancelled."),
+    "series_completed": gettext_noop("The recurring schedule is complete."),
+    "series_generation_failed": gettext_noop("Automatic occurrence generation needs staff attention."),
+    "reminder": gettext_noop("Your event is coming up. Please check the time and location above."),
 }
 
-EVENTS_REQUESTER_TEXT = """Hello {{ registration.name|default:"there" }},
+EVENTS_REQUESTER_TEXT = gettext_noop("""Hello {{ registration.name|default:"there" }},
 
 {{ makerspace.name }}
 Event: {{ event.title }}
 Time: {{ event.when }}
 {% if event.location %}Location: {{ event.location }}
 {% endif %}
+{% if event_name == "registration_restored" %}Registration status: {{ registration.status }}
+{% endif %}
 {{ next_steps }}
-"""
+""")
 
 # --- bookings -------------------------------------------------------------------------
 
 BOOKINGS_STAFF_SUBJECT = (
-    "{{ makerspace.name }} booking #{{ booking.id }} {{ event_name }}"
+    gettext_noop("{{ makerspace.name }} booking #{{ booking.id }} {{ event_label }}")
 )
-BOOKINGS_STAFF_TEXT = """Booking #{{ booking.id }} {{ event_name }}.
+BOOKINGS_STAFF_TEXT = gettext_noop("""Booking #{{ booking.id }} {{ event_label }}.
 Space: {{ booking.space.name }}
 Time: {{ booking.when }}
 Status: {{ booking.status }}
 Booker: {{ booking.name }}
-"""
+{% if event_name == "restored" %}{{ next_steps }}
+{% endif %}""")
 
-BOOKINGS_REQUESTER_SUBJECT = "Booking {{ booking.status }}: {{ booking.space.name }}"
+BOOKINGS_REQUESTER_SUBJECT = (
+    gettext_noop("Booking {% if event_name == 'restored' %}restored{% else %}{{ booking.status }}{% endif %}: "
+    "{{ booking.space.name }}")
+)
 
 # Verbatim from `bookings.notifications._message`, which is the wording members receive
 # today. Changing it here changes what every unedited space sends.
 BOOKINGS_REQUESTER_BODIES = {
     "created": (
-        "Your booking request was received. We will contact you if its status changes."
+        gettext_noop("Your booking request was received. We will contact you if its status changes.")
     ),
     "confirmed": (
-        "Your booking is confirmed. Please contact the makerspace if your plans change."
+        gettext_noop("Your booking is confirmed. Please contact the makerspace if your plans change.")
     ),
     "rejected": (
-        "Your request was not approved. Please contact the makerspace if you have "
-        "questions."
+        gettext_noop("Your request was not approved. Please contact the makerspace if you have "
+        "questions.")
     ),
-    "cancelled": "Your booking has been cancelled.",
-    "completed": "Your booking has been marked completed.",
-    "no_show": "Your booking has been marked as a no-show.",
-    "reminder": "Your booking is coming up. Please check the time and space above.",
+    "cancelled": gettext_noop("Your booking has been cancelled."),
+    "restored": (
+        gettext_noop("Your cancellation was undone. The current booking status and time are shown above. "
+        "Confirmed means your reservation is booked; pending means staff still need to "
+        "approve your request. Please check the time and contact the makerspace if your plans change.")
+    ),
+    "completed": gettext_noop("Your booking has been marked completed."),
+    "no_show": gettext_noop("Your booking has been marked as a no-show."),
+    "reminder": gettext_noop("Your booking is coming up. Please check the time and space above."),
 }
 
-BOOKINGS_REQUESTER_TEXT = """Hello {{ booking.name }},
+BOOKINGS_REQUESTER_TEXT = gettext_noop("""Hello {{ booking.name }},
 
 {{ makerspace.name }}
 Space: {{ booking.space.name }}
@@ -135,14 +153,14 @@ Time: {{ booking.when }}
 Status: {{ booking.status }}
 
 {{ next_steps }}
-"""
+""")
 
 # --- maintenance ----------------------------------------------------------------------
 
 MAINTENANCE_STAFF_SUBJECT = (
-    "{{ makerspace.name }} maintenance {{ event_name }}: {{ machine.name }}"
+    gettext_noop("{{ makerspace.name }} maintenance {{ event_label }}: {{ machine.name }}")
 )
-MAINTENANCE_STAFF_TEXT = """Maintenance {{ event_name }}.
+MAINTENANCE_STAFF_TEXT = gettext_noop("""Maintenance {{ event_label }}.
 Machine: {{ machine.name }}
 {% if schedule %}Schedule: #{{ schedule.id }}
 Description: {{ schedule.description }}
@@ -152,43 +170,43 @@ Active: {{ schedule.is_active }}
 Summary: {{ log.summary }}
 Performed at: {{ log.performed_at }}
 {% if log.parts_note %}Parts note: {{ log.parts_note }}
-{% endif %}{% endif %}"""
+{% endif %}{% endif %}""")
 
 MAINTENANCE_REQUESTER_SUBJECTS = {
-    "schedule_created": "Maintenance scheduled for {{ machine.name }}",
-    "schedule_updated": "Maintenance schedule changed for {{ machine.name }}",
-    "schedule_deactivated": "Maintenance schedule paused for {{ machine.name }}",
-    "schedule_completed": "Maintenance completed on {{ machine.name }}",
-    "logged": "Maintenance recorded on {{ machine.name }}",
+    "schedule_created": gettext_noop("Maintenance scheduled for {{ machine.name }}"),
+    "schedule_updated": gettext_noop("Maintenance schedule changed for {{ machine.name }}"),
+    "schedule_deactivated": gettext_noop("Maintenance schedule paused for {{ machine.name }}"),
+    "schedule_completed": gettext_noop("Maintenance completed on {{ machine.name }}"),
+    "logged": gettext_noop("Maintenance recorded on {{ machine.name }}"),
 }
 
 MAINTENANCE_REQUESTER_BODIES = {
     "schedule_created": (
-        "Maintenance has been scheduled for this machine. It may be unavailable around "
-        "the due date."
+        gettext_noop("Maintenance has been scheduled for this machine. It may be unavailable around "
+        "the due date.")
     ),
-    "schedule_updated": "The maintenance schedule for this machine has changed.",
-    "schedule_deactivated": "Scheduled maintenance for this machine has been paused.",
-    "schedule_completed": "Scheduled maintenance on this machine is complete.",
-    "logged": "Maintenance work on this machine has been recorded.",
+    "schedule_updated": gettext_noop("The maintenance schedule for this machine has changed."),
+    "schedule_deactivated": gettext_noop("Scheduled maintenance for this machine has been paused."),
+    "schedule_completed": gettext_noop("Scheduled maintenance on this machine is complete."),
+    "logged": gettext_noop("Maintenance work on this machine has been recorded."),
 }
 
 # Deliberately thinner than the staff body: a member is told the machine and what it
 # means for them, never the internal schedule ids, parts notes or engineer summaries.
-MAINTENANCE_REQUESTER_TEXT = """Hello,
+MAINTENANCE_REQUESTER_TEXT = gettext_noop("""Hello,
 
 {{ makerspace.name }}
 Machine: {{ machine.name }}
 {% if schedule %}Next due: {{ schedule.next_due }}
 {% endif %}
 {{ next_steps }}
-"""
+""")
 
 # --- membership -----------------------------------------------------------------------
 
 MEMBERSHIP_STAFF_SUBJECTS = {
-    "request_pending": "{{ makerspace.name }}: membership request pending",
-    "member_joined": "{{ makerspace.name }}: member joined",
+    "request_pending": gettext_noop("{{ makerspace.name }}: membership request pending"),
+    "member_joined": gettext_noop("{{ makerspace.name }}: member joined"),
 }
 
 MEMBERSHIP_STAFF_TEXTS = {
@@ -200,8 +218,8 @@ MEMBERSHIP_STAFF_TEXTS = {
 }
 
 MEMBERSHIP_REQUESTER_SUBJECTS = {
-    "request_pending": "Your membership request at {{ makerspace.name }}",
-    "member_joined": "Welcome to {{ makerspace.name }}",
+    "request_pending": gettext_noop("Your membership request at {{ makerspace.name }}"),
+    "member_joined": gettext_noop("Welcome to {{ makerspace.name }}"),
 }
 
 MEMBERSHIP_REQUESTER_TEXTS = {

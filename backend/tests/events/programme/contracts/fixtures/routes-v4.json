@@ -1,0 +1,522 @@
+{
+  "contract_version": 4,
+  "base": "routes-v3.json",
+  "enabled": false,
+  "summary": "Delta over routes-v3 (and the C2 rows of integration/fixtures/routes-gf1.json): G-final part 4 organizer team and submission reads, and the help-type detail route without the retired POST. Rows here replace a base row of the same name; v3 bytes stay frozen.",
+  "routes": [
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/",
+      "name": "events-programme-admin-teams",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/{team_id}/",
+      "name": "events-programme-admin-team-detail",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/submissions/",
+      "name": "events-programme-admin-submissions",
+      "scope": "admin",
+      "owner": "B",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/submissions/{submission_id}/",
+      "name": "events-programme-admin-submission-detail",
+      "scope": "admin",
+      "owner": "B",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/help-types/{type_id}/",
+      "name": "events-programme-admin-help-types-detail",
+      "scope": "admin",
+      "owner": "C2",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "PATCH": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/decline-request/",
+      "name": "events-programme-member-team-decline-request",
+      "scope": "member",
+      "owner": "A",
+      "enabled": false,
+      "operations": {
+        "POST": {
+          "authentication": "active_member_owner",
+          "authority": "owner_and_live_subject_eligibility",
+          "legacy_v1": false,
+          "api_client": "public:write + authenticated owner checks",
+          "request_example": {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "expected_version": 4,
+            "request_id": 31
+          },
+          "response_example": {
+            "id": 21,
+            "event_id": 42,
+            "version": 5,
+            "state": "forming"
+          },
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            410,
+            413,
+            423,
+            429,
+            503
+          ]
+        }
+      },
+      "schema_scope": "literal_examples_and_common_envelope"
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/handover/",
+      "name": "events-programme-member-team-handover",
+      "scope": "member",
+      "owner": "A",
+      "enabled": false,
+      "operations": {
+        "POST": {
+          "authentication": "active_member_owner",
+          "authority": "owner_and_live_subject_eligibility",
+          "legacy_v1": false,
+          "api_client": "public:write + authenticated owner checks",
+          "request_example": {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "expected_version": 4,
+            "new_leader_id": 52
+          },
+          "response_example": {
+            "id": 21,
+            "event_id": 42,
+            "version": 5,
+            "state": "forming"
+          },
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            410,
+            413,
+            423,
+            429,
+            503
+          ]
+        }
+      },
+      "schema_scope": "literal_examples_and_common_envelope"
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/remove-member/",
+      "name": "events-programme-member-team-remove-member",
+      "scope": "member",
+      "owner": "A",
+      "enabled": false,
+      "operations": {
+        "POST": {
+          "authentication": "active_member_owner",
+          "authority": "owner_and_live_subject_eligibility",
+          "legacy_v1": false,
+          "api_client": "public:write + authenticated owner checks",
+          "request_example": {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "expected_version": 4,
+            "member_id": 52
+          },
+          "response_example": {
+            "id": 21,
+            "event_id": 42,
+            "version": 5,
+            "state": "forming"
+          },
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            410,
+            413,
+            423,
+            429,
+            503
+          ]
+        }
+      },
+      "schema_scope": "literal_examples_and_common_envelope"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/{team_id}/rename/",
+      "name": "events-programme-admin-team-rename",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "operations": {
+        "POST": {
+          "authentication": "active_staff",
+          "authority": "event_grant_manage_team",
+          "legacy_v1": false,
+          "api_client": "native event grant",
+          "request_example": {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "expected_version": 4,
+            "name": "Makers"
+          },
+          "response_example": {
+            "id": 21,
+            "event_id": 42,
+            "version": 5,
+            "state": "forming"
+          },
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            410,
+            413,
+            423,
+            429,
+            503
+          ]
+        }
+      },
+      "schema_scope": "literal_examples_and_common_envelope"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/{team_id}/move-member/",
+      "name": "events-programme-admin-team-move-member",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "operations": {
+        "POST": {
+          "authentication": "active_staff",
+          "authority": "event_grant_manage_team",
+          "legacy_v1": false,
+          "api_client": "native event grant",
+          "request_example": {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "expected_version": 4,
+            "member_id": 52,
+            "to_team_id": 22
+          },
+          "response_example": {
+            "id": 21,
+            "event_id": 42,
+            "version": 5,
+            "state": "forming"
+          },
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            410,
+            413,
+            423,
+            429,
+            503
+          ]
+        }
+      },
+      "schema_scope": "literal_examples_and_common_envelope"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/{team_id}/delete/",
+      "name": "events-programme-admin-team-delete",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "operations": {
+        "POST": {
+          "authentication": "active_staff",
+          "authority": "event_grant_manage_team",
+          "legacy_v1": false,
+          "api_client": "native event grant",
+          "request_example": {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "expected_version": 4
+          },
+          "response_example": {
+            "id": 21,
+            "event_id": 42,
+            "version": 5,
+            "state": "forming"
+          },
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            410,
+            413,
+            423,
+            429,
+            503
+          ]
+        }
+      },
+      "schema_scope": "literal_examples_and_common_envelope"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/{team_id}/restore/",
+      "name": "events-programme-admin-team-restore",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "operations": {
+        "POST": {
+          "authentication": "active_staff",
+          "authority": "event_grant_manage_team",
+          "legacy_v1": false,
+          "api_client": "native event grant",
+          "request_example": {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "expected_version": 5
+          },
+          "response_example": {
+            "id": 21,
+            "event_id": 42,
+            "version": 5,
+            "state": "forming"
+          },
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            410,
+            413,
+            423,
+            429,
+            503
+          ]
+        }
+      },
+      "schema_scope": "literal_examples_and_common_envelope"
+    }
+  ]
+}

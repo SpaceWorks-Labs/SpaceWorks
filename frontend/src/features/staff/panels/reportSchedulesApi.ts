@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StructuredApiError, staffRequest } from "../../../lib/api";
 import type { NotificationDestination } from "../notificationDestinationTypes";
 
@@ -98,7 +99,7 @@ export function parseRecipientEmails(raw: string) {
 
 export function scheduleErrorText(error: unknown, fallback: string) {
   if (error instanceof StructuredApiError) {
-    if (error.code === "report_schedule_skipped") return "The schedule is inactive or was skipped, so nothing was generated.";
+    if (error.code === "report_schedule_skipped") return t`The schedule is inactive or was skipped, so nothing was generated.`;
     return error.message || fallback;
   }
   return error instanceof Error ? error.message : fallback;

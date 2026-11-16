@@ -1,7 +1,8 @@
-import { Link } from "react-router-dom";
-
-import { EmptyState } from "../../../../components/ui";
+import { plural, t } from "@lingui/core/macro";
+import { EmptyState, ListRow, StatusPill } from "../../../../components/ui";
+import type { Identity } from "../../../../components/ui/types";
 import type { Machine, MachineType, MachineStatus } from "../../machinesApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type Props = {
   machineTypes: MachineType[];
@@ -13,16 +14,20 @@ type Props = {
   hrefFor: (machineType: MachineType) => string;
 };
 
-const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
-
 // Only the states worth surfacing on a card. `idle` is the resting state and says nothing;
 // `reserved` is normal scheduling. What an operator scans this grid for is "what is busy"
 // and "what is not usable".
-const HIGHLIGHT: { status: MachineStatus; label: string; tone: string }[] = [
-  { status: "running", label: "running", tone: "bg-success text-on-success" },
-  { status: "maintenance", label: "in maintenance", tone: "bg-warn text-on-warn" },
-  { status: "offline", label: "offline", tone: "bg-danger text-bg" },
+const HIGHLIGHT: { status: MachineStatus; label: string; tone: "success" | "warn" | "danger" }[] = [
+  { status: "running", label: "running", tone: "success" },
+  { status: "maintenance", label: t`in maintenance`, tone: "warn" },
+  { status: "offline", label: "offline", tone: "danger" },
 ];
+
+/** The type's own configured icon (short text the space chose) when set, else the generic cog. */
+export function machineTypeIdentity(machineType: MachineType): Identity {
+  const icon = machineType.icon?.trim();
+  return icon ? { kind: "code", code: icon } : { kind: "icon", icon: "Cog", tone: "accent" };
+}
 
 /** The machines index: one card per reachable machine type.
  *
@@ -43,11 +48,7 @@ export function MachineTypeCards({
 }: Props) {
   if (typesLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Loading machine types">
-        {[0, 1, 2].map((slot) => (
-          <div key={slot} className="h-28 animate-pulse rounded-xl border border-line bg-surface" />
-        ))}
-      </div>
+      <LogoLoader label={t`Loading machine types`} size={48} className="min-h-28 py-3" />
     );
   }
 
@@ -56,10 +57,7 @@ export function MachineTypeCards({
   // operator their console is empty when it is merely broken.
   if (!typesFailed && !machineTypes.length) {
     return (
-      <EmptyState
-        title="No machine types available"
-        description="No reachable machine types are configured for you in this makerspace."
-      />
+      <EmptyState message={t`No machine types available. Ask your space manager to configure your machine access.`} />
     );
   }
 
@@ -74,34 +72,27 @@ export function MachineTypeCards({
         })).filter((entry) => entry.count > 0);
 
         return (
-          <Link
+          <ListRow
             key={machineType.id}
-            to={hrefFor(machineType)}
-            className={`group grid gap-3 rounded-xl border border-line bg-panel p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-soft-lg ${focusRing}`}
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              {machineType.icon ? <span aria-hidden="true" className="text-lg">{machineType.icon}</span> : null}
-              <span className="truncate font-display text-lg font-semibold text-ink">{machineType.name}</span>
-            </span>
-            <span className="flex flex-wrap items-center gap-2">
+            href={hrefFor(machineType)} title={machineType.name}
+            identity={machineTypeIdentity(machineType)}
+            meta={<span className="flex flex-wrap items-center gap-2">
               {/* A count is stated as fact, so it must not be stated while the fleet is
                   still loading or after the request failed. */}
               {machinesLoading ? (
-                <span className="font-mono text-xs text-muted">counting…</span>
+                <span className="tabular-nums text-xs text-muted">{t`counting…`}</span>
               ) : machinesFailed ? (
-                <span className="font-mono text-xs text-muted">count unavailable</span>
+                <span className="tabular-nums text-xs text-muted">{t`count unavailable`}</span>
               ) : (
-                <span className="chip">{owned.length} {owned.length === 1 ? "machine" : "machines"}</span>
+                <span className="chip">{plural(owned.length, { one: "# machine", other: "# machines" })}</span>
               )}
               {!machinesLoading && !machinesFailed
                 ? highlights.map((entry) => (
-                    <span key={entry.label} className={`status-box ${entry.tone}`}>
-                      {entry.count} {entry.label}
-                    </span>
+                    <StatusPill key={entry.label} label={`${entry.count} ${entry.label}`} tone={entry.tone} />
                   ))
                 : null}
-            </span>
-          </Link>
+            </span>}
+          />
         );
       })}
     </div>

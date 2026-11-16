@@ -1,0 +1,63 @@
+import { t } from "@lingui/core/macro";
+import { useState } from "react";
+import { Modal } from "../../../components/ui/Modal";
+import { Field } from "../../../components/ui/Field";
+import { commandError, type EventScope } from "../../events/stagedForms/privateQueries";
+import { utcInstant } from "../../events/stagedForms/formPayload";
+import { reimbursementAdminPath, useClaimReviewCommand } from "./api";
+import { MinorAmountInput } from "../../forms/MinorAmountInput";
+import { travelCategoryLabel } from "../../events/reimbursements/labels";
+import type { AllocationCommand, ClaimReviewDetail } from "./types";
+import { ReasonSelect } from "./reasonCodes";
+import { BoxArt } from "../../../components/BoxSpinner";
+type Action = "extend" | "attendance-attestations" | "receipt-allocation-overrides";
+export function ClaimFinanceAction({ scope, row, action, onClose }: { scope: EventScope; row: ClaimReviewDetail; action: Action; onClose: () => void }) {
+  const [reason, setReason] = useState("");
+  const [note, setNote] = useState("");
+  const [when, setWhen] = useState("");
+  const [evidence, setEvidence] = useState("");
+  const [lineId, setLineId] = useState(row.lines[0]?.line_uuid ?? "");
+  const [total, setTotal] = useState<number | null>(null);
+  const [allocations, setAllocations] = useState<AllocationCommand["allocations"]>([]);
+  const [error, setError] = useState("");
+  const mutation = useClaimReviewCommand(scope);
+  const line = row.lines.find(item => item.line_uuid === lineId);
+  const title = action === "extend" ? t`Extend claim deadline` : action === "attendance-attestations" ? t`Exceptional attendance attestation` : t`Receipt allocation override`;
+  const dirty = Boolean(reason || note || when || evidence || total !== null || allocations.length || lineId !== row.lines[0]?.line_uuid);
+  return <Modal open title={title} onClose={() => { if (!mutation.isPending && (!dirty || window.confirm(t`Discard this unsaved finance action?`))) onClose(); }}>
+    <form className="grid gap-4" onSubmit={event => { event.preventDefault();
+      try {
+        const common = { expected_version: row.version, reason_code: reason, note: note.trim() };
+        if (action === "extend") {
+          const due_at = utcInstant(when); if (Date.parse(due_at) <= Date.now()) throw new Error(t`Choose a future deadline.`);
+          mutation.mutate({ path: `${reimbursementAdminPath(scope)}claims/${row.id}/${action}/`, body: { ...common, due_revision: row.due_revision, due_at } }, { onSuccess: onClose });
+        } else if (action === "attendance-attestations") {
+          const refs = evidence.split(",").map(value => value.trim()).filter(Boolean);
+          if (!refs.length || refs.length > 20 || refs.some(ref => !/^[A-Za-z0-9:_-]{1,128}$/.test(ref))) throw new Error(t`Enter up to 20 evidence references (letters, digits, colon, dash or underscore).`);
+          if (row.registration_id === null) throw new Error(t`This claim has no registration to attest.`);
+          mutation.mutate({ path: `${reimbursementAdminPath(scope)}claims/${row.id}/${action}/`, body: { ...common, registration_id: row.registration_id,
+            expected_attendance_revision: row.attendance_revision, attended_at: utcInstant(when), venue_evidence_refs: refs } }, { onSuccess: onClose });
+        } else if (line && line.receipt_asset_id) {
+          if (!allocations.length || total === null || total < 1 || allocations.some(item => !Number.isSafeInteger(item.original_amount_minor))) throw new Error(t`Enter the receipt total and allocations.`);
+          mutation.mutate({ path: `${reimbursementAdminPath(scope)}claims/${row.id}/${action}/`, body: { ...common, asset_id: line.receipt_asset_id,
+            expected_receipt_use_version: line.receipt_use_version, receipt_total_minor: total, original_currency: line.original_currency, allocations } }, { onSuccess: onClose });
+        }
+      } catch (failure) { setError(failure instanceof Error ? failure.message : t`Check these fields.`); }
+    }}><p>{action === "attendance-attestations" ? t`Record evidence of venue attendance for this claim. A later attendance correction invalidates this attestation. Holds need separate review.` : action === "receipt-allocation-overrides" ? t`Allocate the original receipt amount across authorized same-host claim lines. The combined amount cannot exceed the receipt total.` : t`The owner will be notified of the new deadline.`}</p>
+      <fieldset disabled={mutation.isPending} className="grid gap-4"><legend className="sr-only">{t`Finance action details`}</legend>
+        {action !== "receipt-allocation-overrides" ? <Field label={action === "extend" ? t`New due time (your local time)` : t`Attended at (your local time)`}><input className="desk-input" type="datetime-local" required value={when} onChange={event => setWhen(event.target.value)} /></Field> : <>
+          <Field label={t`Receipt from claim expense`}><select className="desk-input" required value={lineId} onChange={event => { setLineId(event.target.value); setAllocations([]); }}>{row.lines.map((item, index) => <option key={item.line_uuid} value={item.line_uuid}>{t`Expense ${index + 1} · ${travelCategoryLabel(item.category)}`}</option>)}</select></Field>
+          <Field label={t`Full receipt total (${line?.original_currency ?? ""})`}><MinorAmountInput required currency={line?.original_currency ?? ""} value={total} onChange={setTotal} /></Field>
+          {allocations.map((allocation, index) => <div key={index} className="grid gap-3 rounded-xl border border-line p-3">
+            <Field label={t`Claim UUID for allocation ${index + 1}`}><input className="desk-input" required value={allocation.claim_uuid} onChange={event => setAllocations(allocations.map((value, i) => i === index ? { ...value, claim_uuid: event.target.value } : value))} /></Field>
+            <Field label={t`Line UUID for allocation ${index + 1}`}><input className="desk-input" required value={allocation.line_uuid} onChange={event => setAllocations(allocations.map((value, i) => i === index ? { ...value, line_uuid: event.target.value } : value))} /></Field>
+            <Field label={t`Original amount for allocation ${index + 1} (${line?.original_currency ?? ""})`}><MinorAmountInput required currency={line?.original_currency ?? ""} value={allocation.original_amount_minor} onChange={minor => setAllocations(allocations.map((value, i) => i === index ? { ...value, original_amount_minor: minor ?? Number.NaN } : value))} /></Field>
+            <button type="button" className="desk-button" onClick={() => setAllocations(allocations.filter((_, i) => i !== index))}>{t`Remove allocation`}</button></div>)}
+          <button type="button" className="desk-button" onClick={() => setAllocations([...allocations, { claim_uuid: row.uuid, line_uuid: lineId, original_amount_minor: line?.original_amount_minor ?? 1 }])}>{t`Add allocation`}</button></>}
+        {action === "attendance-attestations" ? <Field label={t`Venue evidence references`} hint={t`Comma separated references of authorized venue evidence.`}><input className="desk-input" required value={evidence} onChange={event => setEvidence(event.target.value)} /></Field> : null}
+        <Field label={t`Reason`}><ReasonSelect value={reason} onChange={setReason} /></Field>
+        <Field label={t`Finance note`}><textarea className="desk-input" required rows={3} maxLength={5000} value={note} onChange={event => setNote(event.target.value)} /></Field>
+        <button type="submit" className="desk-button-primary">{mutation.isPending ? <><BoxArt size={16} mono />{t`Recording…`}</> : t`Confirm and record`}</button></fieldset>
+      {error || mutation.error ? <p role="alert">{error || commandError(mutation.error)}</p> : null}
+    </form></Modal>;
+}

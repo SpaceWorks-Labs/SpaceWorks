@@ -1,5 +1,6 @@
 """Atomic adoption of preserved memberships after target-side email proof."""
 
+from django.utils.translation import gettext
 import logging
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -7,6 +8,7 @@ from django.db import DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.accounts.staff_identity import is_person, person_q
 from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.makerspaces import limits
@@ -37,30 +39,30 @@ def _member_role(makerspace):
         .first()
     )
     if role is None or role.makerspace_id != makerspace.pk:
-        raise ValidationError({"detail": "This makerspace has no valid Member role."})
+        raise ValidationError({"detail": gettext("This makerspace has no valid Member role.")})
     return role
 
 
 def _validate_address_proof(user, pending):
-    """Require the proven address; every occupying User, including walk-ins, counts."""
-    current = User.objects.filter(pk=user.pk).first()
+    """Require a member account with the proven address, including walk-ins."""
+    current = User.objects.filter(person_q(), pk=user.pk).first()
     if (
         current is None
         or current.email_verified_at is None
         or not current.email
         or current.email.casefold() != pending.email.casefold()
     ):
-        raise ValidationError({"detail": "A verified matching email is required."})
+        raise ValidationError({"detail": gettext("A verified matching email is required.")})
     return current
 
 
 def _validate_tenant_edges(pending, makerspace, member_role):
     if member_role.makerspace_id != makerspace.pk:
-        raise ValidationError({"detail": "Member role belongs to another makerspace."})
+        raise ValidationError({"detail": gettext("Member role belongs to another makerspace.")})
     for field in ("accepted_waiver", "witnessed_waiver"):
         waiver_id = getattr(pending, f"{field}_id")
         if waiver_id and getattr(pending, field).makerspace_id != makerspace.pk:
-            raise ValidationError({field: "Waiver belongs to another makerspace."})
+            raise ValidationError({field: gettext("Waiver belongs to another makerspace.")})
 
 
 def _actor(snapshot, makerspace):
@@ -78,7 +80,7 @@ def _actor(snapshot, makerspace):
     return target_id, snapshot
 
 
-def _membership_values(pending, makerspace, user, member_role):
+def _membership_values(pending, makerspace, user):
     verified_by, verified_snapshot = _actor(
         pending.verified_actor_snapshot, makerspace
     )
@@ -95,8 +97,6 @@ def _membership_values(pending, makerspace, user, member_role):
     return {
         "makerspace": makerspace,
         "user": user,
-        "assigned_role": member_role,
-        "role": member_role.legacy_role or MakerspaceMembership.Role.CUSTOM,
         "receives_notifications": default("receives_notifications"),
         "can_refer": default("can_refer"),
         "can_verify": default("can_verify"),
@@ -148,7 +148,7 @@ def adopt_pending_membership(user, pending):
         user = _validate_address_proof(user, pending)
         if pending.adopted_membership_id:
             if pending.adopted_membership.user_id != user.pk:
-                raise ValidationError({"detail": "Pending import was adopted by another account."})
+                raise ValidationError({"detail": gettext("Pending import was adopted by another account.")})
             return pending.adopted_membership
 
         existing = MakerspaceMembership.objects.select_for_update().filter(
@@ -169,10 +169,15 @@ def adopt_pending_membership(user, pending):
                 pending.save(update_fields=["unresolved_reason"])
                 return None
 
-        values = _membership_values(pending, makerspace, user, member_role)
+        values = _membership_values(pending, makerspace, user)
         try:
             with transaction.atomic():
                 membership = MakerspaceMembership.objects.create(**values)
+                from apps.makerspaces.role_membership_writes import replace_membership_roles
+                changes = replace_membership_roles(
+                    membership=membership, roles=[member_role], actor=user,
+                    reason="membership.adopted_from_import", fresh_lifecycle=True,
+                )
         except IntegrityError:
             if MakerspaceMembership.objects.filter(
                 makerspace=makerspace, user=user
@@ -186,13 +191,15 @@ def adopt_pending_membership(user, pending):
             created_at=pending.created_at
         )
         membership.created_at = pending.created_at
+        from apps.makerspaces.account_profile import ensure_legacy_pointer
+        ensure_legacy_pointer(membership)  # decision 305: the reference token for page/event editors
         pending.adopted_at = timezone.now()
         pending.adopted_membership = membership
         pending.unresolved_reason = ""
         pending.save(
             update_fields=["adopted_at", "adopted_membership", "unresolved_reason"]
         )
-        meta = {"source_membership_id": pending.source_membership_id}
+        meta = {"source_membership_id": pending.source_membership_id, **changes}
         if pending.accepted_waiver_id or pending.witnessed_waiver_id:
             meta["waiver_acceptance"] = "imported"
         audit.record(
@@ -207,7 +214,7 @@ def adopt_pending_membership(user, pending):
 
 def adopt_pending_memberships_for_user(user):
     """Discover proven-email imports without letting one tenant block the account."""
-    if not user.email or user.email_verified_at is None:
+    if not is_person(user) or not user.email or user.email_verified_at is None:
         return []
     pending_rows = list(
         PendingImportedMembership.objects.filter(

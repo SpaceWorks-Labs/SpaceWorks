@@ -1,4 +1,5 @@
-from django.db.models import Count
+from django.db.models import Count, F, Q
+from apps.makerspaces.role_catalog import COMBINABLE_ROLE_SLUGS
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -8,77 +9,41 @@ from apps.makerspaces.models import MakerspaceRole
 class RoleSerializer(serializers.ModelSerializer):
     makerspace_id = serializers.IntegerField(read_only=True)
     granted_actions = serializers.SerializerMethodField()
+    combinable = serializers.SerializerMethodField()
+    exclusive = serializers.SerializerMethodField()
     member_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = MakerspaceRole
         fields = (
             "id", "makerspace_id", "name", "slug", "granted_actions", "legacy_role",
-            "is_default", "is_protected", "member_count", "created_at", "updated_at",
+            "is_default", "is_protected", "combinable", "exclusive", "member_count", "created_at", "updated_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_combinable(self, obj):
+        return obj.slug in COMBINABLE_ROLE_SLUGS
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_exclusive(self, obj):
+        return obj.slug in {"space_manager", "member"}
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_granted_actions(self, obj):
         return sorted(obj.granted_actions) if isinstance(obj.granted_actions, list) else []
 
 
-class RoleWriteSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=80, trim_whitespace=True, required=False)
-    granted_actions = serializers.ListField(child=serializers.CharField(), required=False)
-
-    def validate(self, attrs):
-        if not attrs:
-            raise serializers.ValidationError("At least one field is required.")
-        if "name" in attrs and not attrs["name"]:
-            raise serializers.ValidationError({"name": "This field may not be blank."})
-        return attrs
-
-
-class RoleCreateSerializer(RoleWriteSerializer):
-    name = serializers.CharField(max_length=80, trim_whitespace=True)
-    granted_actions = serializers.ListField(child=serializers.CharField())
-
-
-class MachineScopeOptionSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    label = serializers.CharField()
-    # Global built-in types are selectable by every makerspace, so the console has to be
-    # able to say which ones are shared rather than this lab's own.
-    is_builtin = serializers.BooleanField(required=False)
-    is_active = serializers.BooleanField(required=False)
-
-
-class RoleMachineScopeSerializer(serializers.Serializer):
-    """The role's links plus everything it could be linked to, in one round trip."""
-
-    machine_type_ids = serializers.ListField(child=serializers.IntegerField())
-    machine_ids = serializers.ListField(child=serializers.IntegerField())
-    available_machine_types = MachineScopeOptionSerializer(many=True, read_only=True)
-    available_machines = MachineScopeOptionSerializer(many=True, read_only=True)
-    # False when the role holds MANAGE_MAKERSPACE (or is otherwise exempt): the console
-    # must render the editor as inert rather than let an administrator tick boxes that
-    # `role_scope` will ignore.
-    scoping_applies = serializers.BooleanField(read_only=True)
-
-
-class RoleMachineScopeWriteSerializer(serializers.Serializer):
-    machine_type_ids = serializers.ListField(
-        child=serializers.IntegerField(), allow_empty=True
-    )
-    machine_ids = serializers.ListField(
-        child=serializers.IntegerField(), allow_empty=True
-    )
-
-
-class CapabilitySerializer(serializers.Serializer):
-    value = serializers.CharField()
-    label = serializers.CharField()
-    description = serializers.CharField()
-    group = serializers.CharField()
-    grantable = serializers.BooleanField()
-    lock_reason = serializers.CharField(allow_null=True)
-
-
 def role_queryset():
-    return MakerspaceRole.objects.annotate(member_count=Count("memberships"))
+    # Count people once even if a corrupt redundant additional row names primary.
+    primary = Count("memberships", distinct=True, filter=Q(
+        memberships__makerspace_id=F("makerspace_id"),
+    ))
+    additional = Count("additional_memberships__membership", distinct=True, filter=(
+        Q(slug__in=COMBINABLE_ROLE_SLUGS,
+          additional_memberships__membership__makerspace_id=F("makerspace_id"),
+          additional_memberships__membership__assigned_role__makerspace_id=F("makerspace_id"),
+          additional_memberships__membership__assigned_role__slug__in=COMBINABLE_ROLE_SLUGS)
+        & ~Q(additional_memberships__membership__assigned_role_id=F("pk"))
+    ))
+    return MakerspaceRole.objects.annotate(member_count=primary + additional)

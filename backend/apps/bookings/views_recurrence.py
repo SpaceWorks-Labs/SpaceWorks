@@ -14,6 +14,7 @@ from apps.openapi_errors import errors
 
 
 class RecurringBookingInputSerializer(StaffBookingInputSerializer):
+    event_id = None  # decision 342: an event link is for one booking, never a recurring series
     count = serializers.IntegerField(min_value=2, max_value=52)
     interval_weeks = serializers.IntegerField(min_value=1, max_value=12, default=1)
 
@@ -38,7 +39,7 @@ class StaffRecurringBookingView(APIView):
                    responses={200: RecurrenceResultSerializer, **errors(400, 401, 403, 404, 409, 423, 503)},
                    description='Create a finite weekly series in makerspace local time. Each occurrence has its own flat charge and cancellation. Conflicts are reported, never silently skipped.')
     def post(self, request, pk):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "manage_reservations")
         serializer = RecurringBookingInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)

@@ -1,5 +1,6 @@
 """Transactional reconciliation for every payment subject type."""
 
+from django.utils.translation import gettext
 import logging
 from decimal import Decimal
 
@@ -20,8 +21,10 @@ from apps.payments.reconciliation_authority import (  # noqa: F401
     _require_machine_scope,
     _require_record_authority,
     _require_subject_authority,
+    payment_list_action,
 )
 from apps.payments.reconciliation_rail import _expire_checkout_best_effort  # noqa: F401
+from apps.payments.reconciliation_settlement import _record_settlement, amend_settlement  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +41,11 @@ class PaymentConflict(APIException):
 
 
 def list_payments(*, actor, makerspace_id, status=None, subject_type=None, for_recording=False, due_state=None):
+    # VIEW_FINANCE/RECORD_PAYMENT, or MANAGE_EVENTS for an event-registration listing.
+    action = payment_list_action(actor, makerspace_id, for_recording=for_recording, subject_type=subject_type)
     queryset = rbac.scope_by_action(
         actor,
-        rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE,
+        action,
         Payment.objects.select_related("makerspace"),
         field="makerspace_id",
     ).filter(makerspace_id=makerspace_id)
@@ -50,14 +55,15 @@ def list_payments(*, actor, makerspace_id, status=None, subject_type=None, for_r
         queryset = queryset.filter(status=status)
     if subject_type:
         queryset = queryset.filter(subject_type=subject_type)
+    from apps.payments.unit_payer_scope import narrow_payments
+    queryset = narrow_payments(queryset, actor, makerspace_id, action)  # parity O-B3: a unit lead's own members
     from apps.makerspaces.models import Makerspace
     from apps.payments.due_dates import filter_due, order_by_due
     makerspace = rbac.scope_by_action(
-        actor, rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE,
-        Makerspace.objects.all(), field="pk",
+        actor, action, Makerspace.objects.all(), field="pk",
     ).filter(pk=makerspace_id).first()
     if makerspace is None:
-        raise NotFound("Makerspace not found.")
+        raise NotFound(gettext("Makerspace not found."))
     return order_by_due(with_refunds(filter_due(queryset, makerspace, due_state)))
 
 
@@ -69,7 +75,7 @@ def with_refunds(queryset):
         refunded_amount=Coalesce(
             Sum("refunds__amount", filter=Q(refunds__status=Refund.Status.SUCCEEDED, refunds__amended_by__isnull=True)),
             Value(Decimal("0.00")),
-            output_field=DecimalField(max_digits=12, decimal_places=2),
+            output_field=DecimalField(max_digits=13, decimal_places=3),
         )
     )
 
@@ -171,8 +177,13 @@ def reconcile_payments(
     )
     by_id = {payment.pk: payment for payment in locked}
     if len(by_id) != len(requested_ids):
-        raise NotFound("Payment not found.")
+        raise NotFound(gettext("Payment not found."))
 
+    from apps.payments.unit_payer_scope import payer_user_ids
+
+    payers = payer_user_ids(actor, makerspace_id, rbac.Action.RECORD_PAYMENT)
+    if payers is not None and any(payment.member_id not in payers for payment in locked):
+        raise NotFound(gettext("Payment not found."))  # parity O-B3: another unit's charge does not exist for you
     if target_status == Payment.Status.PAID_OFFLINE:
         _require_record_authority(actor, locked)
     else:
@@ -181,103 +192,36 @@ def reconcile_payments(
     if terminal_ids:
         raise PaymentConflict(terminal_ids)
 
-    action = (
-        "payment.paid_offline"
-        if target_status == Payment.Status.PAID_OFFLINE
-        else "payment.waived"
-    )
+    if target_status == Payment.Status.PAID_OFFLINE:
+        from apps.payments.maker_checker import propose, requires_confirmation
+        if requires_confirmation(locked[0].makerspace):
+            # Maker-checker (lane L5): record the proposal; the charge stays pending
+            # until a second person with RECORD_PAYMENT confirms it.
+            propose(locked, actor, settlement)
+            return [by_id[payment_id] for payment_id in requested_ids]
     for payment in locked:
-        _expire_checkout_best_effort(payment)
-        payment.status = target_status
-        payment.save(
-            update_fields=[
-                "status",
-                "stripe_checkout_session_expired_at",
-                "updated_at",
-            ]
-        )
-        meta = None
-        if settlement and target_status == Payment.Status.PAID_OFFLINE:
-            receipt = _record_settlement(payment, actor, settlement)
-            from apps.payments.documents import issue_receipt
-            issue_receipt(payment, actor=actor, settlement=receipt)
-            meta = {"method": receipt.method, "settlement_id": receipt.pk}
-        audit.record(
-            actor, action, makerspace=payment.makerspace, target=payment, meta=meta
-        )
-        resume_admission_after_settlement(payment)
-        if target_status == Payment.Status.PAID_OFFLINE:
-            from apps.payments.notifications import notify_payment
-            notify_payment(payment, "payment_received")
+        apply_reconciliation(payment, actor, target_status, settlement)
     return [by_id[payment_id] for payment_id in requested_ids]
 
 
-@transaction.atomic
-def amend_settlement(*, actor, makerspace_id, payment_id, settlement):
-    """Correct a receipt by APPENDING a replacement, never by editing one.
-
-    The payment itself is already terminal and stays untouched -- this corrects only the
-    record of how the money arrived, which is exactly the case the `amends` chain exists
-    for: a mistyped reference or the wrong method picked at the desk. Without this the
-    field was unreachable and a wrong receipt was permanent, since every reconciliation
-    endpoint refuses a terminal payment.
-    """
-    from apps.payments.models import ManualSettlement
-
-    payment = (
-        Payment.objects.select_for_update(of=("self",))
-        .select_related("makerspace")
-        .filter(makerspace_id=makerspace_id, pk=payment_id)
-        .first()
-    )
-    if payment is None or payment.status != Payment.Status.PAID_OFFLINE:
-        raise NotFound("Settled payment not found.")
-    _require_record_authority(actor, [payment])
-    current = ManualSettlement.effective_for(payment)
-    if current is None:
-        raise NotFound("This payment has no settlement to correct.")
-    receipt = ManualSettlement.objects.create(
-        payment=payment,
-        method=settlement["method"],
-        reference=settlement.get("reference", ""),
-        received_at=settlement["received_at"],
-        amount=payment.amount,
-        currency=payment.currency,
-        recorded_by=actor,
-        amends=current,
-    )
-    audit.record(
-        actor,
-        "payment.settlement_amended",
-        makerspace=payment.makerspace,
-        target=payment,
-        meta={
-            "settlement_id": receipt.pk,
-            "amends_id": current.pk,
-            "method": receipt.method,
-            "previous_method": current.method,
-        },
-    )
-    from apps.payments.documents import issue_receipt
-    issue_receipt(payment, actor=actor, settlement=receipt)
+def apply_reconciliation(payment, actor, target_status, settlement=None, *, recorded_by=None):
+    """Flip one LOCKED pending charge, writing its receipt in the same transaction."""
+    action = "payment.paid_offline" if target_status == Payment.Status.PAID_OFFLINE else "payment.waived"
+    _expire_checkout_best_effort(payment)
+    payment.status = target_status
+    payment.save(update_fields=["status", "stripe_checkout_session_expired_at", "updated_at"])
+    meta = None
+    receipt = None
+    if settlement and target_status == Payment.Status.PAID_OFFLINE:
+        receipt = _record_settlement(payment, recorded_by or actor, settlement)
+        from apps.payments.documents import issue_receipt
+        issue_receipt(payment, actor=actor, settlement=receipt)
+        meta = {"method": receipt.method, "settlement_id": receipt.pk}
+    audit.record(actor, action, makerspace=payment.makerspace, target=payment, meta=meta)
+    from apps.payments.settlement_supersede import supersede_open_settlements
+    supersede_open_settlements(payment, actor=actor)
+    resume_admission_after_settlement(payment)
+    if target_status == Payment.Status.PAID_OFFLINE:
+        from apps.payments.notifications import notify_payment
+        notify_payment(payment, "payment_received")
     return receipt
-
-
-def _record_settlement(payment, actor, settlement):
-    """Append the cash-book row for one settled charge.
-
-    Amount and currency are taken from the PAYMENT, never from the caller: the receipt
-    describes the debt that was settled, and letting a client name its own figure would
-    let the books disagree with the ledger they are supposed to explain.
-    """
-    from apps.payments.models import ManualSettlement
-
-    return ManualSettlement.objects.create(
-        payment=payment,
-        method=settlement["method"],
-        reference=settlement.get("reference", ""),
-        received_at=settlement["received_at"],
-        amount=payment.amount,
-        currency=payment.currency,
-        recorded_by=actor,
-    )

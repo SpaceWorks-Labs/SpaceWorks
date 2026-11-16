@@ -6,10 +6,10 @@ from rest_framework import serializers
     "type": "object",
     "additionalProperties": False,
     "description": (
-        "Public/member secondary colours. Foreground, hover/pressed states and light/dark "
-        "link ink are derived automatically. Rejects palettes below 4.5:1 text or 3:1 "
-        "component contrast in either mode (including 80% counter text and tinted surfaces). "
-        "Blank colours use the product palette. Staff chrome and status colours stay fixed."
+        "Public/member brand colours. Labels and light/dark hover, active, soft and link "
+        "colours are derived automatically with accessible fallbacks. Well-formed #RGB or "
+        "#RRGGBB colours are accepted; only malformed colour values are rejected. Blank "
+        "colours use Maker Teal. Staff chrome and status colours stay fixed."
     ),
     "properties": {
         "mode": {"type": "string", "enum": ["system", "light", "dark"]},

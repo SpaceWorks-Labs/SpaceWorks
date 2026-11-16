@@ -30,10 +30,10 @@ from .views_email_templates_common import (
 ERROR_RESPONSES = {
     code: OpenApiResponse(EmailTemplateErrorSerializer, description=description)
     for code, description in (
-        (400, "Invalid template or devices module disabled."),
+        (400, "Invalid template."),
         (401, "Authentication required."),
         (403, "Active staff authority required."),
-        (404, "Template or makerspace outside scope, or unknown template."),
+        (404, "Template or makerspace outside scope, unknown template, or the devices module is turned off."),
         (423, "Makerspace frozen for tenant migration."),
     )
 }

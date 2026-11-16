@@ -1,13 +1,14 @@
 {% extends "email/base.html" %}
+{% load i18n %}
 
 {% block body %}
-  <p>Hello,</p>
-  <p>Your print request <strong>{{ print_request.title }}</strong> is now printing.</p>
-  <p>Bucket: {{ print_request.bucket.name }}<br>
-  Makerspace: {{ print_request.bucket.makerspace.name }}</p>
-  <p>We'll let you know when it's ready to collect.</p>
+  <p>{% translate "Hello," %}</p>
+  <p>{% blocktranslate trimmed with title=print_request.title %}Your print request <strong>{{ title }}</strong> is now printing.{% endblocktranslate %}</p>
+  <p>{% blocktranslate trimmed with name=print_request.bucket.name %}Bucket: {{ name }}{% endblocktranslate %}<br>
+  {% blocktranslate trimmed with name=print_request.bucket.makerspace.name %}Makerspace: {{ name }}{% endblocktranslate %}</p>
+  <p>{% translate "We'll let you know when it's ready to collect." %}</p>
   {% if status_url %}
-    <p>Track your request: <a href="{{ status_url }}">{{ status_url }}</a></p>
+    <p>{% translate "Track your request:" %} <a href="{{ status_url }}">{{ status_url }}</a></p>
   {% endif %}
-  <p>Tracking token: <strong>{{ public_token }}</strong></p>
+  <p>{% translate "Tracking token:" %} <strong>{{ public_token }}</strong></p>
 {% endblock %}

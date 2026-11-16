@@ -7,7 +7,7 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from unfold.admin import ModelAdmin, TabularInline
 
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.guards import SurfaceOff, require_module
 from apps.operations import services
 from apps.operations.admin_forms import StockTransferAdminForm, StocktakeCountAdminForm
 from apps.operations.models import (
@@ -17,11 +17,15 @@ from apps.operations.models import (
     StocktakeLine,
     StocktakeSession,
 )
+from apps.makerspaces.admin_limits import CapacityAdminMixin
+from apps.makerspaces.admin_limits import form_limit_error
+from apps.managed_hosting.extra_quotas import ExtraQuotaReached
 from config.admin_access import SuperuserOnlyModelAdmin
 
 # Imported for its `@admin.register` side effect (the split pattern from CLAUDE.md).
 from apps.operations import admin_report_schedules  # noqa: F401,E402
 from apps.operations import admin_scheduling  # noqa: F401,E402
+from django.utils.translation import gettext_lazy
 
 
 class StockTransferLineInline(TabularInline):
@@ -48,6 +52,7 @@ class StockTransferAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     # must never fall through to Django's normal ORM save path.
     list_display = ("id", "makerspace", "source_container", "destination_container", "status", "created_at")
     list_filter = ("status", "makerspace")
+    search_fields = ("makerspace__name",)
     readonly_fields = (
         "makerspace",
         "source_container",
@@ -91,7 +96,16 @@ class StockTransferAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
                     makerspace,
                     form.service_payload(),
                 )
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except ExtraQuotaReached as exc:
+                form.add_error(None, form_limit_error(exc))
+            except DRFValidationError as exc:
+                if isinstance(exc.detail, dict) and str(exc.detail.get("code")) in {
+                    "limit_reached", "plan_limit_reached",
+                }:
+                    form.add_error(None, form_limit_error(exc))
+                else:
+                    form.add_error(None, exc)
+            except (DjangoValidationError, SurfaceOff) as exc:
                 form.add_error(None, exc)
             else:
                 self.message_user(
@@ -141,10 +155,12 @@ class StocktakeLineInline(TabularInline):
 
 
 @admin.register(StocktakeSession)
-class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class StocktakeSessionAdmin(CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "stocktake_sessions_monthly"
     actions = ["complete_selected", "approve_selected", "apply_adjustments_selected"]
     list_display = ("id", "makerspace", "container", "status", "started_at", "approved_at")
     list_filter = ("status", "makerspace")
+    search_fields = ("makerspace__name",)
     inlines = (StocktakeLineInline,)
 
     def get_urls(self):
@@ -156,15 +172,15 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             ),
         ] + super().get_urls()
 
-    @admin.action(description="Complete selected stocktakes")
+    @admin.action(description=gettext_lazy("Complete selected stocktakes"))
     def complete_selected(self, request, queryset):
         self._run_stocktake_action(request, queryset, services.complete_stocktake, "Completed")
 
-    @admin.action(description="Approve selected stocktakes")
+    @admin.action(description=gettext_lazy("Approve selected stocktakes"))
     def approve_selected(self, request, queryset):
         self._run_stocktake_action(request, queryset, services.approve_stocktake, "Approved")
 
-    @admin.action(description="Apply selected stocktake adjustments")
+    @admin.action(description=gettext_lazy("Apply selected stocktake adjustments"))
     def apply_adjustments_selected(self, request, queryset):
         self._run_stocktake_action(request, queryset, services.apply_stocktake_adjustments, "Applied adjustments for")
 
@@ -173,7 +189,7 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         for stocktake in queryset:
             try:
                 service_func(request.user, stocktake)
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
                 self.message_user(request, f"{stocktake.pk}: {exc}", level=messages.ERROR)
             else:
                 success_count += 1
@@ -188,8 +204,8 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             return redirect(reverse("admin:operations_stocktakesession_changelist"))
         try:
             require_module(stocktake.makerspace, "stocktake")
-        except DRFValidationError as exc:
-            self.message_user(request, exc.detail, level=messages.ERROR)
+        except SurfaceOff as exc:
+            self.message_user(request, exc.message, level=messages.ERROR)
             return redirect(reverse("admin:operations_stocktakesession_change", args=[stocktake.pk]))
         if stocktake.status not in {StocktakeSession.Status.DRAFT, StocktakeSession.Status.COUNTING}:
             self.message_user(
@@ -207,7 +223,7 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
                     stocktake,
                     form.cleaned_data["_validated_payload"],
                 )
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
                 form.add_error(None, exc)
             else:
                 self.message_user(
@@ -234,6 +250,16 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 class InventoryAdjustmentAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     list_display = ("id", "makerspace", "product", "asset", "delta_available", "delta_damaged", "delta_lost", "created_at")
     list_filter = ("makerspace",)
+    search_fields = ("product__name", "makerspace__name")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 from .admin_qr_batches import QrPrintBatchAdmin, QrPrintBatchItemInline  # noqa: F401,E402

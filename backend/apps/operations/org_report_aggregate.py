@@ -6,10 +6,34 @@ from apps.operations.org_report_strategies import LimitSemantics, organization_s
 
 
 CENT = Decimal("0.01")
+COMBINE_FUNCTIONS = {}
+
+
+def register_combine(report_key, combine):
+    """Register from report_definitions_<area>.py, imported by report_registry.
+
+    combine(rows_by_space, *, limit) returns list[dict]. It receives ALL source
+    rows, including private numerator/denominator inputs. Sum those inputs before
+    dividing; never average rates. Keep period/currency/unit groups separate.
+    Add the matching STRATEGIES entry (and numeric condition fields) in the same
+    change. Percentile/median reports belong in the organization exclusion set.
+    Public fields are projected by org_reports AFTER this calculation.
+    """
+    if not callable(combine):
+        raise TypeError("combine must be callable.")
+    if report_key in COMBINE_FUNCTIONS and COMBINE_FUNCTIONS[report_key] is not combine:
+        raise ValueError(f"Duplicate organization combine function: {report_key}")
+    COMBINE_FUNCTIONS[report_key] = combine
+    return combine
 
 
 def aggregate_rows(report_key, rows_by_space, *, limit):
     strategy = organization_strategy(report_key)
+    from .org_report_scope import EXCLUDED_ORGANIZATION_REPORT_KEYS
+    if report_key in EXCLUDED_ORGANIZATION_REPORT_KEYS:
+        raise ValueError("Report is excluded from organization combination.")
+    if report_key in COMBINE_FUNCTIONS:
+        return COMBINE_FUNCTIONS[report_key](rows_by_space, limit=limit)
     source = rows_by_space
     if strategy.limit_semantics is LimitSemantics.PER_SPACE_THEN_GLOBAL:
         source = [(space_id, rows[:limit]) for space_id, rows in rows_by_space]

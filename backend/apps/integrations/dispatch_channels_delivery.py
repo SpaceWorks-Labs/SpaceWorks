@@ -1,4 +1,5 @@
 """Provider delivery behind the stable non-email dispatch barrel."""
+from apps.integrations.notification_cutover import guarded, sending_allowed
 
 import logging
 from django.utils import timezone
@@ -7,8 +8,17 @@ from .dispatch_channels import channel_module_blocks, sanitize_notification_erro
 
 logger = logging.getLogger(__name__)
 
+@guarded()
 def _deliver_notification(log) -> NotificationDeliveryLog:
+    if not sending_allowed():
+        return log
+    from apps.operations.cloud_jobs.bounded import check
+    check()
     if log.status in {NotificationDeliveryStatus.SENT, NotificationDeliveryStatus.SKIPPED}:
+        return log
+    if log.channel in {"sms", "whatsapp"} or log.channel not in NonEmailNotificationChannel.values:
+        log.status, log.error = NotificationDeliveryStatus.SKIPPED, "personal_envelope_required"
+        log.save(update_fields=["status", "error", "updated_at"])
         return log
 
     # Re-checked here, not only at dispatch: a PENDING row can sit in the Celery queue
@@ -17,6 +27,12 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
     if channel_module_blocks(log.makerspace, log.channel):
         log.status = NotificationDeliveryStatus.SKIPPED
         log.error = "notification_channel_module_disabled"
+        log.save(update_fields=["status", "error", "updated_at"])
+        return log
+
+    from .dispatch_channels import configuration_blocks
+    if configuration_blocks(log.makerspace, log.channel):
+        log.status, log.error = NotificationDeliveryStatus.SKIPPED, "notification_channel_configuration_disabled"
         log.save(update_fields=["status", "error", "updated_at"])
         return log
 
@@ -30,11 +46,21 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
         log.save(update_fields=["status", "error", "attempts", "updated_at"])
         return log
 
+    # Equipment room summaries re-check their live source, scope and room match on
+    # every send, retry and release; other features' rows pass straight through.
+    from apps.hardware_requests.notifications_p2_rooms import eligible_room
+    if not eligible_room(log):
+        log.status = NotificationDeliveryStatus.SKIPPED
+        log.error = "equipment_source_no_longer_eligible"
+        log.save(update_fields=["status", "error", "updated_at"])
+        return log
+
     from apps.integrations.timing_dispatch import defer_log
     if defer_log(log, kind='channel'):
         return log
 
     try:
+        check()
         if log.channel == NonEmailNotificationChannel.NATIVE_PUSH:
             from apps.integrations.push import deliver_native_push
 
@@ -77,6 +103,7 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
             log.status = NotificationDeliveryStatus.FAILED
             log.error = "notification_channel_not_configured"
     finally:
+        check()
         log.attempts += 1
         log.save(
             update_fields=["status", "error", "attempts", "sent_at", "updated_at"]

@@ -37,10 +37,13 @@ def forward(apps, schema_editor):
             config["metering_unit"] = "weight"
         MachineType.objects.filter(pk=printer.pk).update(capability_config=config)
     for slug, config in PACKS.items():
-        MachineType.objects.update_or_create(
+        # Keep an existing row's name (0002 seeds "CNC Router"); title() only names a new row.
+        row, created = MachineType.objects.get_or_create(
             makerspace_id=None, slug=slug,
             defaults={"name": slug.replace("_", " ").title(), "icon": "", "is_builtin": True, "managing_action": "", "capability_config": config},
         )
+        if not created:
+            MachineType.objects.filter(pk=row.pk).update(icon="", is_builtin=True, managing_action="", capability_config=config)
 
 
 class Migration(migrations.Migration):

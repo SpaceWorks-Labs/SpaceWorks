@@ -1,0 +1,82 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/hello.request.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_kind": {
+      "enum": [
+        "fdm_printer",
+        "resin_printer",
+        "laser",
+        "cnc",
+        "generic",
+        "shelf_pointer",
+        "label_printer",
+        "scanner",
+        "door",
+        "sensor",
+        "kiosk"
+      ],
+      "type": "string"
+    },
+    "capabilities": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 32,
+            "minLength": 1,
+            "type": "string"
+          },
+          "version": {
+            "maximum": 99,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "config_version_seen": {
+      "maximum": 1000000000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "firmware": {
+      "maxLength": 40,
+      "type": "string"
+    },
+    "health": {
+      "enum": [
+        "ok",
+        "degraded",
+        "failing"
+      ],
+      "type": "string"
+    },
+    "protocol_version": {
+      "maximum": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "software_version": {
+      "maxLength": 40,
+      "type": "string"
+    },
+    "vendor": {
+      "maxLength": 80,
+      "type": "string"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "adapter_kind",
+    "capabilities"
+  ],
+  "type": "object"
+}

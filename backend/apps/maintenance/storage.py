@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.storage_clients import s3_client
 from dataclasses import dataclass
 import logging
 import uuid
@@ -31,7 +33,7 @@ class LogDocumentValidationResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -55,7 +57,7 @@ def _public_client():
 def log_document_object_key(makerspace_id, machine_id, ext):
     safe_ext = str(ext).lower().lstrip(".")
     if safe_ext not in _allowed_extensions():
-        raise ValidationError({"extension": "Unsupported maintenance document type."})
+        raise ValidationError({"extension": gettext("Unsupported maintenance document type.")})
     return (
         f"machines/{makerspace_id}/{machine_id}/logs/"
         f"{uuid.uuid4().hex}.{safe_ext}"
@@ -70,11 +72,11 @@ def assert_log_document_object_key(object_key, makerspace_id, machine_id):
     prefix = f"machines/{makerspace_id}/{machine_id}/logs/"
     if not str(object_key).startswith(prefix):
         raise ValidationError(
-            {"object_key": "Maintenance document key does not belong to this machine."}
+            {"object_key": gettext("Maintenance document key does not belong to this machine.")}
         )
     suffix = str(object_key)[len(prefix):]
     if not suffix or "/" in suffix or _extension(object_key) not in _allowed_extensions():
-        raise ValidationError({"object_key": "Invalid maintenance document key."})
+        raise ValidationError({"object_key": gettext("Invalid maintenance document key.")})
 
 
 def ext_for(content_type, filename):
@@ -85,12 +87,16 @@ def ext_for(content_type, filename):
         settings.MACHINE_DOC_ALLOWED_EXT,
         settings.MACHINE_DOC_ALLOWED_MIME,
     ):
-        raise ValidationError({"filename": "Unsupported document extension or content type."})
+        raise ValidationError({"filename": gettext("Unsupported document extension or content type.")})
     return ext
 
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            import sys
+            from apps.private_uploads import presign
+            return presign(sys.modules[__name__], object_key, content_type, settings.MACHINE_DOC_MAX_BYTES)
         if settings.STORAGE_PRESIGN_METHOD == "put":
             url = _public_client().generate_presigned_url(
                 "put_object",
@@ -148,6 +154,10 @@ def object_size(object_key):
 
 
 def finalize_upload(object_key):
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        import sys
+        from apps.private_uploads import finalize
+        return finalize(sys.modules[__name__], object_key, settings.MACHINE_DOC_MAX_BYTES)
     if settings.STORAGE_PRESIGN_METHOD != "put":
         return object_size(object_key)
     final_size = object_size(object_key)
@@ -173,11 +183,11 @@ def finalize_upload(object_key):
 def validate_log_document_object(object_key):
     size = object_size(object_key)
     if size is None:
-        raise ValidationError({"object_key": "Maintenance document was not found."})
+        raise ValidationError({"object_key": gettext("Maintenance document was not found.")})
     if size == 0:
-        raise ValidationError({"object_key": "Maintenance document is empty."})
+        raise ValidationError({"object_key": gettext("Maintenance document is empty.")})
     if size > settings.MACHINE_DOC_MAX_BYTES:
-        raise ValidationError({"object_key": "Maintenance document exceeds the size limit."})
+        raise ValidationError({"object_key": gettext("Maintenance document exceeds the size limit.")})
     try:
         response = _client().get_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
@@ -196,7 +206,7 @@ def validate_log_document_object(object_key):
         settings.MACHINE_DOC_ALLOWED_MIME,
     ):
         raise ValidationError(
-            {"object_key": "Maintenance document extension and content type do not match."},
+            {"object_key": gettext("Maintenance document extension and content type do not match.")},
             code="invalid_document",
         )
 
@@ -205,14 +215,14 @@ def validate_log_document_object(object_key):
     if strict_mime or sniffed:
         if not strict_mime or stored_content_type != strict_mime or sniffed != strict_mime:
             raise ValidationError(
-                {"object_key": "Maintenance document content does not match its extension."},
+                {"object_key": gettext("Maintenance document content does not match its extension.")},
                 code="invalid_document",
             )
         content_type = sniffed
     else:
         if not has_required_signature(ext, data):
             raise ValidationError(
-                {"object_key": "Maintenance document signature is invalid."},
+                {"object_key": gettext("Maintenance document signature is invalid.")},
                 code="invalid_document",
             )
         content_type = stored_content_type

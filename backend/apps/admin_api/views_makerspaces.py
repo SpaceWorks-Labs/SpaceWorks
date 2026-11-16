@@ -20,6 +20,7 @@ from apps.admin_api.views_makerspace_images import (
     MakerspaceLogoImageView,
 )
 from apps.audit import services as audit
+from apps.makerspaces.capability_audit import record_features_changed
 from apps.makerspaces.domain_audit import record_domain_change
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
@@ -42,13 +43,21 @@ _NOT_FOUND = OpenApiResponse(
         summary="List makerspaces the actor has a staff surface in",
         responses={
             200: MakerspaceSerializer(many=True),
-            403: OpenApiResponse(description="Not an active staff account."),
+            403: OpenApiResponse(description="Not an active account, or outside this origin's scope."),
         },
     ),
     post=extend_schema(
         tags=["Admin makerspaces"],
         summary="Create a makerspace (superadmin only)",
-        description="Optional install_profile_id applies a saved pack. creation_setup applies profile, hours, modules and first staff invitation in the same transaction; explicit setup overrides the pack. Invitation delivery follows commit and returns a private fallback link.",
+        description=(
+            "Exactly one write-only organization_id (existing active owner organization) or "
+            "organization_name (new owner organization) is required; both are refused on update. "
+            "Owner assignment and makerspace creation are atomic. Optional install_profile_id "
+            "applies a saved pack; an unknown profile returns 404 before owner assignment. "
+            "creation_setup applies profile, hours, modules and first staff invitation in the "
+            "same transaction; explicit setup overrides the pack. Invitation delivery follows "
+            "commit and returns a private fallback link."
+        ),
         responses={
             201: MakerspaceSerializer,
             400: _INVALID,
@@ -63,6 +72,8 @@ class MakerspaceListCreateView(generics.ListCreateAPIView):
     pagination_class = None
 
     def create(self, request, *args, **kwargs):
+        if not (request.user.is_superuser or request.user.role == User.Role.SUPERADMIN):
+            raise PermissionDenied()
         response = super().create(request, *args, **kwargs)
         # First-staff delivery can return a private invitation fallback link.
         response["Cache-Control"] = "no-store"
@@ -75,7 +86,7 @@ class MakerspaceListCreateView(generics.ListCreateAPIView):
         # manager isn't stuck on an empty list / "No makerspace" screen. Create
         # (POST) stays superadmin-only in perform_create, so widening the read
         # scope here doesn't grant anyone new write access.
-        queryset = servable_queryset().select_related("archive_custody_state")
+        queryset = servable_queryset()
         actor = self.request.user
         origin_scope = origin_scoped_makerspace_id(self.request)
         scope = rbac.makerspaces_for_actions(
@@ -183,6 +194,7 @@ class MakerspaceDetailView(generics.RetrieveUpdateAPIView):
             before = settings_audit.snapshot(serializer.instance, requested)
             previous_features = list(serializer.instance.enabled_features)
             previous_domain = serializer.instance.frontend_domain
+            previous_locale = serializer.instance.default_locale
             previous_geofence = {
                 "enabled": serializer.instance.geofence_enabled,
                 "configured": serializer.instance.geofence_effective,
@@ -200,16 +212,16 @@ class MakerspaceDetailView(generics.RetrieveUpdateAPIView):
                     "fields": settings_audit.changed_fields(before, instance, requested)
                 },
             )
+            if previous_locale != instance.default_locale:
+                audit.record(
+                    self.request.user, "makerspace.default_locale_changed", makerspace=instance,
+                    target=instance, meta={"before": previous_locale, "after": instance.default_locale},
+                )
             if previous_domain != instance.frontend_domain:
                 record_domain_change(self.request.user, instance, previous_domain)
             if previous_features != instance.enabled_features:
-                audit.record(
-                    self.request.user,
-                    "makerspace.features_changed",
-                    makerspace=instance,
-                    target=instance,
-                    meta={"before": previous_features, "after": instance.enabled_features},
-                )
+                record_features_changed(self.request.user, instance, previous_features,
+                                        instance.enabled_features, via="console")
             current_geofence = {
                 "enabled": instance.geofence_enabled,
                 "configured": instance.geofence_effective,

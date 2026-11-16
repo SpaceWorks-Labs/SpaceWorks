@@ -2,6 +2,14 @@ from django.urls import path
 from apps.operations.views_report_views import SavedReportViewDetailView, SavedReportViewListCreateView
 
 from apps.operations import views
+from apps.operations.views_attention import AttentionView
+from apps.operations.views_schedule import ScheduleView
+from apps.operations.views_platform_analytics import PlatformAnalyticsMakerspacesView, PlatformAnalyticsView
+from apps.operations.views_platform_overview import PlatformOverviewExportView, PlatformOverviewView
+from apps.operations.views_platform_tenant_reports import (
+    PlatformTenantAnalyticsView, PlatformTenantCatalogView,
+    PlatformTenantDashboardView, PlatformTenantExportView,
+)
 from apps.admin_api.search import StaffSearchView
 from apps.operations.views_saved_views import SavedViewDetailView, SavedViewListCreateView
 from apps.operations.views_live import LiveStreamView
@@ -13,8 +21,23 @@ from apps.operations.views_report_schedules import (
 )
 
 from .views_stocktake_discipline import StocktakePolicyView, StocktakeScheduleListView, StocktakeScheduleDetailView
+from .views_related_facts import BookingRelatedFactsView, EventRelatedFactsView
+from .views_area_overview import AreaOverviewView
 
 urlpatterns = [
+    # Decision 241: one area list grouped by area / machine type / machine / item category.
+    path("admin/makerspace/<int:makerspace_id>/area-overview/<slug:section>", AreaOverviewView.as_view(), name="admin-area-overview"),
+    # Decision 216 item 13: read-only side-by-side facts; each section re-checks its own source.
+    path("admin/makerspace/<int:makerspace_id>/related-facts/events/<int:event_id>", EventRelatedFactsView.as_view(), name="admin-related-facts-event"),
+    path("admin/makerspace/<int:makerspace_id>/related-facts/bookings/<int:booking_id>", BookingRelatedFactsView.as_view(), name="admin-related-facts-booking"),
+    path("admin/platform/overview", PlatformOverviewView.as_view(), name="platform-overview"),
+    path("admin/platform/overview/export", PlatformOverviewExportView.as_view(), name="platform-overview-export"),
+    path("admin/platform/analytics/makerspaces/<int:makerspace_id>/reports/catalog", PlatformTenantCatalogView.as_view(), name="platform-tenant-report-catalog"),
+    path("admin/platform/analytics/makerspaces/<int:makerspace_id>/analytics/<slug:report_key>", PlatformTenantAnalyticsView.as_view(), name="platform-tenant-analytics"),
+    path("admin/platform/analytics/makerspaces/<int:makerspace_id>/dashboard", PlatformTenantDashboardView.as_view(), name="platform-tenant-dashboard"),
+    path("admin/platform/analytics/makerspaces/<int:makerspace_id>/reports/<slug:report_key>/export", PlatformTenantExportView.as_view(), name="platform-tenant-report-export"),
+    path("admin/platform/analytics/makerspaces", PlatformAnalyticsMakerspacesView.as_view(), name="platform-analytics-makerspaces"),
+    path("admin/platform/analytics/<slug:report_key>", PlatformAnalyticsView.as_view(), name="platform-analytics"),
     path("admin/makerspace/<int:makerspace_id>/stocktake-policy", StocktakePolicyView.as_view(), name="stocktake-policy"),
     path("admin/makerspace/<int:makerspace_id>/stocktake-schedules", StocktakeScheduleListView.as_view(), name="stocktake-schedules"),
     path("admin/makerspace/<int:makerspace_id>/stocktake-schedules/<int:pk>", StocktakeScheduleDetailView.as_view(), name="stocktake-schedule-detail"),
@@ -31,6 +54,8 @@ urlpatterns = [
     path("metrics/", MetricsView.as_view(), name="metrics"),
     path("live/", LiveStreamView.as_view(), name="live"),
     path("admin/makerspace/<int:makerspace_id>/dashboard", views.DashboardView.as_view(), name="operations-dashboard"),
+    path("admin/makerspace/<int:makerspace_id>/dashboard/attention", AttentionView.as_view(), name="operations-attention"),  # decision 242
+    path("admin/makerspace/<int:makerspace_id>/schedule", ScheduleView.as_view(), name="operations-schedule"),  # decision 242(k)
     path("admin/makerspace/<int:makerspace_id>/containers", views.ContainerListCreateView.as_view(), name="containers"),
     path("admin/containers/<int:pk>", views.ContainerDetailView.as_view(), name="container-detail"),
     path("admin/containers/<int:pk>/move", views.ContainerMoveView.as_view(), name="container-move"),
@@ -57,6 +82,7 @@ urlpatterns = [
     path("admin/makerspace/<int:makerspace_id>/ledger", views.LedgerView.as_view(), name="ledger"),
     path("admin/makerspace/<int:makerspace_id>/accountability", views.AccountabilityReportView.as_view(), name="accountability-dashboard"),
     path("admin/makerspace/<int:makerspace_id>/reports/catalog", views.ReportCatalogView.as_view(), name="report-catalog"),
+    path("admin/makerspace/<int:makerspace_id>/problem-reports", views.ProblemReportListView.as_view(), name="problem-report-list"),
     path("admin/makerspace/<int:makerspace_id>/problem-reports/<int:pk>/resolve", views.ProblemReportResolveView.as_view(), name="problem-report-resolve"),
     path("admin/makerspace/<int:makerspace_id>/problem-reports/<int:pk>/triage", views.ProblemReportTriageView.as_view(), name="problem-report-triage"),
     path("admin/makerspace/<int:makerspace_id>/analytics/summary", views.AnalyticsView.as_view(), {"report_key": "summary"}, name="analytics-summary"),

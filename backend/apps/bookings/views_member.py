@@ -11,9 +11,9 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.bookings.models import Booking
-from apps.bookings.serializers_admin import EmptyActionSerializer
 from apps.bookings.serializers_member import (
-    MemberBookingFilterSerializer, MemberBookingListSerializer, MemberBookingSerializer,
+    MemberBookingCancelSerializer, MemberBookingFilterSerializer, MemberBookingListSerializer,
+    MemberBookingSerializer,
 )
 from apps.bookings.serializers_reschedule import BookingRescheduleSerializer
 from apps.bookings.services_bookings import cancel_booking
@@ -37,10 +37,23 @@ def own_bookings(request, slug):
     makerspace = get_public_makerspace(slug)
     require_module_for_servable(makerspace, 'bookings')
     require_active_account(request.user, makerspace)
+    return _owner_rows(request.user, makerspace)
+
+
+def own_booking(request, slug, token):
+    """Resolve private standing before disclosing any booking switch (534)."""
+    makerspace = get_public_makerspace(slug)
+    require_active_account(request.user, makerspace)
+    booking = get_object_or_404(_owner_rows(request.user, makerspace), public_token=token)
+    require_module_for_servable(makerspace, 'bookings')
+    return booking
+
+
+def _owner_rows(user, makerspace):
     return rbac.scope_personal_bookings(
-        request.user,
+        user,
         Booking.objects.select_related('space__makerspace').filter(
-            space__makerspace=makerspace, member=request.user,
+            space__makerspace=makerspace, member=user,
         ), makerspace_id=makerspace.pk,
     )
 
@@ -76,16 +89,19 @@ class MemberBookingCancelView(APIView):
     throttle_scope = 'booking_submit'
 
     @extend_schema(tags=['Member bookings'],
-                   request={'type': 'object', 'properties': {}, 'additionalProperties': False},
+                   request=MemberBookingCancelSerializer,
                    responses={200: MemberBookingSerializer, **ERRORS,
                               423: OpenApiResponse(ErrorSerializer, description='Tenant frozen for migration.'),
                               503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.'),
-                              409: OpenApiResponse(ErrorSerializer, description='Cancellation cutoff or state conflict.')})
+                              409: OpenApiResponse(ErrorSerializer, description='Cancellation cutoff or state conflict, '
+                                                   'or `booking_hosts_event`: the room is held for an event and the '
+                                                   'cancel was not confirmed.')})
     def post(self, request, makerspace_slug, public_token):
-        booking = get_object_or_404(own_bookings(request, makerspace_slug), public_token=public_token)
-        body = EmptyActionSerializer(data=request.data)
+        booking = own_booking(request, makerspace_slug, public_token)
+        body = MemberBookingCancelSerializer(data=request.data)
         body.is_valid(raise_exception=True)
-        cancelled = cancel_booking(booking, actor=request.user, member_cancel=True)
+        cancelled = cancel_booking(booking, actor=request.user, member_cancel=True,
+                                   confirm_event_room=body.validated_data['confirm_event_room'])
         return Response(MemberBookingSerializer(cancelled).data)
 
 
@@ -100,7 +116,7 @@ class MemberBookingRescheduleView(APIView):
                               423: OpenApiResponse(ErrorSerializer, description='Tenant frozen.'),
                               503: OpenApiResponse(ErrorSerializer, description='Tenant gate unavailable.')})
     def post(self, request, makerspace_slug, public_token):
-        booking = get_object_or_404(own_bookings(request, makerspace_slug), public_token=public_token)
+        booking = own_booking(request, makerspace_slug, public_token)
         serializer = BookingRescheduleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         moved = reschedule_booking(booking, actor=request.user, **serializer.validated_data)

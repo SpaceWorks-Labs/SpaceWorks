@@ -1,5 +1,6 @@
 import logging
 import re
+from uuid import uuid4
 
 from django.db import transaction
 from django.utils import timezone
@@ -76,7 +77,11 @@ def _channel_configured(makerspace, channel, destination=None) -> bool:
         return False
 
 
-def channel_module_blocks(makerspace, channel) -> bool:
+class ChannelModuleUnavailable(Exception):
+    """The channel's module state could not be read."""
+
+
+def channel_module_blocks(makerspace, channel, *, strict=False) -> bool:
     """True when this channel's module is uninstalled for the makerspace.
 
     An additive AND in front of the credential check that already existed: enabling the
@@ -84,7 +89,8 @@ def channel_module_blocks(makerspace, channel) -> bool:
     the stored webhook survives, so re-enabling needs no credential re-entry.
 
     Fails OPEN on an unexpected error, matching every other guard in this file: a broken
-    capability lookup must not silently mute a makerspace's alerts.
+    capability lookup must not silently mute a makerspace's alerts. A `strict` caller
+    with no retryable row of its own gets ChannelModuleUnavailable instead and must not send.
     """
     from apps.integrations.models import CHANNEL_MODULE_KEYS
 
@@ -100,6 +106,8 @@ def channel_module_blocks(makerspace, channel) -> bool:
             "notification_channel_module_check_failed",
             extra={"makerspace_id": getattr(makerspace, "pk", None), "channel": channel},
         )
+        if strict:
+            raise ChannelModuleUnavailable() from None
         return False
 
 
@@ -120,12 +128,16 @@ def dispatch_channel(
     specific room rather than to "Slack". Quota is charged per row, because N rooms is N
     real sends and that is what costs.
     """
-    if channel not in NonEmailNotificationChannel.values:
+    if channel in {"sms", "whatsapp"} or channel not in NonEmailNotificationChannel.values:
         raise ValueError(f"Unsupported notification channel: {channel}")
+    if channel == NonEmailNotificationChannel.WHATSAPP:
+        raise ValueError("WhatsApp requires an explicit personal envelope")
 
     # Push resolves its recipients at delivery time, so the alert's subject has to travel
     # on the row or a narrowed recipient rule would match nothing by then.
     stored_payload = dict(payload or {})
+    if channel == NonEmailNotificationChannel.NATIVE_PUSH:
+        stored_payload.setdefault("event_key", str(uuid4()))
     if scope is not None and hasattr(scope, "as_dict"):
         stored_payload["scope"] = scope.as_dict()
 
@@ -152,6 +164,14 @@ def dispatch_channel(
                 "notification_channel_module_disabled",
             )
         ]
+
+    if configuration_blocks(makerspace, channel):
+        return [record(NotificationDeliveryStatus.SKIPPED, "notification_channel_configuration_disabled")]
+
+    from apps.integrations.notification_catalog_sources import event_live
+    if not event_live(makerspace, feature, event):
+        # The event's source capability is off for this space (#183B): recorded, not sent.
+        return [record(NotificationDeliveryStatus.SKIPPED, "notification_source_disabled")]
 
     if channel == NonEmailNotificationChannel.NATIVE_PUSH:
         # Push has no room to address: it is delivered per device to a named user, so it
@@ -199,7 +219,10 @@ def dispatch_channel(
         if defer_log(log, kind='channel'):
             logs.append(log)
             continue
-        if sync:
+        from .mail_providers.outbox import enqueue_inline_allowed
+        if not enqueue_inline_allowed(sync=sync):
+            logs.append(log)
+        elif sync:
             logs.append(_deliver_notification(log))
         else:
             transaction.on_commit(
@@ -210,6 +233,9 @@ def dispatch_channel(
 
 
 def _enqueue_notification(log_id):
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed():
+        return
     from apps.integrations.tasks import deliver_notification_task
 
     try:
@@ -227,3 +253,10 @@ def _enqueue_notification(log_id):
 
 
 from .dispatch_channels_delivery import _deliver_notification  # noqa: E402,F401
+
+
+def configuration_blocks(makerspace, channel):
+    from .models_endpoints import ChannelConfiguration
+    config = ChannelConfiguration.objects.filter(makerspace=makerspace, channel=channel).first()
+    return bool(config and not (config.enabled and (
+        config.personal_enabled if channel == "native_push" else config.room_enabled)))

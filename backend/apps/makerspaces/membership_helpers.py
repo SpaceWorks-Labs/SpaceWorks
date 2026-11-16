@@ -1,4 +1,5 @@
 """Membership identity and outcome helpers shared by admission and legacy paths."""
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 from apps.makerspaces.models import MakerspaceRole
 
@@ -50,7 +51,7 @@ def _member_role(makerspace):
             makerspace=makerspace, slug="member", is_default=True, is_protected=True
         )
     except MakerspaceRole.DoesNotExist as exc:
-        raise ValidationError({"detail": "This makerspace has no protected Member role."}) from exc
+        raise ValidationError({"detail": gettext("This makerspace has no protected Member role.")}) from exc
 
 
 def _outcome(*, outcome, membership=None, request=None):

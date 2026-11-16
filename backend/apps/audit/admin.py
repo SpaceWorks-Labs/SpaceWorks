@@ -128,10 +128,8 @@ class AuditSigningKeyRotationEventAdmin(_ReadOnlyAuditAdmin):
     readonly_fields = ("rotation", "state", "created_at")
 
     def resolve_hidden_lookup(self):
-        # The event row carries only the transition state; scope comes from its rotation.
-        # Without this a superadmin who hid a makerspace would still see that space's
-        # rotation history in /control/ -- the same hide-scoping hole ORG-2b closed for
-        # OrganizationMembership. The model also reaches Makerspace through
+        # The event row carries only the transition state; scope comes from its rotation,
+        # so the source gate can find the tenant. The model also reaches Makerspace through
         # rotation__old_key and rotation__new_key; the rotation's own FK is the canonical
         # one, since both keys belong to that scope by construction.
         return "rotation__makerspace_id"

@@ -1,6 +1,8 @@
 """Compatibility imports for the split source-gate policy catalogs."""
 
 from .gate_policy_http import (
+    PROVIDER_INGRESS_ROUTES,
+    WA_TWILIO_PARTICIPANTS,
     HTTP_EXEMPTIONS,
     HTTP_ANONYMOUS_EXEMPTIONS,
     HTTP_ANONYMOUS_PARTICIPANTS,
@@ -20,4 +22,7 @@ from .gate_policy_replay import (
 from .gate_policy_objects import (
     LIFECYCLE_EXEMPTIONS,
     OBJECT_MUTATION_PARTICIPANTS,
+)
+from .gate_policy_public_pages import (
+    TENANT_PAGE_ROUTES, GLOBAL_PAGE_ROUTES, PAGE_SERVICE_PARTICIPANTS,
 )

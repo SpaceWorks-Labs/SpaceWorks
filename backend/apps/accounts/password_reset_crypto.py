@@ -37,8 +37,11 @@ def fixed_dummy_digest(email_normalized):
 
 
 def credential_fingerprint(user, email_normalized):
+    from apps.accounts.staff_identity import context_label
+
     return _hmac(
-        f"password-reset-credential:v1:{email_normalized}:{user.password}"
+        f"password-reset-credential:v2:{user.pk}:{context_label(user)}:"
+        f"{user.credential_generation}:{email_normalized}:{user.password}"
     )
 
 

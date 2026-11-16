@@ -1,0 +1,22 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/job.ack.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "external_job_id": {
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string"
+    },
+    "lease_token": {
+      "maxLength": 128,
+      "minLength": 32,
+      "type": "string"
+    }
+  },
+  "required": [
+    "lease_token",
+    "external_job_id"
+  ],
+  "type": "object"
+}

@@ -1,5 +1,6 @@
 """Short transactional lifecycle operations around the long-running export."""
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import logging
@@ -110,6 +111,9 @@ def run_export_job(job_id):
 
 def _claim_job(job_id, *, queryset=None):
     queryset = DataExportJob.objects.all() if queryset is None else queryset
+    from apps.operations.cloud_jobs.authority import prepare_export_claim, export_allowed
+    if not prepare_export_claim(queryset, job_id):
+        return None
     now = timezone.now()
     with transaction.atomic():
         job = (
@@ -119,6 +123,8 @@ def _claim_job(job_id, *, queryset=None):
             .first()
         )
         if job is None or job.status != DataExportJob.Status.PENDING:
+            return None
+        if not export_allowed(job):
             return None
         job.status = DataExportJob.Status.RUNNING
         job.started_at = now
@@ -196,13 +202,13 @@ def _fail_job(job, code, detail, manifest=None, *, queryset=None):
 
 def issue_download_token(job, actor):
     if job.fidelity == "SUBJECT":
-        raise ValidationError({"detail": "Personal exports require the owner download endpoint."})
+        raise ValidationError({"detail": gettext("Personal exports require the owner download endpoint.")})
     raw = secrets.token_urlsafe(32)
     now = timezone.now()
     with transaction.atomic():
         locked = DataExportJob.objects.select_for_update().select_related("makerspace").get(pk=job.pk)
         if locked.status != DataExportJob.Status.AVAILABLE or locked.expires_at <= now:
-            raise ValidationError({"detail": "This export is not available for download."})
+            raise ValidationError({"detail": gettext("This export is not available for download.")})
         locked.download_token_digest = _token_digest(raw)
         locked.download_token_expires_at = now + timedelta(
             seconds=settings.DATA_EXPORT_DOWNLOAD_TTL_SECONDS
@@ -268,16 +274,6 @@ def consume_download_token(job_id, raw_token):
     if failure:
         raise failure
     return claimed
-
-
-def invalidate_download_tokens_after_restore():
-    """Restore hook: copied bearer digests must never remain usable."""
-    return DataExportJob.objects.exclude(download_token_digest="").update(
-        download_token_digest="",
-        download_token_expires_at=None,
-        download_token_consumed_at=None,
-        download_issued_to=None,
-    )
 
 
 def _token_digest(raw):

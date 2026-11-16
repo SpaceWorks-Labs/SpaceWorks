@@ -28,6 +28,9 @@ def source_hash():
 
 
 payload = {
+    "image_profile": os.environ.get("BUILD_IMAGE_PROFILE", "full"),
+    "postgres_client_majors": [major for major in (16, 17) if Path(f"/usr/lib/postgresql/{major}/bin/pg_dump").is_file()],
+    "architectures": ["linux/amd64", "linux/arm64"],
     "git_sha": os.environ.get("BUILD_GIT_SHA", "unknown"),
     "git_describe": os.environ.get("BUILD_GIT_DESCRIBE", "unknown"),
     "built_at": datetime.now(timezone.utc).isoformat(),

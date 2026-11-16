@@ -6,4 +6,5 @@ class BackupConfig(AppConfig):
     name = "apps.backup"
 
     def ready(self):
-        from apps.backup import checks, signals  # noqa: F401
+        from .space_restore_notifications import register
+        register()

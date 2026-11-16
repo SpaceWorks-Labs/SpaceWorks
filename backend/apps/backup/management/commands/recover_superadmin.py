@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("username")
-        parser.add_argument("--reset-mfa", action="store_true", help="Discard a lost authenticator; next login must re-enroll.")
+        parser.add_argument("--reset-mfa", action="store_true", help="Discard a lost authenticator; the account signs in with its password until it enrolls again.")
         parser.add_argument("--password", help="Use an explicit password instead of generating one.")
 
     def handle(self, *args, **options):

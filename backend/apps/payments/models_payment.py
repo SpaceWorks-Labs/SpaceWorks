@@ -1,36 +1,77 @@
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 
 class Payment(models.Model):
     class SubjectType(models.TextChoices):
-        MACHINE_SERVICE_REQUEST = "machine_service_request", "Machine service request"
+        MACHINE_SERVICE_REQUEST = "machine_service_request", gettext_noop("Machine service request")
         BOOKING = "booking", "Booking"
-        EVENT_REGISTRATION = "event_registration", "Event registration"
-        MAKERSPACE_MEMBERSHIP = "makerspace_membership", "Makerspace membership"
+        EVENT_REGISTRATION = "event_registration", gettext_noop("Event registration")
+        MAKERSPACE_MEMBERSHIP = "makerspace_membership", gettext_noop("Makerspace membership")
         # subject_id is the `makerspaces.MembershipTerm` pk: the membership pk is already
         # taken by the dues charge above, and one term gets exactly one renewal charge.
-        MEMBERSHIP_TERM = "membership_term", "Membership renewal"
-        MEMBERSHIP_REQUEST = "membership_request", "Membership admission"
+        MEMBERSHIP_TERM = "membership_term", gettext_noop("Membership renewal")
+        MEMBERSHIP_REQUEST = "membership_request", gettext_noop("Membership admission")
         # Loan charges (forward plan phase 6). subject_id is the HardwareRequest id, so
         # the one-per-subject constraint gives one deposit and one late fee per loan.
-        LOAN_DEPOSIT = "loan_deposit", "Loan deposit"
-        LOAN_LATE_FEE = "loan_late_fee", "Loan late fee"
+        LOAN_DEPOSIT = "loan_deposit", gettext_noop("Loan deposit")
+        LOAN_LATE_FEE = "loan_late_fee", gettext_noop("Loan late fee")
+        # Lane L15 (#84/#85). Rental is one per loan (subject_id = HardwareRequest id);
+        # damage and lost are one per RequesterAccountability row (subject_id = its id).
+        LOAN_RENTAL = "loan_rental", gettext_noop("Loan rental")
+        LOAN_DAMAGE = "loan_damage", gettext_noop("Loan damage charge")
+        LOAN_LOST = "loan_lost", gettext_noop("Lost item charge")
+        # Lane L23 (#158): one metered machine session; subject_id is the MachineSession id.
+        MACHINE_SESSION = "machine_session", gettext_noop("Machine session")
+        # Lane L6. An order is one buyer's several tickets (subject_id = EventOrder id); a
+        # venue fee is an outside organiser's hosting charge (subject_id = EventVenueFee id).
+        EVENT_ORDER = "event_order", gettext_noop("Event ticket order")
+        EVENT_VENUE_FEE = "event_venue_fee", gettext_noop("Event venue fee")
+        # Lane L18. A donation (one-off, or one period of a pledge; subject_id = Donation id)
+        # and a sponsor's agreed payment (subject_id = SponsorshipCharge id).
+        DONATION = "donation", "Donation"
+        SPONSORSHIP = "sponsorship", "Sponsorship"
+        # Lane L21b. A hackathon project's entry fee (subject_id = HackathonSubmission id) and a
+        # paid team's one charge on its leader (subject_id = HackathonTeam id, C-39).
+        SUBMISSION_FEE = "submission_fee", gettext_noop("Project entry fee")
+        TEAM_REGISTRATION = "team_registration", gettext_noop("Team registration")
+        # Hack-money G10: an optional refundable commitment deposit (subject_id = EventRegistration id).
+        EVENT_DEPOSIT = "event_deposit", gettext_noop("Event deposit")
+        # Lane L22. One shop order (online or a front-desk sale; subject_id = ShopOrder id).
+        SHOP_ORDER = "shop_order", gettext_noop("Shop order")
+        # #184: a term staff open from the console (subject_id = that MembershipTerm pk). Not
+        # MEMBERSHIP_TERM: that subject id already names the term whose RENEWAL is charged.
+        MEMBERSHIP_TERM_START = "membership_term_start", gettext_noop("Membership term")
+        # Decision 223(b): a paid day pass (subject_id = the makerspaces.GuestPass pk). Never a membership.
+        GUEST_PASS = "guest_pass", gettext_noop("Day pass")
 
-    LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee")
+    #: Subjects whose subject_id is the HardwareRequest id.
+    LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
+    #: Subjects whose subject_id is a RequesterAccountability row of a loan.
+    LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
+    #: Lane L6: event money that is not one registration's own charge.
+    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee", "submission_fee", "team_registration",
+                           "event_deposit")
+    #: Lanes L18 and L22: money that may belong to no account (a guest donor, a sponsor
+    #: organisation, a guest shop buyer or an anonymous desk sale).
+    ACCOUNTLESS_SUBJECT_TYPES = ("donation", "sponsorship", "shop_order")
+    #: Lane L18: a gift is never a taxable supply, so no tax is frozen on top of it.
+    UNTAXED_SUBJECT_TYPES = ("donation",)
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
-        PAID_ONLINE = "paid_online", "Paid online"
-        PAID_OFFLINE = "paid_offline", "Paid offline"
+        PAID_ONLINE = "paid_online", gettext_noop("Paid online")
+        PAID_OFFLINE = "paid_offline", gettext_noop("Paid offline")
         WAIVED = "waived", "Waived"
         CANCELED = "canceled", "Canceled"
 
     class StripeProvider(models.TextChoices):
-        RAW = "raw", "Makerspace raw credentials"
-        CONNECT = "connect", "Stripe Connect"
+        RAW = "raw", gettext_noop("Makerspace raw credentials")
+        CONNECT = "connect", gettext_noop("Stripe Connect")
 
     class Provider(models.TextChoices):
         """Which vendor holds this charge.
@@ -47,11 +88,11 @@ class Payment(models.Model):
         # a DB trigger permits that transition exactly once. Without this state such a row
         # would be stamped `stripe` and could never be claimed by a gateway configured
         # later, because provider provenance is immutable.
-        UNCLAIMED = "unclaimed", "No online rail"
+        UNCLAIMED = "unclaimed", gettext_noop("No online rail")
 
     class OnlineRail(models.TextChoices):
-        CHECKOUT = 'checkout', 'Stripe Checkout'
-        NATIVE_PAYMENT_INTENT = 'native_payment_intent', 'Native payment intent'
+        CHECKOUT = 'checkout', gettext_noop('Stripe Checkout')
+        NATIVE_PAYMENT_INTENT = 'native_payment_intent', gettext_noop('Native payment intent')
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="payments")
     subject_type = models.CharField(max_length=48, choices=SubjectType.choices)
@@ -73,7 +114,7 @@ class Payment(models.Model):
     # so it must never carry PII -- callers pass an event title, a space name or a service
     # title, never a person's name, contact details or custom-form answers.
     subject_label = models.CharField(max_length=255, blank=True, default="")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     due_at = models.DateTimeField(null=True, blank=True)
@@ -100,6 +141,14 @@ class Payment(models.Model):
     stripe_checkout_url = models.URLField(blank=True, default="")
     stripe_checkout_session_expired_at = models.DateTimeField(null=True, blank=True)
     stripe_payment_intent_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    # Lane L5. The tax policy frozen when the charge was raised (NULL with tax off), and
+    # the provider's display label for how it was paid ("Visa ••4242"). Neither is ever
+    # rewritten: the snapshot is insert-only and the label fills once, from blank.
+    tax_snapshot = models.JSONField(null=True, blank=True, default=None)
+    method_label = models.CharField(max_length=64, blank=True, default="")
+    # Lane L15. The frozen quote (lines, discount, waiver, sources, digest) the amount was
+    # computed from; `{}` for charges raised without the pricing kernel. Insert-only.
+    pricing_snapshot = models.JSONField(default=dict, blank=True)
     created_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="created_payments")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -157,85 +206,28 @@ class Payment(models.Model):
         self.currency = (self.currency or "").lower()
         currency_validator(self.currency)
         subject_identity_unchanged = self._subject_identity_unchanged()
-        if self.subject_type == self.SubjectType.MEMBERSHIP_REQUEST:
-            from apps.payments.subject_validation import validate_membership_request
+        from apps.payments.subject_validation import validate_subject
 
-            validate_membership_request(self, subject_identity_unchanged)
-        if self.subject_type == self.SubjectType.MACHINE_SERVICE_REQUEST and self.subject_id:
-            from apps.machines.models import MachineServiceRequest
-
-            if not subject_identity_unchanged and not MachineServiceRequest.objects.filter(
-                pk=self.subject_id,
-                makerspace_id=self.makerspace_id,
-            ).exists():
-                raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
-        if self.subject_type == self.SubjectType.BOOKING and self.subject_id:
-            from apps.bookings.models import Booking
-
-            if not subject_identity_unchanged:
-                booking_exists = Booking.objects.filter(
-                    pk=self.subject_id,
-                    space__makerspace_id=self.makerspace_id,
-                ).exists()
-                if not booking_exists:
-                    raise ValidationError(
-                        {"subject_id": "Payment subject must belong to the payment makerspace."}
-                    )
-        if self.subject_type == self.SubjectType.EVENT_REGISTRATION and self.subject_id:
-            from apps.events.models import EventRegistration
-
-            if not subject_identity_unchanged:
-                registration_exists = EventRegistration.objects.filter(
-                    pk=self.subject_id,
-                    event__makerspace_id=self.makerspace_id,
-                ).exists()
-                if not registration_exists:
-                    raise ValidationError(
-                        {"subject_id": "Payment subject must belong to the payment makerspace."}
-                    )
-        if self.subject_type in self.LOAN_SUBJECT_TYPES and self.subject_id:
-            from apps.hardware_requests.models import HardwareRequest
-
-            if not subject_identity_unchanged and not HardwareRequest.objects.filter(
-                pk=self.subject_id,
-                makerspace_id=self.makerspace_id,
-            ).exists():
-                raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
-        if self.subject_type == self.SubjectType.MEMBERSHIP_TERM and self.subject_id:
-            from apps.makerspaces.models import MembershipTerm
-
-            if not subject_identity_unchanged and not MembershipTerm.objects.filter(
-                pk=self.subject_id,
-                membership__makerspace_id=self.makerspace_id,
-            ).exists():
-                raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
-        if self.subject_type == self.SubjectType.MAKERSPACE_MEMBERSHIP and self.subject_id:
-            from apps.makerspaces.models import MakerspaceMembership
-
-            membership = MakerspaceMembership.objects.filter(
-                pk=self.subject_id,
-                makerspace_id=self.makerspace_id,
-            ).only("user_id").first()
-            if membership is None and not subject_identity_unchanged:
-                raise ValidationError(
-                    {"subject_id": "Payment subject must belong to the payment makerspace."}
-                )
-            if membership is not None and self.member_id != membership.user_id:
-                raise ValidationError(
-                    {"member": "Payment member must be the membership user."}
-                )
+        validate_subject(self, subject_identity_unchanged)
 
     def save(self, *args, **kwargs):
         if self.pk:
             original = type(self).objects.filter(pk=self.pk).values(
-                "status", "amount", "provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount", "online_rail", "due_at"
+                "status", "amount", "provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount", "online_rail", "due_at",
+                "tax_snapshot", "method_label", "pricing_snapshot",
             ).first()
+            if original and original["tax_snapshot"] != self.tax_snapshot:
+                raise ValidationError(gettext("A charge's tax snapshot is immutable."))
+            if original and original["pricing_snapshot"] != self.pricing_snapshot:
+                raise ValidationError(gettext("A charge's pricing snapshot is immutable."))
+            if original and original["method_label"] and original["method_label"] != self.method_label:
+                raise ValidationError(gettext("A payment method label is set once."))
             if original and original["due_at"] != self.due_at:
-                raise ValidationError("A charge due date is immutable.")
+                raise ValidationError(gettext("A charge due date is immutable."))
             if original and original["status"] != self.Status.PENDING and (
                 original["status"] != self.status or original["amount"] != self.amount
             ):
-                raise ValidationError("Terminal payments are immutable.")
+                raise ValidationError(gettext("Terminal payments are immutable."))
             # A charge raised with no gateway configured carries `provider=unclaimed`:
             # it has no provenance yet, so the first checkout that reaches a provider is
             # allowed to stamp one, exactly once. Without this exemption the guard below
@@ -254,13 +246,13 @@ class Payment(models.Model):
                 # `provider` joins the provenance set: moving a charge between vendors
                 # would point the row at a merchant account that never took the money,
                 # and every settlement and refund path after it would be wrong.
-                raise ValidationError("Payment provenance is immutable.")
+                raise ValidationError(gettext("Payment provenance is immutable."))
             if (
                 original
                 and original['online_rail'] is not None
                 and original['online_rail'] != self.online_rail
             ):
-                raise ValidationError('The online payment rail is immutable once claimed.')
+                raise ValidationError(gettext('The online payment rail is immutable once claimed.'))
         self.full_clean()
         return super().save(*args, **kwargs)
 

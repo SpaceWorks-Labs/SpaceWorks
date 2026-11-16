@@ -1,87 +1,112 @@
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import extend_schema
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
 
-from apps.accounts import rbac
-from apps.admin_api.permissions import IsActiveStaff
-from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.makerspaces.lookup import get_public_makerspace
-from apps.makerspaces.servability import servable_queryset
-from apps.presence import services
-from apps.presence.serializers import (
-    PresenceCurrentSerializer,
-    PresenceRosterSerializer,
-    PresenceSessionSerializer,
-    PresenceStartSerializer,
-)
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
+from apps.makerspaces.lookup import get_public_makerspace
+from apps.makerspaces.models_account_profile import AccountProject
+from . import services
+from .models import PresencePreference
+from .policy import presets, require_account, require_enabled
+from .privacy import settings_for, update_preference
+from .serializers import (
+    PresenceCurrentSerializer, PresencePreferenceSerializer, PresenceProjectPageSerializer,
+    PresenceProjectSerializer, PresenceRenewSerializer, PresenceSessionSerializer, PresenceStartSerializer,
+)
+
+from .schema import ERRORS
 
 
-ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Invalid input."),
-    401: OpenApiResponse(description="Authentication required."),
-    403: OpenApiResponse(ErrorSerializer, description="Membership permission required."),
-    404: OpenApiResponse(description="Makerspace not found."),
-    429: OpenApiResponse(description="Rate limit exceeded."),
-}
+def public_space(request, slug):
+    from .views_public import check_origin
+    space = get_public_makerspace(slug)
+    require_enabled(space)
+    check_origin(request, space)
+    return space
 
 
-class PresenceStartView(APIView):
+class MemberPresenceView(APIView):
     permission_classes = [IsAuthenticated]
+
+
+class PresenceStartView(MemberPresenceView):
     throttle_classes = [MemberPrincipalRateThrottle]
     throttle_scope = "presence_start"
-
     @extend_schema(tags=["Presence"], request=PresenceStartSerializer, responses={201: PresenceSessionSerializer, **ERRORS})
     def post(self, request, makerspace_slug):
-        makerspace = get_public_makerspace(makerspace_slug)
+        space = public_space(request, makerspace_slug)
         serializer = PresenceStartSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        session = services.start_session(
-            request.user, makerspace, serializer.validated_data["duration_minutes"],
-            latitude=serializer.validated_data.get("latitude"), longitude=serializer.validated_data.get("longitude"),
-            accuracy=serializer.validated_data.get("accuracy"),
-        )
+        session = services.start_session(request.user, space, **serializer.validated_data)
         return Response(PresenceSessionSerializer(session).data, status=201)
 
 
-class PresenceCurrentView(APIView):
-    permission_classes = [IsAuthenticated]
-
+class PresenceCurrentView(MemberPresenceView):
     @extend_schema(tags=["Presence"], request=None, responses={200: PresenceCurrentSerializer, **ERRORS})
     def get(self, request, makerspace_slug):
-        makerspace = get_public_makerspace(makerspace_slug)
-        session = services.current_session(request.user, makerspace)
-        return Response(PresenceCurrentSerializer({"active": bool(session), "session": session}).data)
+        space = public_space(request, makerspace_slug)
+        session = services.current_session(request.user, space)
+        renewable = None if session else services.renewable_session(request.user, space)
+        policy = settings_for(space)
+        hidden = (session.hide_on_display if session else PresencePreference.objects.filter(
+            makerspace=space, account=request.user, hide_on_display=True).exists())
+        return Response(PresenceCurrentSerializer({"active": bool(session), "session": session, "renewable": renewable,
+            "presets": presets(space),
+            "personal_opt_out_allowed": policy.allow_personal_opt_out,
+            "names_displayed": policy.show_names and not (policy.allow_personal_opt_out and hidden)}).data)
 
 
-class PresenceEndView(APIView):
-    permission_classes = [IsAuthenticated]
-
+class PresenceEndView(MemberPresenceView):
     @extend_schema(tags=["Presence"], request=None, responses={200: PresenceCurrentSerializer, **ERRORS})
     def post(self, request, makerspace_slug):
-        makerspace = get_public_makerspace(makerspace_slug)
-        services.end_session(request.user, makerspace)
-        return Response({"active": False, "session": None})
+        space = public_space(request, makerspace_slug)
+        services.end_session(request.user, space)
+        policy = settings_for(space)
+        hidden = PresencePreference.objects.filter(makerspace=space, account=request.user, hide_on_display=True).exists()
+        return Response({"active": False, "session": None, "renewable": None, "personal_opt_out_allowed": policy.allow_personal_opt_out,
+                         "names_displayed": policy.show_names and not (policy.allow_personal_opt_out and hidden)})
 
 
-class PresenceRosterView(APIView):
-    permission_classes = [IsActiveStaff]
+class PresenceRenewView(MemberPresenceView):
+    throttle_classes = [MemberPrincipalRateThrottle]
+    throttle_scope = "presence_start"
+    @extend_schema(tags=["Presence"], request=PresenceRenewSerializer, responses={200: PresenceSessionSerializer, **ERRORS})
+    def post(self, request, makerspace_slug):
+        space = public_space(request, makerspace_slug)
+        serializer = PresenceRenewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        row = services.renew_session(request.user, space, **serializer.validated_data)
+        return Response(PresenceSessionSerializer(row).data)
 
-    @extend_schema(tags=["Admin makerspaces"], description="Requires manage_members in this makerspace.", request=None, responses={200: PresenceRosterSerializer(many=True), **ERRORS})
-    def get(self, request, makerspace_id):
-        get_object_or_404(
-            rbac.scope_by_action(
-                request.user, rbac.Action.MANAGE_MEMBERS, servable_queryset(), field="id",
-            ),
-            pk=makerspace_id,
-        )
-        from django.utils import timezone
-        from apps.presence.models import PresenceSession
-        sessions = rbac.scope_by_action(
-            request.user, rbac.Action.MANAGE_MEMBERS, PresenceSession.objects.all(),
-        ).filter(
-            makerspace_id=makerspace_id, ended_at__isnull=True, expires_at__gt=timezone.now()
-        ).select_related("member", "membership__assigned_role").order_by("started_at", "id")
-        return Response(PresenceRosterSerializer(sessions, many=True).data)
+
+class PresenceProjectsView(MemberPresenceView):
+    @extend_schema(tags=["Presence"], request=None, responses={200: PresenceProjectPageSerializer, **ERRORS})
+    def get(self, request, makerspace_slug):
+        space = public_space(request, makerspace_slug)
+        require_account(request.user, space)
+        rows = AccountProject.objects.filter(profile__user=request.user).order_by("position", "pk")
+        page = PageNumberPagination()
+        return page.get_paginated_response(PresenceProjectSerializer(page.paginate_queryset(rows, request), many=True).data)
+
+
+class PresencePreferenceView(MemberPresenceView):
+    @extend_schema(tags=["Presence"], responses={200: PresencePreferenceSerializer, **ERRORS})
+    def get(self, request, makerspace_slug):
+        space = public_space(request, makerspace_slug)
+        require_account(request.user, space)
+        row = PresencePreference.objects.filter(makerspace=space, account=request.user).first()
+        return Response({"hide_on_display": bool(row and row.hide_on_display)})
+
+    @extend_schema(tags=["Presence"], request=PresencePreferenceSerializer, responses={200: PresencePreferenceSerializer, **ERRORS})
+    def patch(self, request, makerspace_slug):
+        space = public_space(request, makerspace_slug)
+        serializer = PresencePreferenceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        row = update_preference(request.user, space, **serializer.validated_data)
+        return Response(PresencePreferenceSerializer(row).data)
+
+
+# Preserve the existing import used by presence.urls_admin.
+from .views_staff import PresenceRosterView  # noqa: E402,F401

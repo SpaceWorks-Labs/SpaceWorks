@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.machines.models import MachineType
@@ -24,7 +25,7 @@ class _CustomMachineTypeConfigSerializer(serializers.ModelSerializer):
         attrs = super().validate(attrs)
         config = attrs.get("capability_config", getattr(self.instance, "capability_config", None))
         if config is None:
-            raise serializers.ValidationError({"capability_config": "Custom machine types require structural configuration."})
+            raise serializers.ValidationError({"capability_config": gettext("Custom machine types require structural configuration.")})
         return attrs
 
     def validate_capability_config(self, value):
@@ -58,6 +59,6 @@ class MachineTypeUpdateSerializer(_CustomMachineTypeConfigSerializer):
         )
         if duplicate:
             raise serializers.ValidationError(
-                'A machine type with this name already exists in this makerspace.'
+                gettext('A machine type with this name already exists in this makerspace.')
             )
         return value

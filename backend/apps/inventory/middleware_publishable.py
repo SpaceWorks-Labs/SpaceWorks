@@ -23,6 +23,11 @@ class PublishableKeyMixin:
                 public_site_enabled=True,
             ).first()
             if makerspace is None:
+                # Lane L8 (#77): a rotated key stays valid through its grace window only.
+                from apps.encryption.publishable_keys import makerspace_id_for_retired_key
+                retired = makerspace_id_for_retired_key(key)
+                makerspace = Makerspace.objects.filter(pk=retired, public_site_enabled=True).first() if retired else None
+            if makerspace is None:
                 set_failure_reason(request, UNKNOWN_CLIENT)
                 return False
             if not self._makerspace_scope_ok(request, makerspace):

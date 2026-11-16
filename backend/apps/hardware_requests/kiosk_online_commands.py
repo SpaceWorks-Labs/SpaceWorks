@@ -16,6 +16,7 @@ from django.utils import timezone
 from apps.audit import services as audit
 from apps.accounts import rbac
 from apps.boxes.models import QrCode, QrScanEvent
+from apps.boxes.qr_lookup import scanned_or_404
 from apps.boxes.serializers import QrCodeSerializer, qr_target_payload
 from apps.hardware_requests import direct_loan_workflow, workflow
 from apps.hardware_requests.direct_loan_serializers import DirectLoanSerializer
@@ -53,8 +54,8 @@ def _direct_loan(makerspace, pk, user):
 
 
 def _resolve_qr(makerspace, user, data):
-    qr = get_object_or_404(
-        QrCode, makerspace=makerspace, payload=data["payload"], status=QrCode.Status.ACTIVE,
+    qr = scanned_or_404(
+        QrCode.objects.filter(makerspace=makerspace, status=QrCode.Status.ACTIVE), data["payload"],
     )
     if qr.target_type == QrCode.TargetType.MEMBER_CARD:
         # Identity never travels through the inventory scanner.

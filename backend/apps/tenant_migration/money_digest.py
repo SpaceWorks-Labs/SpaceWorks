@@ -91,15 +91,44 @@ def money_fingerprint(makerspace_id, *, using="default"):
                                            "provider", "method", "reference", "refunded_at", "settled_at", "amends_id"))
     if refunds:
         payload["refunds"] = [{key: str(value) for key, value in row.items()} for row in refunds]
+    # An undecided or approved refund entitlement is money the source may still send
+    # back. Approving, declining or opening one after capture is drift. Omitted when
+    # empty so captures with no cases keep their fingerprint.
+    Case = apps.get_model("payments.RefundCase")
+    cases = list(Case.objects.using(using).filter(
+        payment__makerspace_id=makerspace_id, status__in=("open", "approved", "approval_failed"),
+    ).order_by("pk").values("id", "payment_id", "kind", "status", "due_amount", "approved_amount", "refund_id"))
+    if cases:
+        payload["refund_cases"] = [{key: str(value) for key, value in row.items()} for row in cases]
     documents = list(Document.objects.using(using).filter(makerspace_id=makerspace_id)
                      .order_by("pk").values("id", "payment_id", "sequence", "number", "kind", "amount", "currency"))
     if documents:
         payload["documents"] = documents
     Billing = apps.get_model("payments.MakerspaceBillingSettings")
     counters = list(Billing.objects.using(using).filter(makerspace_id=makerspace_id)
-                    .values("next_document_number", "number_prefix"))
+                    .values("next_document_number", "number_prefix", "next_bill_number", "bill_prefix"))
     if counters:
         payload["document_counter"] = counters
+    from .money_digest_l5 import l5_money_rows
+
+    payload.update(l5_money_rows(makerspace_id, using))
+    from .money_digest_r2_l15 import l15_money_rows
+
+    payload.update(l15_money_rows(makerspace_id, using))
+    from .money_digest_r2_l6 import l6_money_rows
+
+    payload.update(l6_money_rows(makerspace_id, using))
+    from .money_digest_r2_l18 import l18_money_rows
+
+    payload.update(l18_money_rows(makerspace_id, using))
+    from .money_digest_r2_l21b import l21b_money_rows
+
+    payload.update(l21b_money_rows(makerspace_id, using))
+    from .money_digest_hackmoney import hackmoney_money_rows
+    payload.update(hackmoney_money_rows(makerspace_id, using))
+    from .money_digest_r2_l22 import l22_money_rows
+
+    payload.update(l22_money_rows(makerspace_id, using))
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()
     return hashlib.sha256(encoded).hexdigest()
 

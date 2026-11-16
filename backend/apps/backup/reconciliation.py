@@ -1,4 +1,6 @@
 """Idempotent recovery for every remote promotion crash boundary."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 
@@ -19,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def reconcile_artifact_uploads(limit=50):
+    limit = bounded.limit(limit)
     ids = list(
         BackupArtifactLedger.objects.filter(
             state__in=(
@@ -31,7 +34,7 @@ def reconcile_artifact_uploads(limit=50):
         .values_list("artifact_id", flat=True)[:limit]
     )
     reconciled = 0
-    for artifact_id in ids:
+    for artifact_id in bounded.items(ids):
         try:
             _reconcile_pending(artifact_id)
         except (ArtifactLedgerMismatch, storage.BackupVerificationError) as exc:
@@ -47,14 +50,14 @@ def reconcile_artifact_uploads(limit=50):
                 extra={"artifact_id": str(artifact_id)},
             )
         reconciled += 1
-    for row in BackupArtifactLedger.objects.filter(
+    for row in bounded.page(BackupArtifactLedger.objects.filter(
         state__in=(
             BackupArtifactLedger.State.AVAILABLE,
             BackupArtifactLedger.State.SUPERSEDED,
             BackupArtifactLedger.State.FAILED,
         ),
         cleanup_pending=True,
-    ).order_by("created_at")[:limit]:
+    ).order_by("created_at")[:limit], "artifact-cleanup"):
         staging_deleted = storage.delete_archive(row.staging_locator)
         final_deleted = (
             True

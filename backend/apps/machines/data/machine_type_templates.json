@@ -1,0 +1,1213 @@
+{
+ "version": 1,
+ "templates": [
+  {
+   "key": "fdm_printer",
+   "name": "FDM 3D printer",
+   "category": "3d_printing",
+   "icon": "printer",
+   "description": "Filament printers (PLA, PETG, ABS...). Members upload a sliced file; material is weighed in grams.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "weight",
+     "requires_booking": false,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "filament",
+      "name": "Filament",
+      "kind": "material",
+      "unit": "g",
+      "required": true,
+      "estimate_by": "file",
+      "record_by": [
+       "staff",
+       "adapter"
+      ],
+      "attributes": {
+       "material": [
+        "PLA",
+        "PETG",
+        "ABS",
+        "ASA",
+        "TPU"
+       ],
+       "colour": []
+      }
+     },
+     {
+      "key": "nozzle",
+      "name": "Nozzle wear",
+      "kind": "tool_wear",
+      "unit": "h",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {
+       "size": [
+        "0.4 mm",
+        "0.6 mm"
+       ]
+      }
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "layer_height",
+      "label": "Layer height",
+      "type": "choice",
+      "required": false,
+      "choices": [
+       "0.1 mm",
+       "0.2 mm",
+       "0.3 mm"
+      ]
+     },
+     {
+      "key": "infill_percent",
+      "label": "Infill %",
+      "type": "integer",
+      "required": false,
+      "min": 0,
+      "max": 100
+     },
+     {
+      "key": "supports",
+      "label": "Needs supports",
+      "type": "boolean",
+      "required": false
+     }
+    ],
+    "pricing": {
+     "charge_by": "material"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": false
+    },
+    "safety": {
+     "max_session_minutes": 1440
+    },
+    "maintenance": [
+     {
+      "title": "Clean and lubricate rails",
+      "trigger": "usage_hours",
+      "interval": 200
+     },
+     {
+      "title": "Replace nozzle",
+      "trigger": "usage_hours",
+      "interval": 500
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": true
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Show members how to level the bed, load filament and remove a print safely."
+    },
+    "sources": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11
+    ]
+   }
+  },
+  {
+   "key": "resin_printer",
+   "name": "Resin (SLA) printer",
+   "category": "3d_printing",
+   "icon": "printer",
+   "description": "Resin printers: resin by millilitre, plus IPA wash and FEP film wear.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "volume",
+     "requires_booking": false,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "resin",
+      "name": "Resin",
+      "kind": "material",
+      "unit": "ml",
+      "required": true,
+      "estimate_by": "file",
+      "record_by": [
+       "staff",
+       "adapter"
+      ],
+      "attributes": {
+       "material": [
+        "Standard",
+        "Tough",
+        "Flexible",
+        "Castable"
+       ],
+       "colour": []
+      }
+     },
+     {
+      "key": "ipa",
+      "name": "IPA wash",
+      "kind": "other",
+      "unit": "ml",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {}
+     },
+     {
+      "key": "fep_film",
+      "name": "FEP film wear",
+      "kind": "tool_wear",
+      "unit": "use",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {}
+     },
+     {
+      "key": "gloves",
+      "name": "Nitrile gloves",
+      "kind": "other",
+      "unit": "piece",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {}
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "supports",
+      "label": "Needs supports",
+      "type": "boolean",
+      "required": false
+     },
+     {
+      "key": "hollow",
+      "label": "Hollowed model",
+      "type": "boolean",
+      "required": false
+     }
+    ],
+    "pricing": {
+     "charge_by": "material"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": false
+    },
+    "safety": {},
+    "maintenance": [
+     {
+      "title": "Replace FEP film",
+      "trigger": "job_count",
+      "interval": 30
+     },
+     {
+      "title": "Filter and top up resin vat",
+      "trigger": "days",
+      "interval": 14
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": true
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Gloves and eye protection on; wash parts in IPA and cure them before handing over."
+    },
+    "sources": [
+     2,
+     4,
+     5,
+     12
+    ]
+   }
+  },
+  {
+   "key": "laser_cutter",
+   "name": "Laser cutter / engraver",
+   "category": "cutting",
+   "icon": "laser",
+   "description": "CO2 or diode laser: sheet stock by sheet or by area, with material and thickness; time is billed at the machine-time rate.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "minutes",
+     "requires_booking": true,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "sheet",
+      "name": "Sheet stock",
+      "kind": "material",
+      "unit": "sheet",
+      "required": true,
+      "estimate_by": "staff",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {
+       "material": [
+        "Plywood",
+        "MDF",
+        "Acrylic",
+        "Cardboard"
+       ],
+       "thickness": [
+        "3 mm",
+        "6 mm"
+       ],
+       "size": [
+        "300 x 600 mm",
+        "600 x 900 mm"
+       ]
+      }
+     },
+     {
+      "key": "sheet_area",
+      "name": "Stock by area",
+      "kind": "material",
+      "unit": "cm2",
+      "required": false,
+      "estimate_by": "staff",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {
+       "material": [
+        "Plywood",
+        "MDF",
+        "Acrylic",
+        "Leather",
+        "Fabric"
+       ],
+       "thickness": []
+      }
+     },
+     {
+      "key": "lens",
+      "name": "Lens and mirror wear",
+      "kind": "tool_wear",
+      "unit": "h",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {}
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "operation",
+      "label": "Operation",
+      "type": "choice",
+      "required": true,
+      "choices": [
+       "Cut",
+       "Engrave",
+       "Cut and engrave"
+      ]
+     },
+     {
+      "key": "own_material",
+      "label": "I bring my own material",
+      "type": "boolean",
+      "required": false
+     }
+    ],
+    "pricing": {
+     "charge_by": "time"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": true,
+     "slot_minutes": 30,
+     "buffer_minutes": 5,
+     "requires_approval": false
+    },
+    "safety": {
+     "idle_auto_off_minutes": 10,
+     "max_session_minutes": 120,
+     "area_clear_required": true,
+     "filter_ok_required": true
+    },
+    "maintenance": [
+     {
+      "title": "Clean lens and mirrors",
+      "trigger": "days",
+      "interval": 7
+     },
+     {
+      "title": "Check air assist and extraction",
+      "trigger": "usage_hours",
+      "interval": 50
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Never leave a running laser. No PVC or vinyl (chlorine). Keep the lid closed and the extractor on."
+    },
+    "sources": [
+     3,
+     5,
+     13,
+     14
+    ]
+   }
+  },
+  {
+   "key": "pcb_mill",
+   "name": "PCB mill",
+   "category": "electronics",
+   "icon": "chip",
+   "description": "Desktop PCB mill: copper-clad boards by piece, end mills and V-bits by tool wear.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "minutes",
+     "requires_booking": true,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "board",
+      "name": "Copper-clad board",
+      "kind": "material",
+      "unit": "piece",
+      "required": true,
+      "estimate_by": "staff",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {
+       "material": [
+        "FR1",
+        "FR4"
+       ],
+       "size": [
+        "100 x 70 mm",
+        "100 x 160 mm"
+       ],
+       "thickness": [
+        "1.6 mm"
+       ]
+      }
+     },
+     {
+      "key": "end_mill",
+      "name": "End mill",
+      "kind": "tool_wear",
+      "unit": "use",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {
+       "size": [
+        "1/64 in",
+        "1/32 in",
+        "0.8 mm"
+       ]
+      }
+     },
+     {
+      "key": "v_bit",
+      "name": "V-bit",
+      "kind": "tool_wear",
+      "unit": "use",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {
+       "size": [
+        "20 deg",
+        "30 deg",
+        "60 deg"
+       ]
+      }
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "sides",
+      "label": "Board sides",
+      "type": "choice",
+      "required": true,
+      "choices": [
+       "Single",
+       "Double"
+      ]
+     },
+     {
+      "key": "min_trace_mm",
+      "label": "Smallest trace (mm)",
+      "type": "number",
+      "required": false,
+      "min": 0.05,
+      "max": 5
+     }
+    ],
+    "pricing": {
+     "charge_by": "time"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": true,
+     "slot_minutes": 60,
+     "buffer_minutes": 10,
+     "requires_approval": false
+    },
+    "safety": {
+     "max_session_minutes": 240
+    },
+    "maintenance": [
+     {
+      "title": "Check spindle runout and collet",
+      "trigger": "usage_hours",
+      "interval": 100
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Zero Z on the copper, use the sacrificial layer, vacuum the dust after each job."
+    },
+    "sources": [
+     5,
+     15
+    ]
+   }
+  },
+  {
+   "key": "cnc_router",
+   "name": "CNC router",
+   "category": "cutting",
+   "icon": "cnc",
+   "description": "Router for wood, plastics and soft metals: stock by sheet or volume, bits by tool wear.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "minutes",
+     "requires_booking": true,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "stock_sheet",
+      "name": "Sheet stock",
+      "kind": "material",
+      "unit": "sheet",
+      "required": true,
+      "estimate_by": "staff",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {
+       "material": [
+        "Plywood",
+        "MDF",
+        "HDPE",
+        "Aluminium"
+       ],
+       "thickness": [
+        "6 mm",
+        "12 mm",
+        "18 mm"
+       ]
+      }
+     },
+     {
+      "key": "stock_volume",
+      "name": "Stock by volume",
+      "kind": "material",
+      "unit": "cm3",
+      "required": false,
+      "estimate_by": "staff",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {
+       "material": [
+        "Hardwood",
+        "Softwood",
+        "Foam"
+       ]
+      }
+     },
+     {
+      "key": "router_bit",
+      "name": "Router bit",
+      "kind": "tool_wear",
+      "unit": "use",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {
+       "size": [
+        "3 mm",
+        "6 mm",
+        "1/4 in"
+       ]
+      }
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "material_supplied",
+      "label": "I bring my own stock",
+      "type": "boolean",
+      "required": false
+     }
+    ],
+    "pricing": {
+     "charge_by": "time"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": true,
+     "slot_minutes": 60,
+     "buffer_minutes": 15,
+     "requires_approval": true
+    },
+    "safety": {
+     "idle_auto_off_minutes": 15,
+     "max_session_minutes": 240,
+     "area_clear_required": true,
+     "filter_ok_required": true
+    },
+    "maintenance": [
+     {
+      "title": "Clean and lubricate the gantry",
+      "trigger": "usage_hours",
+      "interval": 50
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Dust extraction on, workpiece clamped, hearing and eye protection worn."
+    },
+    "sources": [
+     4,
+     5,
+     13,
+     16
+    ]
+   }
+  },
+  {
+   "key": "vinyl_cutter",
+   "name": "Vinyl / sign cutter",
+   "category": "cutting",
+   "icon": "scissors",
+   "description": "Cuts adhesive and heat-transfer vinyl from rolls, billed by the metre.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "length",
+     "requires_booking": false,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "vinyl",
+      "name": "Vinyl",
+      "kind": "material",
+      "unit": "m",
+      "required": true,
+      "estimate_by": "member",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {
+       "material": [
+        "Adhesive vinyl",
+        "Heat-transfer vinyl"
+       ],
+       "colour": []
+      }
+     },
+     {
+      "key": "transfer_tape",
+      "name": "Transfer tape",
+      "kind": "other",
+      "unit": "m",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {}
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "design_width_cm",
+      "label": "Design width (cm)",
+      "type": "number",
+      "required": false,
+      "min": 1,
+      "max": 200
+     }
+    ],
+    "pricing": {
+     "charge_by": "material"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": false
+    },
+    "safety": {},
+    "maintenance": [
+     {
+      "title": "Replace blade",
+      "trigger": "job_count",
+      "interval": 200
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Mirror heat-transfer designs before cutting; weed on the bench, not at the cutter."
+    },
+    "sources": [
+     5,
+     17,
+     18
+    ]
+   }
+  },
+  {
+   "key": "embroidery",
+   "name": "Embroidery machine",
+   "category": "textiles",
+   "icon": "needle",
+   "description": "Computerised embroidery: thread by 1,000 stitches (from the design file), stabiliser per job.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "minutes",
+     "requires_booking": true,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "thread",
+      "name": "Thread",
+      "kind": "material",
+      "unit": "k_stitch",
+      "required": true,
+      "estimate_by": "file",
+      "record_by": [
+       "staff",
+       "adapter"
+      ],
+      "attributes": {
+       "colour": []
+      }
+     },
+     {
+      "key": "stabiliser",
+      "name": "Stabiliser",
+      "kind": "per_job",
+      "unit": "use",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {
+       "material": [
+        "Tear-away",
+        "Cut-away",
+        "Wash-away"
+       ]
+      }
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "hoop_size",
+      "label": "Hoop size",
+      "type": "choice",
+      "required": false,
+      "choices": [
+       "100 x 100 mm",
+       "130 x 180 mm",
+       "200 x 300 mm"
+      ]
+     }
+    ],
+    "pricing": {
+     "charge_by": "material"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": true,
+     "slot_minutes": 60,
+     "buffer_minutes": 0,
+     "requires_approval": false
+    },
+    "safety": {},
+    "maintenance": [
+     {
+      "title": "Clean the bobbin case and oil the hook",
+      "trigger": "usage_hours",
+      "interval": 40
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Hoop the stabiliser with the fabric; check the bobbin before long designs."
+    },
+    "sources": [
+     5,
+     17
+    ]
+   }
+  },
+  {
+   "key": "sewing_machine",
+   "name": "Sewing machine",
+   "category": "textiles",
+   "icon": "needle",
+   "description": "Walk-up sewing: fabric by the metre and needles by wear; often included in membership.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "minutes",
+     "requires_booking": true,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "fabric",
+      "name": "Fabric",
+      "kind": "material",
+      "unit": "m",
+      "required": false,
+      "estimate_by": "member",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {
+       "material": [
+        "Cotton",
+        "Canvas",
+        "Denim"
+       ]
+      }
+     },
+     {
+      "key": "needle",
+      "name": "Needle",
+      "kind": "tool_wear",
+      "unit": "piece",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {}
+     }
+    ],
+    "intake_fields": [],
+    "pricing": {
+     "charge_by": "time"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": true,
+     "slot_minutes": 60,
+     "buffer_minutes": 0,
+     "requires_approval": false
+    },
+    "safety": {},
+    "maintenance": [
+     {
+      "title": "Clean and oil",
+      "trigger": "usage_hours",
+      "interval": 20
+     }
+    ],
+    "job": {
+     "accepts_job_requests": false,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Thread with the presser foot up; change the needle after each big project."
+    },
+    "sources": [
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "key": "soldering_station",
+   "name": "Soldering station",
+   "category": "electronics",
+   "icon": "chip",
+   "description": "Electronics bench: solder by weight, tips by wear, components by count.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "minutes",
+     "requires_booking": false,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "solder",
+      "name": "Solder",
+      "kind": "material",
+      "unit": "g",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {
+       "material": [
+        "Lead-free",
+        "Leaded"
+       ]
+      }
+     },
+     {
+      "key": "tip",
+      "name": "Soldering tip",
+      "kind": "tool_wear",
+      "unit": "piece",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {}
+     },
+     {
+      "key": "components",
+      "name": "Components",
+      "kind": "material",
+      "unit": "piece",
+      "required": false,
+      "estimate_by": "none",
+      "record_by": [
+       "staff",
+       "member"
+      ],
+      "attributes": {}
+     }
+    ],
+    "intake_fields": [],
+    "pricing": {
+     "charge_by": "time"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": false
+    },
+    "safety": {
+     "idle_auto_off_minutes": 30
+    },
+    "maintenance": [
+     {
+      "title": "Replace the fume filter",
+      "trigger": "days",
+      "interval": 90
+     }
+    ],
+    "job": {
+     "accepts_job_requests": false,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Fume extractor on; tin the tip before switching off."
+    },
+    "sources": [
+     4
+    ]
+   }
+  },
+  {
+   "key": "ceramics_kiln",
+   "name": "Ceramics kiln",
+   "category": "ceramics",
+   "icon": "flame",
+   "description": "Kiln firings: a fee per firing or load, or ware volume in cm3.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "count",
+     "requires_booking": true,
+     "is_public": true
+    },
+    "consumables": [
+     {
+      "key": "firing",
+      "name": "Firing",
+      "kind": "per_job",
+      "unit": "use",
+      "required": true,
+      "estimate_by": "staff",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {
+       "material": [
+        "Bisque",
+        "Glaze"
+       ],
+       "size": [
+        "Full kiln",
+        "Full shelf",
+        "Half shelf"
+       ]
+      }
+     },
+     {
+      "key": "ware_volume",
+      "name": "Ware volume",
+      "kind": "material",
+      "unit": "cm3",
+      "required": false,
+      "estimate_by": "staff",
+      "record_by": [
+       "staff"
+      ],
+      "attributes": {}
+     }
+    ],
+    "intake_fields": [
+     {
+      "key": "firing_type",
+      "label": "Firing",
+      "type": "choice",
+      "required": true,
+      "choices": [
+       "Bisque",
+       "Glaze"
+      ]
+     },
+     {
+      "key": "cone",
+      "label": "Cone",
+      "type": "text",
+      "required": false
+     }
+    ],
+    "pricing": {
+     "charge_by": "job"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": true,
+     "slot_minutes": 720,
+     "buffer_minutes": 240,
+     "requires_approval": true
+    },
+    "safety": {
+     "area_clear_required": true
+    },
+    "maintenance": [
+     {
+      "title": "Inspect elements and shelves",
+      "trigger": "job_count",
+      "interval": 25
+     }
+    ],
+    "job": {
+     "accepts_job_requests": true,
+     "runs_unattended": true
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": "Only dry, labelled ware; no glaze on the foot; staff load and unload the kiln."
+    },
+    "sources": [
+     19,
+     20
+    ]
+   }
+  },
+  {
+   "key": "time_based",
+   "name": "Generic time-based machine",
+   "category": "general",
+   "icon": "clock",
+   "description": "Any machine billed by the minute with no tracked materials. Add consumables if it needs any.",
+   "spec": {
+    "version": 1,
+    "basics": {
+     "metering_unit": "minutes",
+     "requires_booking": true,
+     "is_public": true
+    },
+    "consumables": [],
+    "intake_fields": [],
+    "pricing": {
+     "charge_by": "time"
+    },
+    "access": {
+     "open_to_all_members": false,
+     "supervised": false
+    },
+    "bookings": {
+     "bookable": true,
+     "slot_minutes": 60,
+     "buffer_minutes": 0,
+     "requires_approval": false
+    },
+    "safety": {
+     "idle_auto_off_minutes": 15
+    },
+    "maintenance": [],
+    "job": {
+     "accepts_job_requests": false,
+     "runs_unattended": false
+    },
+    "notifications": {
+     "job_finished": true,
+     "job_failed": true,
+     "low_stock": true
+    },
+    "documents": {
+     "training_notes": ""
+    },
+    "sources": [
+     1,
+     21,
+     22
+    ]
+   }
+  }
+ ]
+}

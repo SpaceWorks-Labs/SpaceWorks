@@ -53,6 +53,19 @@ def charge_tracking_enabled(makerspace, domain):
     )
 
 
+#: Every chargeable domain with its own `charges.<domain>` switch (#184).
+CHARGE_DOMAINS = ("loans", "machines", "bookings", "events", "membership", "shop", "donations")
+
+
+def charges_tracked(makerspace):
+    """`{domain: bool}` for the frontend: whether that domain's money UI shows at all (#184 G5).
+
+    Per domain, never one global flag, so a mixed space (free lending, paid machines) hides
+    exactly the free domains' prices. The server still decides every charge itself.
+    """
+    return {domain: charge_tracking_enabled(makerspace, domain) for domain in CHARGE_DOMAINS}
+
+
 #: Which capability domain each payment subject belongs to. Kept beside the two
 #: predicates so a new SubjectType cannot quietly acquire a rail nobody switched on.
 SUBJECT_DOMAINS = {
@@ -61,9 +74,30 @@ SUBJECT_DOMAINS = {
     "event_registration": "events",
     "makerspace_membership": "membership",
     "membership_term": "membership",
+    "membership_term_start": "membership",  # #184: a term staff opened
+    "guest_pass": "membership",  # decision 223(b): a paid day pass is membership-domain money
     "membership_request": "membership",
     "loan_deposit": "loans",
     "loan_late_fee": "loans",
+    # Lane L15: rental, damage and lost charges are loan money too.
+    "loan_rental": "loans",
+    "loan_damage": "loans",
+    "loan_lost": "loans",
+    # Lane L23: a metered machine session is machine money.
+    "machine_session": "machines",
+    # Lane L6: ticket orders and venue fees are events income.
+    "event_order": "events",
+    "event_venue_fee": "events",
+    # Lane L18: gifts and sponsor money. The rail is `payments.donations`.
+    "donation": "donations",
+    "sponsorship": "donations",
+    # Lane L21b: a project's entry fee and a paid team's one charge are events income.
+    "submission_fee": "events",
+    "team_registration": "events",
+    # Hack-money G10: a refundable deposit is events money.
+    "event_deposit": "events",
+    # Lane L22: shop orders, online and at the front desk.
+    "shop_order": "shop",
 }
 
 

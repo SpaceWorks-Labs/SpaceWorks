@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django import forms
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
@@ -14,7 +15,9 @@ from apps.integrations.webhook_validation import (
     UnsafeWebhookUrl,
     resolve_webhook_target,
 )
+from apps.makerspaces.admin_limits import CapacityAdminMixin
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext
 
 
 class NotificationDestinationAdminForm(forms.ModelForm):
@@ -41,20 +44,20 @@ class NotificationDestinationAdminForm(forms.ModelForm):
         if channel == ChatNotificationChannel.TELEGRAM:
             if not chat_id:
                 raise forms.ValidationError(
-                    {"telegram_chat_id": "A Telegram destination needs a chat id."}
+                    {"telegram_chat_id": gettext("A Telegram destination needs a chat id.")}
                 )
             if raw_webhook:
                 raise forms.ValidationError(
-                    {"new_webhook_url": "Telegram destinations use a chat id, not a webhook."}
+                    {"new_webhook_url": gettext("Telegram destinations use a chat id, not a webhook.")}
                 )
         elif channel in WEBHOOK_CHANNELS:
             if not has_webhook:
                 raise forms.ValidationError(
-                    {"new_webhook_url": "This channel needs an incoming-webhook URL."}
+                    {"new_webhook_url": gettext("This channel needs an incoming-webhook URL.")}
                 )
             if chat_id:
                 raise forms.ValidationError(
-                    {"telegram_chat_id": "Only Telegram destinations carry a chat id."}
+                    {"telegram_chat_id": gettext("Only Telegram destinations carry a chat id.")}
                 )
             if raw_webhook:
                 try:
@@ -95,7 +98,8 @@ class DestinationCategoryScopeInline(TabularInline):
 
 
 @admin.register(NotificationDestination)
-class NotificationDestinationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class NotificationDestinationAdmin(CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "webhook_endpoints"
     """A room a makerspace posts into. No scope links means space-wide."""
 
     form = NotificationDestinationAdminForm
@@ -109,6 +113,6 @@ class NotificationDestinationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     search_fields = ("label",)
     readonly_fields = ("created_at", "updated_at")
 
-    @admin.display(boolean=True, description="Credential set")
+    @admin.display(boolean=True, description=gettext_lazy("Credential set"))
     def credential_set(self, obj):
         return bool(obj.webhook_url or obj.telegram_chat_id)

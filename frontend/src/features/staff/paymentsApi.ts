@@ -1,26 +1,41 @@
+import { t } from "@lingui/core/macro";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { StructuredApiError, staffRequest } from "../../lib/api";
+import { paymentMethodLabel } from "../../lib/money";
 
 export const PAYMENT_SUBJECTS = [
-  ["machine_service_request", "Machine service"],
-  ["booking", "Booking"],
-  ["event_registration", "Event registration"],
-  ["makerspace_membership", "Membership dues"],
+  ["machine_service_request", t`Machine service`],
+  ["booking", t`Booking`],
+  ["event_registration", t`Event registration`],
+  ["makerspace_membership", t`Membership dues`],
   // Every `Payment.SubjectType`: a renewal or loan charge filtered as "All subjects" only
   // could not be found on its own, and rendered with a raw enum label.
-  ["membership_term", "Membership renewal"],
-  ["membership_request", "Membership admission"],
-  ["loan_deposit", "Loan deposit"],
-  ["loan_late_fee", "Late return fee"],
+  ["membership_term", t`Membership renewal`],
+  ["membership_request", t`Membership admission`],
+  ["membership_term_start", t`Membership term`], // #184: a term staff opened
+  ["loan_deposit", t`Loan deposit`],
+  ["loan_late_fee", t`Late return fee`],
+  ["loan_rental", t`Loan rental`],
+  ["loan_damage", t`Loan damage charge`],
+  ["loan_lost", t`Lost item charge`],
+  ["machine_session", t`Machine session`],
+  ["event_order", t`Event ticket order`],
+  ["event_venue_fee", t`Event venue fee`],
+  ["donation", t`Donation`],
+  ["sponsorship", t`Sponsorship`],
+  ["submission_fee", t`Project entry fee`],
+  ["team_registration", t`Team registration`],
+  ["event_deposit", t`Event deposit`],
+  ["shop_order", t`Shop order`],
 ] as const;
 
 export const PAYMENT_STATUSES = [
-  ["pending", "Pending"],
-  ["paid_online", "Paid online"],
-  ["paid_offline", "Paid offline"],
-  ["waived", "Waived"],
-  ["canceled", "Canceled"],
+  ["pending", t`Pending`],
+  ["paid_online", t`Paid online`],
+  ["paid_offline", t`Paid offline`],
+  ["waived", t`Waived`],
+  ["canceled", t`Canceled`],
 ] as const;
 
 // Mirrors `apps/payments/serializers_reconciliation.RefundSerializer`. A refund is a row
@@ -59,6 +74,9 @@ export type PaymentRow = {
   // The standing manual receipt for a `paid_offline` charge, else null. Mirrors
   // `serializers_reconciliation.StaffSettlementSerializer`.
   settlement?: StaffSettlement | null;
+  // Lane L5 row facts (method label, open claim/confirmation, flags, disputes, pay-link offer).
+  ledger_flags?: { method_label: string; awaiting_confirmation_id: number | null; open_claim_id: number | null;
+    open_flags: number; disputed: boolean; taxed: boolean; pay_link_available: boolean };
   created_at: string;
   updated_at: string;
 };
@@ -87,12 +105,12 @@ export function paymentListPath(makerspaceId: number, status: string, subject: s
 }
 
 export const SETTLEMENT_METHODS = [
-  ["cash", "Cash"],
+  ["cash", t`Cash`],
   ["upi", "UPI"],
-  ["bank_transfer", "Bank transfer"],
-  ["card_machine", "Card machine"],
-  ["cheque", "Cheque"],
-  ["other", "Other"],
+  ["bank_transfer", t`Bank transfer`],
+  ["card_machine", t`Card machine`],
+  ["cheque", t`Cheque`],
+  ["other", t`Other`],
 ] as const;
 
 export type Settlement = { method: string; reference: string; received_at: string };
@@ -128,9 +146,22 @@ export function amendSettlement(makerspaceId: number, paymentId: number, settlem
   );
 }
 
+/** The translated label for a `Payment.Status` value ("none" when a subject has no charge). */
+export function paymentStatusLabel(status: string) {
+  if (status === "none") return t`No charge`;
+  return PAYMENT_STATUSES.find(([key]) => key === status)?.[1] ?? status.replace(/_/g, " ");
+}
+
+export function paymentSubjectLabel(subject: string) {
+  return PAYMENT_SUBJECTS.find(([key]) => key === subject)?.[1] ?? subject.replace(/_/g, " ");
+}
+
+export function settlementMethodLabel(method: string) {
+  return SETTLEMENT_METHODS.find(([key]) => key === method)?.[1] ?? paymentMethodLabel(method);
+}
+
 export function settlementLabel(settlement: StaffSettlement) {
-  const method = SETTLEMENT_METHODS.find(([key]) => key === settlement.method)?.[1]
-    ?? settlement.method.replace(/_/g, " ");
+  const method = settlementMethodLabel(settlement.method);
   return settlement.reference ? `${method} · ${settlement.reference}` : method;
 }
 
@@ -178,31 +209,25 @@ export function remainingRefundable(row: Pick<PaymentRow, "amount" | "refunds">)
   const counted = (row.refunds ?? [])
     .filter((refund) => refund.status !== "failed" && !refund.corrected)
     .reduce((total, refund) => total + Number(refund.amount), 0);
-  return Math.max(0, Math.round((Number(row.amount) - counted) * 100) / 100);
+  return Math.max(0, Math.round((Number(row.amount) - counted) * 1000) / 1000);
 }
 
 // One readable sentence per backend code (`services_refunds.RefundNotAllowed` and
 // `RefundProviderFailure`); anything else falls back to the API's own detail text.
-const REFUND_ERRORS: Record<string, string> = {
-  deposit_not_returned: "Close the loan through its return workflow before recording a deposit release.",
-  refund_not_online: "Only payments settled online can be refunded through the provider. Use Record refund for an offline payment.",
-  refund_not_offline: "Only payments settled offline can have an offline refund recorded.",
-  refund_exceeds_balance: "That amount is more than the remaining refundable balance of this payment.",
-  refund_amount_invalid: "Enter a refund amount greater than zero, with at most two decimals.",
-  refund_provider_failed: "The payment provider rejected the refund. No money was sent back; the failed attempt is recorded on the payment.",
-};
+const REFUND_ERRORS = (): Record<string, string> => ({
+  deposit_not_returned: t`Close the loan through its return workflow before recording a deposit release.`,
+  refund_not_online: t`Only payments settled online can be refunded through the provider. Use Record refund for an offline payment.`,
+  refund_not_offline: t`Only payments settled offline can have an offline refund recorded.`,
+  refund_exceeds_balance: t`That amount is more than the remaining refundable balance of this payment.`,
+  refund_amount_invalid: t`Enter a refund amount greater than zero, with no more decimals than the currency has.`,
+  refund_provider_failed: t`The payment provider rejected the refund. No money was sent back; the failed attempt is recorded on the payment.`,
+});
 
 export function refundErrorMessage(error: unknown) {
-  if (error instanceof StructuredApiError && error.code && REFUND_ERRORS[error.code]) {
-    return REFUND_ERRORS[error.code];
+  if (error instanceof StructuredApiError && error.code && REFUND_ERRORS()[error.code]) {
+    return REFUND_ERRORS()[error.code];
   }
-  return error instanceof Error ? error.message : "Refund failed.";
+  return error instanceof Error ? error.message : t`Refund failed.`;
 }
 
-export function formatMoney(amount: string, currency: string) {
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
-  } catch {
-    return `${currency.toUpperCase()} ${amount}`;
-  }
-}
+export { formatMoney } from "../../lib/money";

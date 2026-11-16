@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics
@@ -21,10 +22,10 @@ ERRORS = {code: PackErrorSerializer for code in (400, 401, 403, 404, 409, 423, 5
 class PackExceptionMixin:
     def handle_exception(self, exc):
         if isinstance(exc, SerializerValidationError):
-            return Response({"code": "invalid_pack_configuration", "detail": "Check the pack configuration.",
+            return Response({"code": "invalid_pack_configuration", "detail": gettext("Check the pack configuration."),
                              "fields": exc.detail}, status=400)
         if isinstance(exc, DjangoValidationError):
-            return Response({"code": "invalid_pack_configuration", "detail": "Check the pack configuration.",
+            return Response({"code": "invalid_pack_configuration", "detail": gettext("Check the pack configuration."),
                              "fields": exc.message_dict if hasattr(exc, "message_dict") else exc.messages}, status=400)
         return super().handle_exception(exc)
 

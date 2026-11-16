@@ -1,37 +1,61 @@
-import { useMemo, useRef, useState } from "react";
+import { t } from "@lingui/core/macro";
+import { SegmentedControl } from "../../components/ui";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Card } from "../../components/ui/Card";
 import type { RequestCartItem } from "../../types/inventory";
 import { BorrowRequestCard } from "./BorrowRequestCard";
-import { getAccessToken, refreshAccessToken } from "../../lib/api";
 import { submitPublicRequest } from "./api";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { PublicToolScanPanel } from "./PublicToolScanPanel";
+import { useRequestDraft, type RequestDraft } from "./useRequestDraft";
+import { useContactRequest } from "./useContactRequest";
+import { PricePreview } from "../payments/PricePreview";
+import { PickupWindowFields, pickupWindowPayload, pickupWindowProblem } from "./PickupWindowFields";
+import { ContextualRequest } from "./ContextualRequest";
+import { ConsumableKitPlan } from "./ConsumableKitPlan";
+import { type PendingIntake, type SelfBody, type SelfResult } from "./contextualIntake";
+import { useIntakeScope } from "./useIntakeScope";
+import { useRestoreMemberSession } from "./useRestoreMemberSession";
+import { usePendingIntakeOwner } from "./usePendingIntakeOwner";
+import { getSessionOwner, hasSessionIdentity } from "../../lib/api/sessionTokens";
+import { onSessionCleared } from "../../lib/api/sessionContext";
+import { memberRequest } from "../../lib/api";
+import { eligibilityMessage } from "../../lib/eligibilityCopy";
+import { acquireOrdinary, notifyOrdinary, ordinaryEntry } from "./ordinaryRequestFence";
+import { tenantPath, useOptionalTenant } from "../../lib/tenant";
+import { stashCartForSignIn } from "./publicInventory/cartHandoff";
+import { formatDateTime } from "../../lib/format";
+import { statusStageLabel } from "../../components/ui/StatusStepper";
 
-type ActiveTab = "borrow" | "scan";
+export type ActiveTab = "borrow" | "scan";
 
 type PublicRequestPanelProps = {
   items: RequestCartItem[];
   makerspaceSlug: string;
   onClear: () => void;
   disabled?: boolean;
-  // The makerspace's policy, not the caller's state. Present only when the space opted
-  // into account-less borrow requests.
-  requestAccess?: "anyone";
+  // The makerspace's policy: "contact" only where it has no member accounts (#80).
+  requestAccess?: "contact";
+  /** Lets the page open the panel straight on "Scan a tool" (the phone bar does). Uncontrolled when omitted. */
+  activeTab?: ActiveTab;
+  onActiveTabChange?: (tab: ActiveTab) => void;
+  /** The page owns the draft so it survives the phone sheet unmounting this panel. Own state when omitted. */
+  draft?: RequestDraft;
+  /** The space's effective switches (bootstrap `features`); `loans.reservations` adds the collection window. */
+  features?: readonly string[];
+  makerspaceId?: number;
+  modules?: readonly string[];
+  /** Single-item forms submit ordinary requests; contextual kits belong to the catalogue. */
+  contextual?: boolean;
+  pendingOwner?: PendingIntake<SelfBody>;
+  contextualLocked?: boolean;
+  onContextLock?: () => void;
+  onContextDone?: () => void;
+  onContextSuccess?: (result: SelfResult, scope: string) => void;
+  planConfirmed?: boolean;
+  onNewRequest?: () => void;
 };
-
-// The header is required for account-less submissions, and it is what makes a retry
-// idempotent: the same key with the same payload returns the original request. Held for
-// the lifetime of one composed request and rotated only after a successful submit, so a
-// network retry of the SAME attempt cannot create a second request.
-function newIdempotencyKey() {
-  const cryptoRef = globalThis.crypto;
-  if (cryptoRef && typeof cryptoRef.randomUUID === "function") {
-    return cryptoRef.randomUUID();
-  }
-  return `req-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
 
 export function PublicRequestPanel({
   items,
@@ -39,45 +63,88 @@ export function PublicRequestPanel({
   onClear,
   disabled = false,
   requestAccess,
+  activeTab: controlledTab,
+  onActiveTabChange,
+  draft: draftProp,
+  features, contextual = true,
+  makerspaceId, modules = [], pendingOwner, contextualLocked: parentLocked, onContextLock, onContextDone, onContextSuccess, planConfirmed, onNewRequest,
 }: PublicRequestPanelProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("borrow");
-  const [requestedFor, setRequestedFor] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [contactName, setContactName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-  const [website, setWebsite] = useState("");
-  const [publicToken, setPublicToken] = useState("");
-  const idempotencyKey = useRef(newIdempotencyKey());
-  // A signed-in member who RELOADED this page holds no in-memory access token -- it lives
-  // behind the refresh cookie, and unlike `MemberArea` this page never hydrates. Without
-  // the probe they would be classified as anonymous and their request filed against the
-  // SHARED anonymous principal, which every per-person view excludes: it would vanish from
-  // their own activity and take the unverified-contact path instead of notifying them.
-  const sessionProbe = useQuery({
-    queryKey: ["public-request-session", makerspaceSlug],
-    queryFn: async () => (getAccessToken() ? true : refreshAccessToken()),
-    enabled: requestAccess === "anyone" && !disabled,
-    staleTime: Infinity,
-    retry: false,
-  });
-  // Policy AND caller state. `tenantPublicRequest` still attaches Authorization when a
-  // token is in memory, and the backend then takes the AUTHENTICATED branch and ignores
-  // these contact fields -- so asking for them would promise something the stored request
-  // does not honour. Until the probe settles we assume a member: claiming "no account
-  // needed" and then discovering a session would be the worse way round.
-  const authenticated = Boolean(getAccessToken());
-  const accountLess =
-    requestAccess === "anyone" && sessionProbe.isFetched && !authenticated;
+  const tenantMode = useOptionalTenant()?.mode ?? "central";
+  const session = useIntakeScope();
+  useRestoreMemberSession(requestAccess !== "contact");
+  // The identity query is intentionally unscoped by the candidate owner: while
+  // auth notification precedes token replacement, its verified result may still
+  // be the previous actor and must never admit a new actor-scoped request.
+  const identity = useQuery({ queryKey: ["member", "cards-account"], queryFn: () => memberRequest<{ id: number }>("/auth/me"), enabled: hasSessionIdentity("person"), retry: false, staleTime: 0 });
+  const verifiedOwner = Boolean(session.owner && identity.data && session.owner === String(identity.data.id));
+  const ordinaryScope = JSON.stringify([session.context, session.owner, makerspaceSlug, makerspaceId ?? null]);
+  const ordinary = ordinaryEntry(ordinaryScope);
+  useSyncExternalStore(listener => { ordinary.listeners.add(listener); return () => { ordinary.listeners.delete(listener); }; }, () => ordinary.busy ? "busy" : ordinary.unknown ? "unknown" : "idle");
+  const [history, setHistory] = useState<{ scope: string; rows: { id: number; status: string; created_at: string }[] }>();
+  const [historyError, setHistoryError] = useState(false);
+  const identityAdmitted = () => {
+    const current = getSessionOwner("person");
+    const verified = queryClient.getQueryData<{ id: number }>(["member", "cards-account"]);
+    return Boolean(current && current === session.owner && verified && current === String(verified.id));
+  };
+  const admitted = () => identityAdmitted() && !ordinary.busy && !ordinary.unknown;
+  const scope = ordinaryScope;
+  const liveScope = useRef({ scope, live: false }); liveScope.current.scope = scope;
+  useEffect(() => { const state = liveScope.current; state.live = true; return () => { state.live = false; }; }, []);
+  const [lockedScope, setLockedScope] = useState<string>();
+  const [planSubmittedScope, setPlanSubmitted] = useState<string>();
+  useEffect(() => { setPlanSubmitted(undefined); }, [scope]);
+  useEffect(() => onSessionCleared(context => {
+    if (context === session.context && getSessionOwner(context) !== session.owner) setPlanSubmitted(undefined);
+  }), [session.context, session.owner]);
+  const localOwner = usePendingIntakeOwner(scope);
+  const selectedOwner = pendingOwner ?? localOwner;
+  const pendingAtRender = Boolean(selectedOwner.current(scope));
+  useEffect(() => {
+    let wasPending = pendingAtRender;
+    const reconcile = () => {
+      const pending = Boolean(selectedOwner.current(scope));
+      if (wasPending && !pending && getSessionOwner("person") === session.owner) {
+        setLockedScope(current => current === scope ? undefined : current);
+        onContextDone?.();
+      }
+      wasPending = pending;
+    };
+    const unsubscribe = selectedOwner.subscribe(reconcile);
+    reconcile();
+    return unsubscribe;
+  }, [selectedOwner, scope, session.owner, onContextDone, pendingAtRender]);
+  const contextualLocked = parentLocked || lockedScope === scope;
+  const [ownTab, setOwnTab] = useState<ActiveTab>("borrow");
+  // "Scan a tool" is the self-checkout surface: without `inventory.self_checkout` every step
+  // of it is refused, so the tab is not offered at all (an unknown switch list keeps it).
+  const selfCheckout = !features || features.includes("inventory.self_checkout");
+  const activeTab = selfCheckout ? controlledTab ?? ownTab : "borrow";
+  const setActiveTab = (tab: ActiveTab) => { setOwnTab(tab); onActiveTabChange?.(tab); };
+  const ownDraft = useRequestDraft();
+  const draft = draftProp ?? ownDraft;
+  const { requestedFor, setRequestedFor, submitted, setSubmitted, website, setWebsite, pickup, setPickup } = draft;
+  const contextSuccess = (result: SelfResult, completedScope: string) => {
+    if (onContextSuccess) { onContextSuccess(result, completedScope); return; }
+    if (!liveScope.current.live || completedScope !== liveScope.current.scope || !identityAdmitted()) return;
+    invalidatePublicInventory(queryClient, makerspaceSlug);
+    setSubmitted(result.kind === "request"); setPlanSubmitted(result.kind === "consumable_plan" ? completedScope : undefined);
+    onClear(); setRequestedFor(""); setWebsite(""); setPickup({ from: "", until: "" });
+  };
+  const reservations = Boolean(features?.includes("loans.reservations"));
+  const contactMode = requestAccess === "contact";
+  // `request_access` only says "contact"; members vs any-account follows the membership module.
+  const membershipBorrowing = modules.includes("membership");
+  const contact = useContactRequest(makerspaceSlug, draft, contactMode);
   const totalItems = useMemo(
     () => items.reduce((total, item) => total + item.quantity, 0),
     [items],
   );
 
   const submitMutation = useMutation({
-    mutationFn: () =>
-      submitPublicRequest(
+    mutationFn: (_attempt: { owner: string; done?: (definite: boolean) => boolean }) =>
+      (!contactMode && !identityAdmitted()) ? Promise.reject(new Error(t`Session changed.`)) : submitPublicRequest(
         makerspaceSlug,
         {
           requested_for: requestedFor.trim(),
@@ -86,138 +153,74 @@ export function PublicRequestPanel({
             quantity: item.quantity,
           })),
           website,
-          ...(accountLess
-            ? {
-                contact_name: contactName.trim(),
-                contact_email: contactEmail.trim(),
-                contact_phone: contactPhone.trim(),
-              }
-            : {}),
+          ...(reservations ? pickupWindowPayload(pickup) : {}),
+          ...contact.payload,
         },
-        accountLess ? idempotencyKey.current : undefined,
       ),
-    // The previous banner and token must not survive into the next attempt: if this one
-    // fails, showing the error beside a stale token invites the requester to save the
-    // wrong reference -- and it is their only route back to the request.
-    onMutate: () => {
-      setSubmitted(false);
-      setPublicToken("");
-    },
-    onSuccess: (response) => {
+    // The previous banner must not survive into the next attempt.
+    onMutate: () => { setSubmitted(false); setPlanSubmitted(undefined); onNewRequest?.(); },
+    onSuccess: (_result, attempt) => {
+      if (attempt.done && !attempt.done(true)) return;
+      if (!contactMode && (!identityAdmitted() || getSessionOwner("person") !== attempt.owner)) return;
       invalidatePublicInventory(queryClient, makerspaceSlug);
-      // Kept before the form is cleared: this token is the account-less requester's only
-      // way back to the request.
-      setPublicToken(response?.public_token ?? "");
       setSubmitted(true);
       onClear();
-      setContactName("");
-      setContactEmail("");
-      setContactPhone("");
       setRequestedFor("");
       setWebsite("");
-      // Only after the server accepted it: reusing the key for the NEXT request would
-      // return this one back instead of creating anything.
-      idempotencyKey.current = newIdempotencyKey();
+      setPickup({ from: "", until: "" });
+      contact.clear();
     },
+    onError: (error, attempt) => { attempt.done?.((error as { status?: number }).status === 400); },
   });
 
-  // Each tab carries its own palette tone - a touch of colour so the action row
-  // doesn't read as flat. Active = filled pastel (+ dark deep-tint); idle = neutral
-  // with a faint tone hover hint.
-  const tabTone: Record<ActiveTab, { active: string; idle: string }> = {
-    borrow: {
-      active:
-        "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
-      idle: "hover:border-secondary hover:bg-secondary/15 hover:text-secondary-ink",
-    },
-    scan: {
-      active:
-        "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
-      idle: "hover:border-secondary hover:bg-secondary/15 hover:text-secondary-ink",
-    },
-  };
-
-  function tabClass(tab: ActiveTab) {
-    const tone = tabTone[tab];
-    return activeTab === tab
-      ? `status-box min-h-11 w-full py-2 shadow-soft ${tone.active}`
-      : `status-box min-h-11 w-full py-2 ${tone.idle}`;
-  }
-
-  const contactReady =
-    !accountLess ||
-    (contactName.trim().length > 0 && contactEmail.trim().length > 0);
-  // While the probe is unresolved `accountLess` is still false, so `contactReady` is
-  // vacuously true and the button would go live before the contact fields exist. On a
-  // slow refresh a visitor could submit a member-shaped body and take a 400.
-  const policyResolved = requestAccess !== "anyone" || sessionProbe.isFetched;
   const canSubmit =
     requestedFor.trim().length > 0 &&
     items.length > 0 &&
-    contactReady &&
-    policyResolved &&
-    !submitMutation.isPending;
+    contact.ready &&
+    (contactMode || verifiedOwner) &&
+    !(reservations && pickupWindowProblem(pickup)) &&
+    !submitMutation.isPending && !contextualLocked && !ordinary.busy && !ordinary.unknown;
 
+  // No cards inside this panel: its host already frames it (the public "Your request" card, the
+  // desk kiosk's card), and every nested card's padding took width from a ~300px desktop column.
+  // At xl the host card is sticky beside the catalogue, so the tab body scrolls inside a viewport-
+  // high panel instead of hiding the submit button below the fold until the page ends.
   return (
-    <aside className="space-y-4 lg:sticky lg:top-0 lg:max-h-[100dvh] lg:flex lg:flex-col lg:overflow-hidden">
+    <div data-replay-block className="grid min-w-0 gap-4 xl:flex xl:max-h-[calc(100dvh-9rem)] xl:flex-col">
+      {planConfirmed || planSubmittedScope === scope ? <p role="status">{t`Consumable plan saved. No equipment was issued or stock used.`}</p> : null}
       {disabled ? (
-        <Card>
-          <p className="eyebrow text-secondary-ink">
-            Requests
-          </p>
-          <h2 className="title-panel mt-2">Unavailable</h2>
+        <div>
+          <p className="eyebrow text-brand-ink">
+            {t`Requests`}</p>
+          <h2 className="title-panel mt-2">{t`Unavailable`}</h2>
           <p className="mt-2 text-sm text-muted">
-            This makerspace is publishing inventory without public requests.
-          </p>
-        </Card>
+            {t`This makerspace is publishing inventory without public requests.`}</p>
+          {features?.includes("inventory.consumables") && verifiedOwner ? <ConsumableKitPlan key={scope} scope={scope} slug={makerspaceSlug} pendingOwner={pendingOwner ?? localOwner} admitted={admitted} onSuccess={contextSuccess} onLock={() => { setPlanSubmitted(undefined); onNewRequest?.(); setLockedScope(scope); onContextLock?.(); }} onDone={() => { setLockedScope(undefined); onContextDone?.(); }} /> : null}
+        </div>
       ) : (
         <>
-          <Card className="shrink-0" padding="sm">
-            <h2 className="title-panel text-secondary-ink">
-              {accountLess && activeTab === "borrow"
-                ? "Borrow something"
-                : "Member borrowing"}
-            </h2>
-            <p className="mt-2 text-sm text-muted">
-              {/* Three states, because the requirements genuinely differ. Scoped to the
-                  borrow tab: scanning a tool is self-checkout, which DOES require an
-                  authenticated member with active presence, so "no account needed" would
-                  be false there until it 401s. And an `anyone` policy necessarily has the
-                  membership module off, so the membership/waiver/presence sentence cannot
-                  be true on such a space even for a signed-in visitor. */}
-              {activeTab === "borrow" && accountLess
-                ? "No account needed. Leave your name and email so staff can reach you about the request; they review it before anything is handed over."
-                : activeTab === "borrow" && requestAccess === "anyone"
-                  ? "You are signed in, so this request is filed against your account. Staff review it before anything is handed over."
-                  : "Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required."}
+          <div className="shrink-0">
+            <h2 className="title-panel text-brand-ink">{contactMode ? activeTab === "borrow" ? t`Borrow something` : t`Borrow or return a tool` : membershipBorrowing ? t`Member borrowing` : t`Borrowing`}</h2>
+            <p className="mt-1 text-sm leading-6 text-muted">
+              {contactMode
+                ? activeTab === "borrow"
+                  ? t`No account needed. Give your name, phone and email and confirm the email with the code we send; staff review every request before anything is handed over.`
+                  : t`No account needed. Give your name, phone and email and confirm the email with the code we send.`
+                : membershipBorrowing
+                  ? t`Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required.`
+                  : t`Requests use your signed-in account. Staff review every request before anything is handed over.`}
             </p>
-          </Card>
-
-          <div
-            aria-label="Request actions"
-            className="grid shrink-0 grid-cols-2 gap-2"
-          >
-            <button
-              aria-pressed={activeTab === "borrow"}
-              className={tabClass("borrow")}
-              id="public-request-borrow-tab"
-              type="button"
-              onClick={() => setActiveTab("borrow")}
-            >
-              Borrow request
-            </button>
-            <button
-              aria-pressed={activeTab === "scan"}
-              className={tabClass("scan")}
-              id="public-request-scan-tab"
-              type="button"
-              onClick={() => setActiveTab("scan")}
-            >
-              Scan a tool
-            </button>
+            {/* 0.12.0 row 29: sign in, then come back to this page with the cart as it was. */}
+            {!contactMode && !session.owner ? <a className="desk-button-brand mt-3 inline-flex" onClick={() => stashCartForSignIn(items)}
+              href={`${tenantPath(tenantMode, makerspaceSlug, "member")}?next=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`}>{t`Sign in to borrow`}</a> : null}
           </div>
 
-          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          {selfCheckout ? <div className="shrink-0 [&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
+            <SegmentedControl label={t`Request actions`} value={activeTab} options={[{ value: "borrow", label: t`Borrow request` }, { value: "scan", label: t`Scan a tool` }]} onChange={value => setActiveTab(value as ActiveTab)} />
+          </div> : null}
+
+          {/* p-1/-m-1 keeps focus outlines inside the scroll box from being clipped. */}
+          <div className="min-h-0 min-w-0 xl:-m-1 xl:flex-1 xl:overflow-y-auto xl:p-1">
             {activeTab === "borrow" ? (
               <div
                 id="public-request-borrow-panel"
@@ -226,41 +229,42 @@ export function PublicRequestPanel({
                   canSubmit={canSubmit}
                   items={items}
                   requestedFor={requestedFor}
-                  submitError={submitMutation.error?.message}
+                  submitError={eligibilityMessage(submitMutation.error) ?? submitMutation.error?.message}
                   submitPending={submitMutation.isPending}
                   submitted={submitted}
+                  historyHref={!contactMode ? tenantPath(tenantMode, makerspaceSlug, "member/loans/history") : undefined}
                   totalItems={totalItems}
                   onClear={onClear}
                   onRequestedForChange={setRequestedFor}
-                  onSubmit={() => submitMutation.mutate()}
-                  accountLess={accountLess}
-                  contactName={contactName}
-                  contactEmail={contactEmail}
-                  contactPhone={contactPhone}
-                  onContactNameChange={setContactName}
-                  onContactEmailChange={setContactEmail}
-                  onContactPhoneChange={setContactPhone}
+                  onSubmit={() => { if (contactMode) { submitMutation.mutate({ owner: "" }); return; } if (!identityAdmitted() || (pendingOwner ?? localOwner).current(scope)) return; const done = acquireOrdinary(scope); if (!done) return; submitMutation.mutate({ owner: session.owner ?? "", done }); }}
                   website={website}
                   onWebsiteChange={setWebsite}
-                  publicToken={publicToken}
+                  contact={contact.details}
+                  extraFields={reservations ? <PickupWindowFields value={pickup} onChange={setPickup} /> : null}
                 />
+                {ordinary.unknown && !ordinary.busy ? <div className="mt-3 grid gap-2 text-sm" role="status"><p className="text-ink">{t`The previous request may have been submitted. Review your borrowing history before making another.`}</p><button type="button" className="desk-button w-fit" onClick={() => { if (!identityAdmitted() || !makerspaceId) return; setHistoryError(false); void memberRequest<{ results: { id: number; status: string; created_at: string }[] }>(`/member/makerspaces/${makerspaceId}/borrowing-history?period=all&page=1`).then(page => { if (identityAdmitted()) setHistory({ scope, rows: page.results }); }).catch(() => setHistoryError(true)); }}>{t`Load my borrowing history`}</button>{historyError ? <p className="text-danger" role="alert">{t`History is unavailable. Try again before starting another request.`}</p> : null}{history?.scope === scope ? <>{history.rows.length ? <ul className="grid gap-1">{history.rows.map(row => <li key={row.id}>{t`Request #${row.id}`} · {statusStageLabel(row.status)} · {formatDateTime(row.created_at)}</li>)}</ul> : <p className="text-muted">{t`No earlier requests found.`}</p>}<a className="desk-button w-fit" href={tenantPath(tenantMode, makerspaceSlug, "member/loans/history")}>{t`Open full borrowing history`}</a><button type="button" className="desk-button w-fit" onClick={() => { if (!identityAdmitted() || ordinary.busy) return; ordinary.unknown = false; setHistory(undefined); notifyOrdinary(ordinary); }}>{t`I reviewed my history; start another request`}</button></> : null}</div> : null}
+                {contextualLocked && !modules.includes("events") && !modules.includes("bookings") ? <p role="status">{t`A previous request may have been submitted. Review your request history before making another.`}</p> : null}
+                {contextual && !contactMode && makerspaceId && verifiedOwner ? <ContextualRequest key={`${scope}:${modules.includes("events")}:${modules.includes("bookings")}`} scope={scope} slug={makerspaceSlug} makerspaceId={makerspaceId} eventsEnabled={modules.includes("events")} bookingsEnabled={modules.includes("bookings")} fields={{ requested_for: requestedFor.trim(), items: items.map(item => ({ product_id: item.productId, quantity: item.quantity })), website, ...(reservations ? pickupWindowPayload(pickup) : {}) }} canSubmit={requestedFor.trim().length > 0 && !(reservations && pickupWindowProblem(pickup)) && !submitMutation.isPending} admitted={admitted} pendingOwner={pendingOwner ?? localOwner} onLock={() => { setLockedScope(scope); setPlanSubmitted(undefined); onNewRequest?.(); onContextLock?.(); }} onDenied={() => { setLockedScope(undefined); onContextDone?.(); }} onSuccess={contextSuccess} /> : null}
+                <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "loans", items: items.map(item => ({ product_id: item.productId, quantity: item.quantity })) }} />
               </div>
             ) : null}
 
             {activeTab === "scan" ? (
               <div
-                aria-labelledby="public-request-scan-tab"
+                aria-label={t`Scan a tool`}
                 id="public-request-scan-panel"
-                role="tabpanel"
+                role="region"
               >
                 <PublicToolScanPanel
                   makerspaceSlug={makerspaceSlug}
+                  requestAccess={requestAccess}
+                  borrowOff={contactMode && Boolean(features) && !features?.includes("inventory.contact_self_checkout")}
                 />
               </div>
             ) : null}
           </div>
         </>
       )}
-    </aside>
+    </div>
   );
 }

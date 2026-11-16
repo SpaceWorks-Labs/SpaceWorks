@@ -21,7 +21,7 @@ LOAN_AUTHORITY_FIELDS = {
         "makerspaces.MakerspaceLoanPolicy",
         "makerspace default_loan_days loan_renewal_mode loan_max_renewals "
         "loan_renewal_days loan_max_active loan_max_items loan_reminder_offsets_hours "
-        "loan_escalate_overdue_days",
+        "loan_escalate_overdue_days account_self_renewal",
         "Tenant loan terms and reminder offsets travel; target-owned modules, "
         "features and recipient rules still bound borrowing and disclosure.",
     ),

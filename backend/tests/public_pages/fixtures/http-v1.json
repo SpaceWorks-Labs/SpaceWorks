@@ -1,0 +1,400 @@
+{
+  "member_handle": {
+    "kind": "member",
+    "handle": "ada.maker",
+    "canonical_url": "https://space-works.example/ada.maker",
+    "redirected": false,
+    "content_url": "/api/v1/public/profiles/ada.maker/"
+  },
+  "makerspace_handle": {
+    "kind": "makerspace",
+    "handle": "example-lab",
+    "canonical_url": "https://space-works.example/example-lab",
+    "redirected": false,
+    "content_url": "/api/v1/public/example-lab/page/"
+  },
+  "organization_handle": {
+    "kind": "organization",
+    "handle": "example-org",
+    "canonical_url": "https://space-works.example/example-org",
+    "redirected": false,
+    "content_url": "/api/v1/public/organizations/example-org/page/"
+  },
+  "makerspace_editor": {
+    "kind": "makerspace",
+    "owner_id": 17,
+    "version": 0,
+    "handle": null,
+    "draft_revision_id": null,
+    "published_revision_id": null,
+    "document": {
+      "schema_version": 1,
+      "cover_mode": "inherit",
+      "cover_asset_id": null,
+      "accent_choice": "inherit",
+      "sections": [
+        {
+          "id": "32c417ce-8dda-50d7-b563-2b09c335ffd1",
+          "type": "functional_content",
+          "enabled": true,
+          "payload": {}
+        }
+      ]
+    },
+    "assets": [],
+    "capabilities": {
+      "allowed_section_types": [
+        "about",
+        "gallery",
+        "team",
+        "testimonials",
+        "links",
+        "upcoming_events",
+        "stats",
+        "location",
+        "functional_content"
+      ],
+      "required_groups": [
+        "functional_content"
+      ],
+      "palette_choices": {
+        "inherit": null,
+        "maker_teal": "#006E63",
+        "workshop_orange": "#FF7447",
+        "citron": "#DFFF8F",
+        "sky_blue": "#B5CDFF",
+        "warm_yellow": "#FFD447"
+      },
+      "can_edit_details": true,
+      "can_publish": true,
+      "suggested_handle": "example-lab"
+    },
+    "limits": {
+      "document_bytes": 131072,
+      "sections": 20,
+      "assets": 50,
+      "upload_bytes": 5000000,
+      "storage_bytes": null,
+      "storage_bytes_used": 0
+    }
+  },
+  "organization_editor": {
+    "kind": "organization",
+    "owner_id": 17,
+    "version": 0,
+    "handle": null,
+    "draft_revision_id": null,
+    "published_revision_id": null,
+    "document": {
+      "schema_version": 1,
+      "cover_mode": "inherit",
+      "cover_asset_id": null,
+      "accent_choice": "inherit",
+      "sections": [
+        {
+          "id": "4aa691a1-46b2-533b-ac4b-dafb10bad9b8",
+          "type": "linked_makerspaces",
+          "enabled": true,
+          "payload": {
+            "title": ""
+          }
+        },
+        {
+          "id": "1549b1e7-0f7f-554b-92ee-b8d787f34cc0",
+          "type": "organization_events",
+          "enabled": true,
+          "payload": {
+            "title": ""
+          }
+        }
+      ]
+    },
+    "assets": [],
+    "capabilities": {
+      "allowed_section_types": [
+        "about",
+        "gallery",
+        "team",
+        "testimonials",
+        "links",
+        "location",
+        "linked_makerspaces",
+        "organization_events"
+      ],
+      "required_groups": [
+        "linked_makerspaces",
+        "organization_events"
+      ],
+      "palette_choices": {
+        "inherit": null,
+        "maker_teal": "#006E63",
+        "workshop_orange": "#FF7447",
+        "citron": "#DFFF8F",
+        "sky_blue": "#B5CDFF",
+        "warm_yellow": "#FFD447"
+      },
+      "can_edit_details": true,
+      "can_publish": true,
+      "suggested_handle": "example-org"
+    },
+    "limits": {
+      "document_bytes": 131072,
+      "sections": 20,
+      "assets": 50,
+      "upload_bytes": 5000000,
+      "storage_bytes": 100000000,
+      "storage_bytes_used": 0
+    }
+  },
+  "event_pending_draft": {
+    "tagline": "A day of making",
+    "accent_color": "",
+    "section_order": [
+      "HERO",
+      "ABOUT",
+      "HIGHLIGHTS",
+      "SCHEDULE",
+      "SPEAKERS",
+      "SPONSORS",
+      "VENUE",
+      "FAQ",
+      "RESOURCES",
+      "EDITORIAL"
+    ],
+    "section_enabled": {
+      "HERO": true,
+      "ABOUT": true,
+      "HIGHLIGHTS": true,
+      "SCHEDULE": true,
+      "SPEAKERS": true,
+      "SPONSORS": true,
+      "VENUE": true,
+      "FAQ": true,
+      "RESOURCES": true,
+      "EDITORIAL": true
+    },
+    "venue": null,
+    "editorial_document": {
+      "schema_version": 1,
+      "cover_mode": "inherit",
+      "cover_asset_id": null,
+      "accent_choice": "inherit",
+      "sections": []
+    },
+    "revision": 3,
+    "released": true,
+    "inherited": false,
+    "sections": [],
+    "sessions": [
+      {
+        "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+        "slug": "talk-renamed",
+        "title": "Pending title",
+        "body": "Welcome",
+        "body_rendering": "restricted_v1",
+        "starts_at": "2026-10-20T09:00:00Z",
+        "ends_at": "2026-10-20T09:30:00Z",
+        "effective_starts_at": "2026-10-20T09:10:00Z",
+        "effective_ends_at": "2026-10-20T09:40:00Z",
+        "delay_minutes": 10,
+        "visibility": "published",
+        "track": null,
+        "room": null,
+        "speakers": []
+      }
+    ],
+    "assets": [],
+    "draft_revision_id": "f7dafbe9-4ab3-43ba-9d5e-56a9398b589b",
+    "published_revision_id": "e02618f5-9cd3-4c7a-8450-f0e5ef12b3e9",
+    "delay_targets": [
+      {
+        "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+        "working_slug": "talk-renamed",
+        "public_slug": "talk",
+        "working_present": true,
+        "public_present": true,
+        "working_delay_minutes": 10,
+        "public_delay_minutes": 10
+      }
+    ],
+    "capabilities": {
+      "can_edit_details": true,
+      "can_publish_schedule": true
+    }
+  },
+  "event_inherited_editor": {
+    "tagline": "A day of making",
+    "accent_color": "",
+    "section_order": [
+      "HERO",
+      "ABOUT",
+      "HIGHLIGHTS",
+      "SCHEDULE",
+      "SPEAKERS",
+      "SPONSORS",
+      "VENUE",
+      "FAQ",
+      "RESOURCES",
+      "EDITORIAL"
+    ],
+    "section_enabled": {
+      "HERO": true,
+      "ABOUT": true,
+      "HIGHLIGHTS": true,
+      "SCHEDULE": true,
+      "SPEAKERS": true,
+      "SPONSORS": true,
+      "VENUE": true,
+      "FAQ": true,
+      "RESOURCES": true,
+      "EDITORIAL": true
+    },
+    "venue": null,
+    "editorial_document": {
+      "schema_version": 1,
+      "cover_mode": "inherit",
+      "cover_asset_id": null,
+      "accent_choice": "inherit",
+      "sections": []
+    },
+    "revision": 3,
+    "released": true,
+    "inherited": true,
+    "sections": [],
+    "sessions": [
+      {
+        "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+        "slug": "talk-renamed",
+        "title": "Pending title",
+        "body": "Welcome",
+        "body_rendering": "restricted_v1",
+        "starts_at": "2026-10-20T09:00:00Z",
+        "ends_at": "2026-10-20T09:30:00Z",
+        "effective_starts_at": "2026-10-20T09:10:00Z",
+        "effective_ends_at": "2026-10-20T09:40:00Z",
+        "delay_minutes": 10,
+        "visibility": "published",
+        "track": null,
+        "room": null,
+        "speakers": []
+      }
+    ],
+    "assets": [],
+    "draft_revision_id": "f7dafbe9-4ab3-43ba-9d5e-56a9398b589b",
+    "published_revision_id": "e02618f5-9cd3-4c7a-8450-f0e5ef12b3e9",
+    "delay_targets": [
+      {
+        "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+        "working_slug": "talk-renamed",
+        "public_slug": "talk",
+        "working_present": true,
+        "public_present": true,
+        "working_delay_minutes": 10,
+        "public_delay_minutes": 10
+      }
+    ],
+    "capabilities": {
+      "can_edit_details": true,
+      "can_publish_schedule": true
+    }
+  },
+  "event_released_public": {
+    "tagline": "A day of making",
+    "accent_color": "",
+    "section_order": [
+      "HERO",
+      "ABOUT",
+      "HIGHLIGHTS",
+      "SCHEDULE",
+      "SPEAKERS",
+      "SPONSORS",
+      "VENUE",
+      "FAQ",
+      "RESOURCES",
+      "EDITORIAL"
+    ],
+    "section_enabled": {
+      "HERO": true,
+      "ABOUT": true,
+      "HIGHLIGHTS": true,
+      "SCHEDULE": true,
+      "SPEAKERS": true,
+      "SPONSORS": true,
+      "VENUE": true,
+      "FAQ": true,
+      "RESOURCES": true,
+      "EDITORIAL": true
+    },
+    "venue": null,
+    "editorial_document": {
+      "schema_version": 1,
+      "cover_mode": "inherit",
+      "cover_asset_id": null,
+      "accent_choice": "inherit",
+      "sections": []
+    },
+    "revision": 3,
+    "released": true,
+    "inherited": false,
+    "sections": [],
+    "sessions": [
+      {
+        "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+        "slug": "talk",
+        "title": "Released title",
+        "body": "Welcome",
+        "body_rendering": "restricted_v1",
+        "starts_at": "2026-10-20T09:00:00Z",
+        "ends_at": "2026-10-20T09:30:00Z",
+        "effective_starts_at": "2026-10-20T09:10:00Z",
+        "effective_ends_at": "2026-10-20T09:40:00Z",
+        "delay_minutes": 10,
+        "visibility": "published",
+        "track": null,
+        "room": null,
+        "speakers": []
+      }
+    ]
+  },
+  "organization_upcoming_empty": {
+    "count": 0,
+    "next": null,
+    "previous": null,
+    "results": [],
+    "period": "upcoming"
+  },
+  "organization_archive": {
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "period": "past",
+    "results": [
+      {
+        "kind": "archive",
+        "title": "Community workshop",
+        "description": "A public workshop.",
+        "starts_at": "2026-10-01T09:00:00Z",
+        "ends_at": "2026-10-01T12:00:00Z",
+        "timezone": "Asia/Kolkata",
+        "event_url": null,
+        "host": {
+          "name": "Venue lab",
+          "canonical_url": "https://space-works.example/m/venue-lab"
+        }
+      }
+    ]
+  },
+  "organization_linked_spaces": {
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "name": "Venue lab",
+        "slug": "venue-lab",
+        "logo_url": null,
+        "canonical_url": "https://space-works.example/m/venue-lab"
+      }
+    ]
+  }
+}

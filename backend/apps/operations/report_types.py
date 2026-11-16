@@ -22,7 +22,8 @@ class ReportDefinition:
     required_modules: tuple[str, ...] = ()
     exportable: bool = True
     summary: bool = False
-    required_action: str = rbac.Action.VIEW_AUDIT
+    # Fail closed: a definition that forgets to name its action is Space-Manager-only, never audit-reader wide.
+    required_action: str = rbac.Action.MANAGE_MAKERSPACE
     title: str = ""
     chart_hint: str = "table"
     grains: tuple[str, ...] = ()
@@ -37,9 +38,36 @@ class ReportDefinition:
     schedulable: bool = True
     previewable: bool = True
     deployment_aggregate: bool = True
+    subject_kind: str = ""
+    required_feature: str = ""
+    pdf_renderer_path: str = ""
+    platform_only: bool = False
+    identity_bearing: bool = False
+    chart_spec: dict | None = None
+    # Further tenant actions that admit a viewer besides `required_action`. Used where one
+    # report serves several areas' managers and their workers at once (the repairs family:
+    # Technicians plus the Machine, Inventory and Booking Managers); its builder then
+    # narrows the rows to what that viewer may see. Keep it empty for an ordinary report.
+    alternate_actions: tuple[str, ...] = ()
 
     def builder(self) -> Callable:
-        return import_string(self.builder_path)
+        builder = import_string(self.builder_path)
+        if not self.platform_only:
+            return builder
+        from .platform_scope import require_platform_context
+
+        def platform_builder(makerspace_id=None, *, platform_context=None, **kwargs):
+            require_platform_context(platform_context)
+            if makerspace_id is not None:
+                raise ReportNotFound()
+            return builder(makerspace_id, platform_context=platform_context, **kwargs)
+
+        return platform_builder
+
+
+def definition_actions(definition):
+    """Every tenant action that admits a viewer to this report (the primary one first)."""
+    return (definition.required_action, *definition.alternate_actions)
 
 
 class ReportNotFound(APIException):

@@ -1,4 +1,10 @@
-"""One inert requester principal per makerspace for account-less loan requests."""
+"""One inert requester principal per makerspace for account-less loan requests.
+
+A space without the `member_accounts` module has accounts for staff only (owner decision
+#80), so a public borrower's request needs a durable `requester` that is not a person:
+this principal. The borrower's own name, phone and email live in the request's encrypted
+contact snapshot, never on this row.
+"""
 
 import uuid
 

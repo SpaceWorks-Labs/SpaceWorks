@@ -1,3 +1,4 @@
+from apps.admin_api.views_member_scope import MemberMachineScopeView
 from django.urls import path
 from apps.admin_api.views_membership_admission import AdminMembershipAdmissionView
 
@@ -25,10 +26,7 @@ from apps.admin_api.views_memberships import (
     MembershipRoleAssignView,
 )
 from apps.admin_api.views_roles import (
-    CapabilityCatalogView,
-    RoleDetailView,
     RoleListCreateView,
-    RoleMachineScopeView,
 )
 from apps.admin_api.views_walk_in import WalkInMemberCreateView
 from apps.makerspaces.member_card_admin_views import (
@@ -96,23 +94,13 @@ management_urlpatterns = [
         name="admin-membership-role-assign",
     ),
     path(
-        "makerspaces/<int:makerspace_id>/roles/capabilities",
-        CapabilityCatalogView.as_view(),
-        name="admin-role-capabilities",
-    ),
-    path(
         "makerspaces/<int:makerspace_id>/roles",
         RoleListCreateView.as_view(),
         name="admin-role-list-create",
     ),
     path(
-        "makerspaces/<int:makerspace_id>/roles/<int:role_id>",
-        RoleDetailView.as_view(),
-        name="admin-role-detail",
-    ),
-    path(
-        "makerspaces/<int:makerspace_id>/roles/<int:role_id>/machine-scope",
-        RoleMachineScopeView.as_view(),
-        name="admin-role-machine-scope",
+        "makerspaces/<int:makerspace_id>/memberships/<int:membership_id>/machine-scope",
+        MemberMachineScopeView.as_view(),
+        name="admin-membership-machine-scope",
     ),
 ]

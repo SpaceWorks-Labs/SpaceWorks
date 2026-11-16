@@ -53,16 +53,9 @@ def _is_forbidden_address(raw_address: str) -> bool:
     address = ip_address(raw_address.split("%", 1)[0])
     if getattr(address, "ipv4_mapped", None) is not None:
         address = address.ipv4_mapped
-    return any(
-        (
-            address.is_loopback,
-            address.is_private,
-            address.is_link_local,
-            address.is_multicast,
-            address.is_reserved,
-            address.is_unspecified,
-        )
-    )
+    # is_global excludes carrier-grade NAT; reserved ranges such as the well-known NAT64
+    # prefix and multicast still need explicit checks.
+    return not address.is_global or address.is_reserved or address.is_multicast
 
 
 def resolve_webhook_target(value: str) -> ResolvedWebhookTarget:

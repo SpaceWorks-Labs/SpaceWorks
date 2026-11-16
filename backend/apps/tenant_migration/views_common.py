@@ -1,15 +1,17 @@
+from django.utils.translation import gettext
 import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.http import Http404
 from drf_spectacular.utils import OpenApiResponse
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DrfValidationError
 from rest_framework.response import Response
 
 from .gate_errors import SourceMigrationGateError
-from .insertion_errors import TenantInsertionError
+from .insertion_errors import TenantInsertionError, VenueFeeDebtProvenanceUnavailable
 from .preflight import SourcePreflightError
-from .protocol_errors import TenantMigrationProtocolError
+from .protocol_errors import TenantMigrationProtocolError, UploadOffsetMismatchError
 from .serializers import FieldValidationErrorSerializer, TypedErrorSerializer
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,11 @@ FIELD_ERRORS = OpenApiResponse(
 
 
 def protocol_error(exc):
+    if isinstance(exc, Http404):
+        return Response(
+            {"detail": gettext("The import job was not found or has expired."), "code": "not_found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
     if isinstance(exc, SourceMigrationGateError):
         return Response(
             {
@@ -38,9 +45,14 @@ def protocol_error(exc):
         )
     if isinstance(exc, TenantMigrationProtocolError):
         code = getattr(exc, "code", "tenant_migration_conflict")
+        data = {"detail": str(exc), "code": code}
+        if isinstance(exc, UploadOffsetMismatchError):
+            data["upload_received_bytes"] = exc.upload_received_bytes
         return Response(
-            {"detail": str(exc), "code": code}, status=status.HTTP_409_CONFLICT
+            data, status=status.HTTP_409_CONFLICT
         )
+    if isinstance(exc, VenueFeeDebtProvenanceUnavailable):
+        return Response({"detail": str(exc), "code": exc.code}, status=status.HTTP_409_CONFLICT)
     if isinstance(exc, TenantInsertionError):
         return Response(
             {"detail": str(exc), "code": "invalid_archive"},
@@ -62,7 +74,7 @@ def protocol_error(exc):
             extra={"exception_type": type(exc).__name__},
         )
         return Response(
-            {"detail": "The tenant migration request failed unexpectedly.", "code": "internal_error"},
+            {"detail": gettext("The tenant migration request failed unexpectedly."), "code": "internal_error"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

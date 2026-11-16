@@ -7,6 +7,7 @@ The heartbeat re-takes the makerspace-first locks because revocation, rotation o
 module uninstall can commit between authentication and the view.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.conf import settings
@@ -31,7 +32,7 @@ def claim_signed_request(*, device_id, makerspace_id, key_version, nonce, messag
             raw_key = protocol.b64_decode(device.public_key, label="public key", length=32)
             verify_bytes(message, signature, raw_key)
         except (protocol.ProtocolError, Ed25519Error) as exc:
-            raise AuthenticationFailed("Invalid device signature.") from exc
+            raise AuthenticationFailed(gettext("Invalid device signature.")) from exc
         try:
             with transaction.atomic():
                 DeviceRequestNonce.objects.create(
@@ -41,7 +42,7 @@ def claim_signed_request(*, device_id, makerspace_id, key_version, nonce, messag
                     expires_at=now + timedelta(seconds=settings.DEVICE_NONCE_TTL_SECONDS),
                 )
         except IntegrityError as exc:
-            raise AuthenticationFailed("Replayed device request.") from exc
+            raise AuthenticationFailed(gettext("Replayed device request.")) from exc
     return DevicePrincipal.from_device(device)
 
 
@@ -50,7 +51,7 @@ def record_heartbeat(principal, *, now):
         makerspace = lock_tenant(principal.makerspace_id)
         device = Device.objects.select_for_update().get(pk=principal.device_id)
         if device.status != Device.Status.ACTIVE or device.key_version != principal.key_version:
-            raise PermissionDenied("Device authorization is no longer active.")
+            raise PermissionDenied(gettext("Device authorization is no longer active."))
         record_activity_locked(makerspace, device, now=now)
         record_device_event(makerspace, device, EventType.HEARTBEAT)
     return device
@@ -62,4 +63,4 @@ def _assert_current(device, key_version):
         or device.key_version != key_version
         or not device.public_key
     ):
-        raise AuthenticationFailed("Device authorization is not active.")
+        raise AuthenticationFailed(gettext("Device authorization is not active."))

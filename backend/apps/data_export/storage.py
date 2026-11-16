@@ -1,3 +1,4 @@
+from apps.storage_clients import s3_client
 """Private object-storage operations for completed export archives."""
 
 import logging
@@ -20,7 +21,7 @@ def _client(*, public=False):
     endpoint = (
         settings.AWS_S3_PUBLIC_ENDPOINT_URL if public else settings.AWS_S3_ENDPOINT_URL
     )
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,

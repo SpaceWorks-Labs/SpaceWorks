@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.accounts.models_claim import MemberClaimCode
 from apps.accounts.models_devices import DeviceGrant
 from apps.accounts.models_social import SocialIdentity
+from apps.accounts.staff_identity import person_q
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,6 +21,7 @@ class ClaimAuditContext:
     issued_by_id: int | None
     redemption_ip: str | None
     absolute_expires_at: datetime
+    credential_generation: int = 0
 
 
 class ClaimSessionInvalid(Exception):
@@ -28,6 +30,8 @@ class ClaimSessionInvalid(Exception):
 
 def validated_claim_session(token, *, for_update=False):
     """Return the session with membership/user loaded using exactly one query."""
+    if token.get("kind") != "person":
+        raise ClaimSessionInvalid()
     social = SocialIdentity.objects.filter(user_id=OuterRef("membership__user_id"))
     grants = DeviceGrant.objects.filter(
         user_id=OuterRef("membership__user_id"),
@@ -40,6 +44,7 @@ def validated_claim_session(token, *, for_update=False):
         rows = rows.select_for_update(of=("self",))
     now = timezone.now()
     rows = rows.filter(
+        person_q("membership__user__"),
         session_id=token.get("claim_session_id"),
         consumed_at__isnull=False,
         revoked_at__isnull=True,
@@ -50,6 +55,7 @@ def validated_claim_session(token, *, for_update=False):
         membership__user__access_status="active",
         membership__user__is_walk_in=True,
         membership__user__password__startswith=UNUSABLE_PASSWORD_PREFIX,
+        membership__user__deletion_requested_at__isnull=True,
         membership__user__email_verified_at__isnull=True,
         has_social_identity=False,
         has_active_device_grant=False,
@@ -74,6 +80,7 @@ def audit_context(claim):
         issued_by_id=claim.issued_by_id,
         redemption_ip=claim.consumed_ip,
         absolute_expires_at=claim.absolute_expires_at,
+        credential_generation=claim.membership.user.credential_generation,
     )
 
 
@@ -86,6 +93,16 @@ def claim_context(user):
     return getattr(user, "_claim_audit_context", None)
 
 
+def carry_claim_context(source, fresh):
+    """Keep a claim session on a re-read copy of the same user. Audit attribution and the
+    claim-session narrowing (payments, member scope) read it from the user object, so a
+    service that re-fetches its actor must not silently turn a claim into a full account."""
+    context = claim_context(source)
+    if context is not None and fresh is not None and fresh.pk == source.pk:
+        fresh._claim_audit_context = context
+    return fresh
+
+
 def token_payload_for_context(context, user_id):
     return {
         "claim_session_id": context.session_id,
@@ -93,6 +110,8 @@ def token_payload_for_context(context, user_id):
         "claim_makerspace_id": context.makerspace_id,
         "absolute_expires_at": int(context.absolute_expires_at.timestamp()),
         "user_id": user_id,
+        "kind": "person",
+        "credential_generation": context.credential_generation,
     }
 
 
@@ -102,7 +121,8 @@ def _claims_match_row(token, claim):
             int(token["absolute_expires_at"]), tz=datetime_timezone.utc
         )
         return (
-            str(token["claim_session_id"]) == str(claim.session_id)
+            token.get("credential_generation") == claim.membership.user.credential_generation
+            and str(token["claim_session_id"]) == str(claim.session_id)
             and int(token["claim_membership_id"]) == claim.membership_id
             and int(token["claim_makerspace_id"]) == claim.membership.makerspace_id
             and int(token["user_id"]) == claim.membership.user_id

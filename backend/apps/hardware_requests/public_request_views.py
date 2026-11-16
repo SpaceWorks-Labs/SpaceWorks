@@ -1,64 +1,60 @@
-import json
+from django.utils.translation import gettext
 import uuid
 from types import SimpleNamespace
 
-from django.conf import settings
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotAuthenticated, Throttled, ValidationError
+from rest_framework.exceptions import NotAuthenticated, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.audit_events import fingerprint
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.hardware_requests import workflow
+from apps.hardware_requests.contact_identity import confirm_contact
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.hardware_requests.models import HardwareRequest
-from apps.hardware_requests.request_workflow import (
-    RequesterSnapshot,
-    anonymous_idempotency_replay,
-)
+from apps.hardware_requests.request_workflow import RequesterSnapshot
 from apps.hardware_requests.serializers import (
+    ContactRequestSubmitSerializer,
+    PublicRequestSubmitSchemaSerializer,
     RequestSubmitResponseSerializer,
     RequestSubmitSerializer,
 )
-from apps.hardware_requests.throttles import (
-    AnonymousRequestEmailThrottle,
-    AnonymousRequestIpBurstThrottle,
-    AnonymousRequestIpHourThrottle,
-)
+from apps.hardware_requests.throttles import AnonymousRequestIpBurstThrottle, AnonymousRequestIpHourThrottle
 from apps.hardware_requests.view_helpers import (
     PUBLIC_ERROR_RESPONSES,
 )
-from apps.inventory.models import InventoryProduct
-from apps.makerspaces.anonymous_requesters import get_or_create_anonymous_requester
+from apps.inventory.event_only import refuse_event_only_ids
+from apps.inventory.requestable_products import requestable_products
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.guards import require_feature
 from apps.makerspaces.platform import module_enabled
-from apps.makerspaces.request_access import anonymous_requests_allowed, require_current_term
-from apps.presence.guard import require_active_account, require_active_member_presence
+from apps.makerspaces.request_access import require_current_term, uses_contact_path
+from apps.hardware_requests.guest_lending import admit_borrower
+from apps.presence.guard import require_active_account, require_active_member_presence  # noqa: F401 (re-exported)
 from apps.openapi import (
     PUBLIC_API_AUTH_PARAMETERS,
+    PUBLIC_REQUEST_CONTACT_SUBMIT_EXAMPLE,
     PUBLIC_REQUEST_SUBMIT_EXAMPLE,
 )
 
 
 class RequestSubmitView(APIView):
+    """Submit a borrow request (owner decision #80).
+
+    A space WITH member accounts requires a signed-in account: the requester is
+    ``request.user`` and the contact snapshot is account-derived (an anonymous POST is a
+    401). A space WITHOUT member accounts has accounts for staff only, so EVERY request
+    there takes the contact path, signed in or not (owner decision #91): name, phone and
+    email are required, the email must carry the one-time code from
+    ``requests/email-code``, and the request is recorded against the space's inert
+    principal with an encrypted contact snapshot.
+    """
+
     permission_classes = [AllowAny]
-    # Every IP/principal budget is declared here so DRF applies it in APIView.initial(),
-    # BEFORE the handler runs. `check_throttles` is deliberately NOT overridden: it is a
-    # pre-auth lifecycle hook, `apps.accounts.claim_route_guard` refuses any route that
-    # replaces one, and overriding it here had already cost the endpoint its floor --
-    # anonymous throttles were selected inside post(), which is *after* the
-    # `anonymous_requests_allowed` refusal, so every makerspace that had not opted in
-    # served an UNTHROTTLED 401 that still paid for a makerspace lookup.
-    #
-    # Each class self-selects by auth state (see `_AnonymousIpThrottle`), so listing them
-    # together does not double-charge anyone. Consequence worth knowing: the honeypot no
-    # longer precedes the IP budget, so a bot loud enough to exhaust it sees 429 instead
-    # of the honeypot's fake success. Being rate-limited before being fingerprinted is
-    # the safer of the two, and the honeypot still absorbs every bot under the limit.
+    # Declared, not chosen in post(): DRF applies them in initial(), before the handler,
+    # and each IP budget skips authenticated callers (see `throttles`).
     throttle_classes = [
         MemberPrincipalRateThrottle,
         AnonymousRequestIpBurstThrottle,
@@ -69,132 +65,68 @@ class RequestSubmitView(APIView):
     @extend_schema(
         tags=["Public requests"],
         summary="Submit public borrow request",
+        description=(
+            "Signed-in account required where the makerspace has member accounts. Without "
+            "member accounts (bootstrap `request_access: contact`) send `contact_name`, "
+            "`contact_phone`, `contact_email` and the `email_code` mailed by "
+            "`requests/email-code`; no account is used."
+        ),
         auth=[{"jwtAuth": []}, {}],
-        parameters=[
-            *PUBLIC_API_AUTH_PARAMETERS,
-            OpenApiParameter(
-                name="Idempotency-Key",
-                type=str,
-                location=OpenApiParameter.HEADER,
-                required=False,
-                description=(
-                    "Required for account-less submissions. Reusing a key with the same "
-                    "payload returns the original request; a different payload is rejected."
-                ),
-            ),
-        ],
-        request=RequestSubmitSerializer,
+        parameters=PUBLIC_API_AUTH_PARAMETERS,
+        request=PublicRequestSubmitSchemaSerializer,
         responses={201: RequestSubmitResponseSerializer, **PUBLIC_ERROR_RESPONSES,
                    400: OpenApiResponse(
                        {"type": "object", "additionalProperties": {},
                         "properties": {"feature": {"type": "string"}}},
-                       description="Invalid submission or loans feature disabled.",
+                       description="Invalid submission, wrong email code or loans feature disabled.",
                    ),
                    423: OpenApiResponse(ErrorSerializer, description="Tenant frozen for migration.")},
-        examples=[PUBLIC_REQUEST_SUBMIT_EXAMPLE],
+        examples=[PUBLIC_REQUEST_SUBMIT_EXAMPLE, PUBLIC_REQUEST_CONTACT_SUBMIT_EXAMPLE],
     )
     def post(self, request, makerspace_slug, *args, **kwargs):
         makerspace = get_public_makerspace(makerspace_slug)
         require_feature(makerspace, "loans.enabled")
-        anonymous_submission = not request.user.is_authenticated
-        if anonymous_submission:
-            if not anonymous_requests_allowed(makerspace):
-                # Raising DRF's own exception preserves the previous IsAuthenticated
-                # response body as well as its 401 status for every non-opted-in space.
-                #
-                # `anonymous_requests_allowed` re-derives the answer rather than reading
-                # the column, so a row that somehow carries BOTH the flag and the
-                # `membership` module -- raw SQL, an old backup, a restore that predates
-                # the model rule -- still fails closed here instead of admitting a
-                # stranger past the membership requirement.
-                raise NotAuthenticated()
-            # Resolving the opt-in flag is unavoidable because disabled spaces must
-            # retain their 401. The IP budgets were already charged in initial(); from
-            # here the raw honeypot precedes module checks, serializer work, product
-            # queries and principal creation.
-            if _honeypot_filled(request.data):
-                return _honeypot_response()
-            _require_module(makerspace, "request_workflow")
-        else:
-            _require_module(makerspace, "request_workflow")
+        # Without member accounts everyone uses the contact form, even a signed-in staff
+        # or organisation account (#91); a walk-in's claim session keeps its person record.
+        contact = uses_contact_path(request, makerspace)
+        if not contact and not request.user.is_authenticated:
+            raise NotAuthenticated()
+        _require_module(makerspace, "request_workflow")
+        if not contact:
             if module_enabled(makerspace, "membership"):
-                require_current_term(makerspace, require_active_member_presence(request.user, makerspace).membership)
+                admit_borrower(makerspace, request.user)  # decision 223: a member, or a live guest pass that borrows
             else:
                 # Waiver acceptance lives on MakerspaceMembership and cannot be recorded
-                # with membership off. In this configuration the flow is public request ->
-                # STAFF ACCEPT, and staff acceptance is the proposal-time control.
+                # with membership off; staff acceptance is the proposal-time control.
                 require_active_account(request.user, makerspace)
-            if _honeypot_filled(request.data):
-                return _honeypot_response()
+        if _honeypot_filled(request.data):
+            return _honeypot_response()
 
-        serializer = RequestSubmitSerializer(
-            data=request.data,
-            context={"anonymous_submission": anonymous_submission},
-        )
+        serializer = (ContactRequestSubmitSerializer if contact else RequestSubmitSerializer)(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         data.pop("website", None)
 
-        idempotency_key_fingerprint = ""
-        payload_fingerprint = ""
-        if anonymous_submission:
-            request.anonymous_contact_email = data["contact_email"]
-            _enforce_throttles(request, self, (AnonymousRequestEmailThrottle,))
-            idempotency_key = str(request.headers.get("Idempotency-Key", "")).strip()
-            if not idempotency_key:
-                raise ValidationError(
-                    {"idempotency_key": "This header is required for anonymous submissions."}
-                )
-            if len(idempotency_key) > settings.ANONYMOUS_REQUEST_IDEMPOTENCY_KEY_MAX_LENGTH:
-                raise ValidationError(
-                    {
-                        "idempotency_key": (
-                            "Ensure this header has no more than "
-                            f"{settings.ANONYMOUS_REQUEST_IDEMPOTENCY_KEY_MAX_LENGTH} characters."
-                        )
-                    }
-                )
-            idempotency_key_fingerprint = fingerprint(idempotency_key)
-            payload_fingerprint = _anonymous_payload_fingerprint(data)
-            replay = anonymous_idempotency_replay(
-                makerspace,
-                idempotency_key_fingerprint,
-                payload_fingerprint,
-            )
-            if replay is not None:
-                return Response(
-                    RequestSubmitResponseSerializer(replay).data,
-                    status=status.HTTP_201_CREATED,
-                )
-
         product_ids = [item["product_id"] for item in data["items"]]
+        refuse_event_only_ids(makerspace, product_ids)  # decision 221b: clear code, not "unavailable"
         products = _requestable_products(product_ids, makerspace)
         if len(products) != len(product_ids):
             raise ValidationError(
-                {"items": "One or more products are unavailable for request."}
+                {"items": gettext("One or more products are unavailable for request.")}
             )
 
-        if anonymous_submission:
-            requester_principal = get_or_create_anonymous_requester(makerspace)
-            contact_snapshot = RequesterSnapshot(
-                username="",
-                name=data["contact_name"].strip(),
-                email=data["contact_email"],
-                phone=data.get("contact_phone", ""),
-                contact_verified=False,
+        if contact:
+            identity = confirm_contact(makerspace, data)
+            principal, actor, marker, key = identity.principal, None, identity.marker, identity.key
+            snapshot = RequesterSnapshot(
+                username="", name=identity.name, email=identity.email, phone=identity.phone,
             )
-            audit_actor = None
         else:
-            requester_principal = request.user
-            contact_snapshot = RequesterSnapshot(
-                username=request.user.username,
-                name=request.user.display_name,
-                email=request.user.email,
-                phone=request.user.phone,
-                contact_verified=True,
+            principal, actor, marker, key = request.user, request.user, "", ""
+            snapshot = RequesterSnapshot(
+                username=request.user.username, name=request.user.display_name,
+                email=request.user.email, phone=request.user.phone,
             )
-            audit_actor = request.user
-
         hardware_request = workflow.submit_request(
             makerspace,
             [
@@ -205,11 +137,14 @@ class RequestSubmitView(APIView):
                 for item in data["items"]
             ],
             data["requested_for"],
-            requester_principal=requester_principal,
-            contact_snapshot=contact_snapshot,
-            audit_actor=audit_actor,
-            idempotency_key_fingerprint=idempotency_key_fingerprint,
-            payload_fingerprint=payload_fingerprint,
+            requester_principal=principal,
+            contact_snapshot=snapshot,
+            audit_actor=actor,
+            account_less_marker=marker,
+            contact_key=key,
+            pickup_from=data.get("pickup_from"),
+            pickup_until=data.get("pickup_until"),
+            waitlist_entry_id=None if contact else data.get("waitlist_entry_id"),
         )
         return Response(
             RequestSubmitResponseSerializer(hardware_request).data,
@@ -228,29 +163,6 @@ def _honeypot_response():
     )
 
 
-def _enforce_throttles(request, view, throttle_types):
-    waits = []
-    for throttle_type in throttle_types:
-        throttle = throttle_type()
-        if not throttle.allow_request(request, view):
-            waits.append(throttle.wait())
-    if waits:
-        durations = [wait for wait in waits if wait is not None]
-        raise Throttled(wait=max(durations) if durations else None)
-
-
-def _anonymous_payload_fingerprint(data):
-    canonical = {
-        "contact_email": data["contact_email"],
-        "contact_name": data["contact_name"].strip(),
-        "contact_phone": data.get("contact_phone", ""),
-        "items": sorted(data["items"], key=lambda item: item["product_id"]),
-        "requested_for": data["requested_for"],
-    }
-    return fingerprint(json.dumps(canonical, sort_keys=True, separators=(",", ":")))
-
-
-
 def _honeypot_filled(payload):
     """True if the hidden anti-spam `website` field was populated. Real browsers never
     fill it; bots that auto-fill every field do. Read defensively from the raw payload."""
@@ -264,12 +176,7 @@ def _honeypot_filled(payload):
 def _requestable_products(product_ids, makerspace):
     return {
         product.pk: product
-        for product in InventoryProduct.objects.filter(
-            pk__in=product_ids,
-            makerspace=makerspace,
-            is_public=True,
-            is_archived=False,
-        )
+        for product in requestable_products(makerspace).filter(pk__in=product_ids)
     }
 
 
@@ -278,4 +185,5 @@ def _require_module(makerspace, module_key):
 
     require_public_surface(module_key)
     if not module_enabled(makerspace, module_key):
-        raise ValidationError({"module": f"{module_key} is disabled for this makerspace."})
+        from apps.makerspaces.guards import module_off
+        raise module_off(module_key)

@@ -8,8 +8,12 @@ app = Celery(
     "config", task_cls="apps.tenant_migration.task_gate:TenantGateTask"
 )
 app.config_from_object("django.conf:settings", namespace="CELERY")
+# Explicit cloud profiles supply CELERY_IMPORTS through the reviewed J discovery
+# hook in settings. Legacy host/full retains Celery's existing autodiscovery.
 app.autodiscover_tasks()
 
 # Registers the before_task_publish / task_prerun handlers that carry the request id
 # from the web process into the worker. Import for its side effect; nothing to call.
 import config.celery_signals  # noqa: E402,F401
+# Task discovery and real completion evidence are required for host installs too.
+import apps.operations.cloud_jobs.diagnostics  # noqa: E402,F401

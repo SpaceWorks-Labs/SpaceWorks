@@ -1,0 +1,14 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/command.locate.calibrate.aim.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "pose": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "pose"
+  ],
+  "type": "object"
+}

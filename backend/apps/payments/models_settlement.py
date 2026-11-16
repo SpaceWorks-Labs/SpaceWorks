@@ -13,6 +13,7 @@ Corrections are therefore an appended `amends` row -- the same shape `Refund` an
 visible.
 """
 
+from django.utils.translation import gettext, gettext_noop
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -20,14 +21,15 @@ from django.db import models
 
 from apps.payments.models_payment import Payment
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 
 class ManualSettlement(models.Model):
     class Method(models.TextChoices):
         CASH = "cash", "Cash"
         UPI = "upi", "UPI"
-        BANK_TRANSFER = "bank_transfer", "Bank transfer"
-        CARD_MACHINE = "card_machine", "Card machine"
+        BANK_TRANSFER = "bank_transfer", gettext_noop("Bank transfer")
+        CARD_MACHINE = "card_machine", gettext_noop("Card machine")
         CHEQUE = "cheque", "Cheque"
         OTHER = "other", "Other"
 
@@ -48,7 +50,7 @@ class ManualSettlement(models.Model):
     reference = models.CharField(max_length=64, blank=True, default="")
     #: When the money actually changed hands, which is not always when staff recorded it.
     received_at = models.DateTimeField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     recorded_by = models.ForeignKey(
         "accounts.User", on_delete=models.PROTECT, related_name="recorded_settlements"
@@ -102,9 +104,9 @@ class ManualSettlement(models.Model):
         self.currency = (self.currency or "").lower()
         currency_validator(self.currency)
         if self.amount is None or self.amount <= 0:
-            raise ValidationError({"amount": "Settlement amount must be positive."})
+            raise ValidationError({"amount": gettext("Settlement amount must be positive.")})
         if self.received_at is None:
-            raise ValidationError({"received_at": "A settlement needs a received date."})
+            raise ValidationError({"received_at": gettext("A settlement needs a received date.")})
         if self.amends_id:
             # A correction replaces a receipt on the SAME debt. Allowing it to cross
             # payments would let one space's cash book absorb another's.
@@ -113,10 +115,10 @@ class ManualSettlement(models.Model):
             ).first()
             if amended and amended["payment_id"] != self.payment_id:
                 raise ValidationError(
-                    {"amends": "An amendment must stay on the same payment."}
+                    {"amends": gettext("An amendment must stay on the same payment.")}
                 )
             if self.amends_id == self.pk:
-                raise ValidationError({"amends": "A settlement cannot amend itself."})
+                raise ValidationError({"amends": gettext("A settlement cannot amend itself.")})
         if self.payment_id:
             payment = (
                 Payment.objects.filter(pk=self.payment_id)
@@ -129,20 +131,75 @@ class ManualSettlement(models.Model):
                 # rather than a part payment nobody can reconcile later.
                 if Decimal(self.amount) != payment.amount:
                     raise ValidationError(
-                        {"amount": "A settlement must match the payment amount."}
+                        {"amount": gettext("A settlement must match the payment amount.")}
                     )
                 if self.currency != payment.currency:
                     raise ValidationError(
-                        {"currency": "A settlement must match the payment currency."}
+                        {"currency": gettext("A settlement must match the payment currency.")}
                     )
 
     def save(self, *args, **kwargs):
         if self.pk:
             raise ValidationError(
-                "Manual settlements are append-only; record an amendment instead."
+                gettext("Manual settlements are append-only; record an amendment instead.")
             )
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Manual settlements are append-only and cannot be deleted.")
+        raise ValidationError(gettext("Manual settlements are append-only and cannot be deleted."))
+
+
+class SettlementConfirmation(models.Model):
+    """Maker-checker: an offline settlement one person recorded and a second must confirm.
+
+    Exists only while the space's `billing.maker_checker` switch is on. The charge
+    stays PENDING while this row is `awaiting_confirmation`; confirmation writes the
+    `ManualSettlement` and flips the charge in one transaction. The row is written once
+    and decided once (model and database trigger); the maker can never be the checker.
+    """
+
+    class Status(models.TextChoices):
+        AWAITING = "awaiting_confirmation", gettext_noop("Awaiting confirmation")
+        CONFIRMED = "confirmed", "Confirmed"
+        REJECTED = "rejected", "Rejected"
+
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="settlement_confirmations")
+    method = models.CharField(max_length=16, choices=ManualSettlement.Method.choices)
+    reference = models.CharField(max_length=64, blank=True, default="")
+    received_at = models.DateTimeField()
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
+    currency = models.CharField(max_length=3, validators=[currency_validator])
+    proposed_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    claim = models.ForeignKey("payments.PaymentClaim", null=True, blank=True, on_delete=models.CASCADE,
+                              related_name="confirmations")
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.AWAITING)
+    decided_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.CharField(max_length=500, blank=True, default="")
+    settlement = models.OneToOneField(ManualSettlement, null=True, blank=True, on_delete=models.CASCADE,
+                                      related_name="confirmation")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["payment"], condition=models.Q(status="awaiting_confirmation"),
+                                    name="settlement_confirmation_one_awaiting"),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="settlement_confirmation_amount_positive"),
+            models.CheckConstraint(condition=models.Q(decided_by__isnull=True) | ~models.Q(
+                decided_by=models.F("proposed_by")), name="settlement_confirmation_no_self_confirm"),
+            models.CheckConstraint(condition=models.Q(status="awaiting_confirmation", decided_at__isnull=True) | models.Q(
+                ~models.Q(status="awaiting_confirmation"), decided_at__isnull=False),
+                name="settlement_confirmation_decision_shape"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            original = type(self).objects.filter(pk=self.pk).values("status").first()
+            if original and original["status"] != self.Status.AWAITING:
+                raise ValidationError(gettext("A decided settlement confirmation is final."))
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(gettext("Settlement confirmations are append-only."))

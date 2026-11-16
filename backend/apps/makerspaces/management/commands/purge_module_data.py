@@ -3,7 +3,8 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.accounts.models import User
 from apps.makerspaces.management.commands.list_modules import resolve_makerspace
-from apps.makerspaces.module_purge import purge_module, purgeable_modules
+from apps.makerspaces.module_purge import _resolve, purge_module, purgeable_modules
+from apps.makerspaces.module_purge_collectors_reimbursements import preflight_report
 
 
 class Command(BaseCommand):
@@ -21,6 +22,10 @@ class Command(BaseCommand):
             help="Skip the confirmation prompt. Required for non-interactive use.",
         )
         parser.add_argument("--list", action="store_true", help="List purgeable modules and exit.")
+        parser.add_argument(
+            "--preflight", action="store_true",
+            help="Show what would block the purge and what is preserved, then exit without deleting.",
+        )
 
     def handle(self, *args, **options):
         if options["list"] or not options["module"]:
@@ -32,6 +37,18 @@ class Command(BaseCommand):
 
         makerspace = resolve_makerspace(options["makerspace"])
         actor = self._actor(options["actor"])
+        # The preflight always runs and prints first; --yes skips only the prompt below.
+        try:
+            _resolve(makerspace, options["module"], actor)
+        except ValidationError as exc:
+            raise CommandError("; ".join(exc.messages)) from exc
+        report = preflight_report(makerspace, options["module"])
+        self._print_preflight(report)
+        if options["preflight"]:
+            return
+        if not report["allowed"]:
+            codes = ", ".join(row["code"] for row in report["blockers"])
+            raise CommandError(f"Preflight refused the purge ({codes}); nothing was purged.")
 
         if not options["yes"]:
             self.stdout.write(
@@ -55,6 +72,15 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"Purged {options['module']} for {makerspace.slug}: {summary}")
         )
+
+    def _print_preflight(self, report):
+        verdict = "allowed" if report["allowed"] else "REFUSED"
+        self.stdout.write(f"Preflight for {report['module']}: {verdict}")
+        for row in report["blockers"]:
+            self.stdout.write(f"  blocker {row['code']}: {row['count']}")
+        for key, value in sorted(report.items()):
+            if key not in ("module", "allowed", "blockers"):
+                self.stdout.write(f"  {key}: {value}")
 
     def _actor(self, username):
         # The purge is superadmin-only, and the audit entry must name a real actor --

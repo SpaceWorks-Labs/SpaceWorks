@@ -6,7 +6,7 @@ still constructing the application registry.
 
 from .types import Fidelity
 
-REGISTRY_VERSION = "2026-08-16.phase4.f1"
+REGISTRY_VERSION = "2026-11-06.phase8.i18n1"
 
 __all__ = (
     "DATASETS",

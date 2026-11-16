@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from django.utils import timezone
 
 from apps.events.capacity import (
@@ -8,21 +9,25 @@ from apps.events.capacity import (
     registration_is_open,
 )
 from apps.events.models import Event, EventRegistration
+from .serializers_organization_audience import OrganizationAudienceFields
 from .serializers_ticketing_public import EventTicketingPublicSerializer
-from apps.forms_schema.serializers import CustomFormSubmissionMixin
+from .serializers_registration_form import RegistrationFormInput
 from apps.inventory import public_image_storage
+from .serializers_website import PublicWebsiteSerializer
 
 
 PUBLIC_EVENT_FIELDS = (
+    'accent_preset', 'website', 'participating_organizations', 'audience_label',
     'public_token',
     'title',
     'description',
     'starts_at',
     'ends_at',
     'location',
-    'location_kind',
+    'location_kind', 'venue_address', 'venue_map_url',
     'custom_form',
     'capacity',
+    'show_registration_count', 'registration_count',
     'payment_amount',
     'currency',
     'availability',
@@ -33,6 +38,9 @@ PUBLIC_EVENT_FIELDS = (
     'status',
     'organizers',
     'series', 'registration_audience', 'category', 'tags', 'ticket_types', 'ticket_selection_required', 'promo_codes_enabled',
+    'delivery_mode', 'indexable',
+    # S13 (deadlines show in the event's zone) and #178 (stage deadlines, event detail only).
+    'timezone_name', 'submission_stages',
 )
 
 
@@ -42,20 +50,74 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
     name = serializers.CharField(source='organization.name', read_only=True)
 
 
-class PublicEventSerializer(EventTicketingPublicSerializer):
+class PublicStageSerializer(serializers.Serializer):
+    position = serializers.IntegerField()
+    name = serializers.CharField()
+    opens_at = serializers.DateTimeField(allow_null=True)
+    deadline = serializers.DateTimeField()
+    filters = serializers.ListField(child=serializers.DictField(),
+                                    help_text="S7: public choice fields ({key, label, choices}); the last stage's filter the gallery.")
+
+
+class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
+    accent_preset = serializers.CharField(read_only=True, allow_blank=True)
+    timezone_name = serializers.CharField(read_only=True, help_text="The event's time zone (S13: deadlines show in it).")
+    website = serializers.SerializerMethodField()
+    # How people attend is public; the join link itself never is (online_delivery.py).
+    delivery_mode = serializers.SerializerMethodField(
+        help_text="in_person, online or hybrid; null while the space has online events switched off.")
+    indexable = serializers.SerializerMethodField(
+        help_text="False for unlisted events: pages must send noindex, nofollow.")
+    submission_stages = serializers.SerializerMethodField(
+        help_text="#178: the hackathon's submission stage deadlines (event detail only; empty elsewhere).")
+
+    @extend_schema_field(PublicStageSerializer(many=True))
+    def get_submission_stages(self, obj):
+        if not self.context.get("submission_stages"):
+            return []
+        from .submissions.stage_public import public_stages
+        return public_stages(obj)
+
+    @extend_schema_field(serializers.ChoiceField(choices=Event.DeliveryMode.choices, allow_null=True))
+    def get_delivery_mode(self, obj):
+        from .online_delivery import public_mode
+        return public_mode(obj)
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_indexable(self, obj):
+        return bool(obj.is_public and obj.listing == Event.Listing.LISTED)
+
+    @extend_schema_field(PublicWebsiteSerializer(allow_null=True))
+    def get_website(self, obj):
+        if self.context.get("omit_website"):
+            return None
+        from django.http import Http404
+        from rest_framework.exceptions import NotFound
+        from .views_website_public import projection
+        # The optional website must never 404 the core event: a scope refusal
+        # (DRF NotFound) or a hidden page (Http404) both just omit it.
+        try:
+            return PublicWebsiteSerializer(projection(obj, self.context.get("request"))).data
+        except (Http404, NotFound):
+            return None
+
     public_token = serializers.UUIDField(read_only=True)
     title = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
     starts_at = serializers.DateTimeField(read_only=True)
     ends_at = serializers.DateTimeField(read_only=True)
     location = serializers.CharField(read_only=True)
+    venue_address = serializers.CharField(read_only=True)
+    venue_map_url = serializers.CharField(read_only=True)
     location_kind = serializers.ChoiceField(
         choices=Event.LocationKind.choices,
         read_only=True,
     )
     custom_form = serializers.JSONField(allow_null=True, read_only=True)
     capacity = serializers.IntegerField(min_value=0, read_only=True)
-    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    show_registration_count = serializers.BooleanField(read_only=True)
+    registration_count = serializers.SerializerMethodField()
+    payment_amount = MoneyField(max_digits=13, decimal_places=3, read_only=True)
     currency = serializers.SerializerMethodField()
     availability = serializers.SerializerMethodField()
     registration_requires_approval = serializers.BooleanField(read_only=True)
@@ -68,6 +130,13 @@ class PublicEventSerializer(EventTicketingPublicSerializer):
     )
     organizers = EventOrganizerSummarySerializer(many=True, read_only=True)
     series = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_registration_count(self, obj):
+        if not obj.show_registration_count:
+            return None
+        from .capacity import confirmed_occupancy
+        return confirmed_occupancy(obj)
 
     @extend_schema_field(
         {
@@ -113,29 +182,72 @@ class PublicEventSerializer(EventTicketingPublicSerializer):
         'properties': {
             'public_token': {'type': 'string', 'format': 'uuid'},
             'title': {'type': 'string'},
+            'id': {'type': 'integer'},
+            'passes_enabled': {'type': 'boolean'},
         },
     })
     def get_series(self, obj):
         if not obj.series_id:
             return None
-        return {'public_token': obj.series.public_token, 'title': obj.series.title}
+        # Release 2 L6 member UI: the id opens the series-pass page while `events.series_passes` is on.
+        from apps.makerspaces.platform import feature_enabled
+        return {'public_token': obj.series.public_token, 'title': obj.series.title, 'id': obj.series_id,
+                'passes_enabled': feature_enabled(obj.makerspace, 'events.series_passes')}
 
 
 class PublicEventRegistrationInputSerializer(
-    CustomFormSubmissionMixin,
+    RegistrationFormInput,
     serializers.Serializer,
 ):
+    host_waiver_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, write_only=True)
+    host_waiver_version = serializers.CharField(max_length=64, required=False, allow_null=True, write_only=True)
+    host_waiver_accepted = serializers.BooleanField(required=False, default=False, write_only=True)
     phone = serializers.CharField(max_length=64, required=False, allow_blank=True, write_only=True)
     email = serializers.EmailField(required=False, allow_blank=True, write_only=True)
     invite_code = serializers.CharField(max_length=128, required=False, write_only=True)
     ticket_type_id = serializers.IntegerField(min_value=1, required=False, write_only=True)
     promo_code = serializers.CharField(max_length=128, required=False, write_only=True)
+    # Application-stage forms and the travel-support request answered with the signup.
+    # Both are validated by their owners before the registration transaction.
+    stage_forms = serializers.ListField(child=serializers.DictField(), max_length=50, required=False, write_only=True)
+    reimbursement_request = serializers.DictField(required=False, write_only=True)
+
+    def validate(self, attrs):
+        inline = {key: attrs.pop(key) for key in ("stage_forms", "reimbursement_request") if key in attrs}
+        if inline:
+            if "operation_id" not in attrs:
+                raise serializers.ValidationError({"code": "operation_required"})
+            inline["operation_id"] = attrs["operation_id"]
+        attrs = super().validate(attrs)
+        if inline:
+            attrs["inline_forms"] = inline
+        return attrs
 
     def custom_form_schema(self):
         return self.context['event'].custom_form
 
 
 class PublicEventRegistrationResponseSerializer(serializers.Serializer):
+    save_intent = serializers.SerializerMethodField()
+
+    def to_representation(self, instance):
+        result = super().to_representation(instance)
+        snapshot = getattr(instance, "custom_answers", None)
+        if not isinstance(snapshot, dict) or snapshot.get("version") != 2:
+            result.pop("save_intent", None)
+        return result
+
+    @extend_schema_field({"type": "object", "nullable": True, "properties": {
+        "operation_id": {"type": "string", "format": "uuid"},
+        "state": {"type": "string"}, "status_url": {"type": "string"}}})
+    def get_save_intent(self, obj):
+        if not getattr(obj, "member_id", None):
+            return None
+        from .contracts.subjects import AnswerSubject, SubjectKind
+        from .programme.prepared_forms import intent_for
+        return intent_for(AnswerSubject(event_id=obj.event_id, owner_member_id=obj.member_id,
+            kind=SubjectKind.REGISTRATION, subject_id=obj.pk))
+
     status = serializers.ChoiceField(
         choices=(
             EventRegistration.Status.PENDING_APPROVAL,

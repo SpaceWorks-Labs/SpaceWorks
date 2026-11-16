@@ -1,4 +1,4 @@
-"""Idempotent persistence and pre-promotion state transitions for Lane E."""
+"""Idempotent persistence and pre-promotion state transitions for deployment artifacts."""
 
 import hmac
 
@@ -6,11 +6,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 
-from apps.backup.models import (
-    BackupArtifactComponent,
-    BackupArtifactLedger,
-    BackupComponentRecipient,
-)
+from apps.backup.models import BackupArtifactComponent, BackupArtifactLedger
 from apps.backup.outer_manifest import manifest_digest, verify_outer_manifest
 from apps.backup.storage_promotion import final_locator, staging_locator
 
@@ -52,9 +48,7 @@ def persist_pending(archive, build, size_bytes):
     if not created:
         _require_equal(ledger, facts)
     specs = component_specs(manifest)
-    for declared in specs:
-        spec = dict(declared)
-        recipients = tuple(spec.pop("recipient_fingerprints"))
+    for spec in specs:
         component, component_created = BackupArtifactComponent.objects.get_or_create(
             artifact=ledger,
             component_id=spec["component_id"],
@@ -62,19 +56,6 @@ def persist_pending(archive, build, size_bytes):
         )
         if not component_created:
             _require_equal(component, spec)
-        for fingerprint in recipients:
-            BackupComponentRecipient.objects.get_or_create(
-                component=component, fingerprint=fingerprint
-            )
-        actual_recipients = set(
-            component.recipient_associations.filter(
-                tombstoned_at__isnull=True
-            ).values_list("fingerprint", flat=True)
-        )
-        if actual_recipients != set(recipients):
-            raise ArtifactLedgerMismatch(
-                "The durable component recipient set differs from the manifest."
-            )
     if ledger.components.count() != len(specs):
         raise ArtifactLedgerMismatch("The durable component set differs from the manifest.")
     return ledger
@@ -82,25 +63,14 @@ def persist_pending(archive, build, size_bytes):
 
 def component_specs(manifest):
     main = manifest["main_component"]
-    values = [{
+    return [{
         "component_id": main["component_id"],
         "kind": BackupArtifactComponent.Kind.MAIN,
         "makerspace_id_snapshot": None,
         "ciphertext_path": main["path"],
         "ciphertext_sha256": main["ciphertext_sha256"],
         "size_bytes": main["size_bytes"],
-        "recipient_fingerprints": tuple(main["recipient_fingerprints"]),
     }]
-    values.extend({
-        "component_id": item["component_id"],
-        "kind": BackupArtifactComponent.Kind.SLICE,
-        "makerspace_id_snapshot": item["makerspace_id"],
-        "ciphertext_path": item["ciphertext_path"],
-        "ciphertext_sha256": item["ciphertext_sha256"],
-        "size_bytes": item["size_bytes"],
-        "recipient_fingerprints": tuple(item["recipient_fingerprints"]),
-    } for item in manifest["slice_components"])
-    return values
 
 
 @transaction.atomic
@@ -187,9 +157,6 @@ def mark_managed_bytes_deleted(artifact_id):
         storage_state=BackupArtifactComponent.StorageState.BYTES_DELETED,
         bytes_deleted_at=now,
     )
-    BackupComponentRecipient.objects.filter(
-        component__artifact=row, tombstoned_at__isnull=True
-    ).update(tombstoned_at=now)
     row.state = BackupArtifactLedger.State.BYTES_DELETED
     row.bytes_deleted_at = now
     row.cleanup_pending = False

@@ -41,7 +41,14 @@ def _start_attempt(run_id):
         if latest is None or latest.state not in {State.QUEUED, State.RETRYING}:
             return None, None  # duplicate delivery or already terminal
         attempt = latest.attempt + 1
+        from apps.accounts import rbac
+        from apps.operations.cloud_jobs.authority import allowed
+        # The event-order trigger lets QUEUED/RETRYING move only to RUNNING (or time out), so a
+        # refusal is recorded as the attempt starting and then failing, never FAILED directly.
         runs.append_event(run, State.RUNNING, attempt)
+        if not allowed(run.requested_by, rbac.Action.VIEW_AUDIT, run.makerspace_id):
+            runs.finish(run, State.FAILED, attempt, failure_code="requester_authority_changed")
+            return None, None
     return run, attempt
 
 
@@ -86,21 +93,24 @@ def execute_attempt(run_id):
     if run is None:
         return None
     try:
-        with scope_session_lock(run.makerspace_id):
+        with scope_session_lock(run.makerspace_id) as guard:
+            guard.assert_valid()
             result = _snapshot(run)
             if result is None:
                 return runs.finish(run, State.INCOMPLETE, attempt,
                                    failure_code="verification_bounds_exceeded")
             try:
+                guard.assert_valid()
                 anchor_phase(run.makerspace_id, result,
                              read_budget=AnchorReadBudget(runs.MAX_ANCHOR_READS),
                              genesis_row_limit=runs.MAX_EXPANDED_LEAVES)
+                guard.assert_valid()
             except (AnchorReadBudgetExceeded, GenesisMembershipLimitExceeded):
                 result.anchor_status = "unavailable"
                 return runs.finish(run, State.INCOMPLETE, attempt,
                                    failure_code="verification_bounds_exceeded", **_fields(result))
     except OperationalError:
-        logger.exception("audit_verification_database_error", extra={"run_id": run_id})
+        logger.warning("audit_verification_database_error", extra={"run_id": run_id})
         if attempt < runs.MAX_ATTEMPTS:
             runs.append_event(run, State.RETRYING, attempt)
             raise RetryAttempt() from None
@@ -117,13 +127,14 @@ def execute_attempt(run_id):
 
 def fail_attempt(run_id, failure_code):
     """Close a RUNNING attempt after a soft time limit or an unexpected error."""
-    run = AuditVerificationRun.objects.filter(pk=run_id).first()
-    if run is None:
-        return None
-    latest = runs.latest_event(run)
-    if latest is None or latest.state not in AuditVerificationRunEvent.ACTIVE_STATES:
-        return latest
-    state = State.TIMED_OUT if failure_code == "soft_time_limit" else State.FAILED
-    if latest.state == State.QUEUED:
-        state = State.TIMED_OUT  # QUEUED may only time out
-    return runs.finish(run, state, latest.attempt, failure_code=failure_code)
+    with transaction.atomic():
+        run = AuditVerificationRun.objects.select_for_update().filter(pk=run_id).first()
+        if run is None:
+            return None
+        latest = runs.latest_event(run)
+        if latest is None or latest.state not in AuditVerificationRunEvent.ACTIVE_STATES:
+            return latest
+        state = State.TIMED_OUT if failure_code == "soft_time_limit" else State.FAILED
+        if latest.state in {State.QUEUED, State.RETRYING}:
+            state = State.TIMED_OUT  # neither waiting state may fail an unstarted attempt
+        return runs.finish(run, state, latest.attempt, failure_code=failure_code)

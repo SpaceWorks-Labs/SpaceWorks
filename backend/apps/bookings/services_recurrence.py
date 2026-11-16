@@ -1,5 +1,6 @@
 """Bounded weekly staff bookings; each occurrence uses the ordinary locked workflow."""
 
+from django.utils.translation import gettext
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -15,30 +16,30 @@ from apps.makerspaces.platform import feature_enabled
 
 @transaction.atomic
 def create_recurring_bookings(space, *, actor, starts_at, ends_at, count, interval_weeks=1, **values):
-    from apps.accounts import rbac
-    from rest_framework.exceptions import PermissionDenied
     from apps.makerspaces.guards import require_module_locked
     locked = _locked_space(space.pk)
     locked.makerspace = require_module_locked(locked.makerspace, 'bookings')
-    if not rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, locked.makerspace_id):
-        raise PermissionDenied()
+    from .booking_authority import require
+    require(actor, locked, "manage_reservations")
     if not feature_enabled(locked.makerspace, 'bookings.recurring'):
-        raise ValidationError({'feature': 'Recurring bookings are disabled.'})
+        # #183B: the route exists only for this switch, so off leaves no surface (404).
+        from apps.makerspaces.guards import feature_off
+        raise feature_off('bookings.recurring', gettext('Recurring bookings are disabled.'))
     if type(count) is not int or not 2 <= count <= 52 or type(interval_weeks) is not int or not 1 <= interval_weeks <= 12:
-        raise ValidationError({'count': 'Use 2–52 occurrences, spaced 1–12 weeks apart.'})
+        raise ValidationError({'count': gettext('Use 2–52 occurrences, spaced 1–12 weeks apart.')})
     if (count - 1) * interval_weeks > 52:
-        raise ValidationError({'count': 'The last occurrence must be within 52 weeks.'})
+        raise ValidationError({'count': gettext('The last occurrence must be within 52 weeks.')})
     if timezone.is_naive(starts_at) or timezone.is_naive(ends_at):
-        raise ValidationError({'starts_at': 'Datetime must include a timezone offset.'})
+        raise ValidationError({'starts_at': gettext('Datetime must include a timezone offset.')})
     try:
         ends_at + timedelta(weeks=(count - 1) * interval_weeks, days=1)
     except OverflowError:
-        raise ValidationError({'ends_at': 'Series exceeds the supported calendar range.'})
+        raise ValidationError({'ends_at': gettext('Series exceeds the supported calendar range.')})
     local = to_local(locked.makerspace, starts_at)
     zone = ZoneInfo(locked.makerspace.timezone)
     duration = ends_at - starts_at
     if duration <= timedelta(0):
-        raise ValidationError({'ends_at': 'End must follow start.'})
+        raise ValidationError({'ends_at': gettext('End must follow start.')})
     result = []
     for index in range(count):
         wall = datetime.combine(local.date() + timedelta(weeks=index * interval_weeks), local.time().replace(tzinfo=None))
@@ -52,7 +53,9 @@ def create_recurring_bookings(space, *, actor, starts_at, ends_at, count, interv
             # Each create has a savepoint, so a conflict rolls back its charge/audit only.
             booking = create_booking(locked, actor=actor, starts_at=start, ends_at=end, **values)
         except (BookingConflict, BookingInvalidTransition, ValidationError) as exc:
-            result.append({**item, 'booking_id': None, 'status': 'conflict', 'detail': str(getattr(exc, 'detail', exc))})
+            # A conflict's own message (a machine under repair is also an APIException with a dict detail).
+            detail = str(exc) if isinstance(exc, BookingConflict) else str(getattr(exc, 'detail', exc))
+            result.append({**item, 'booking_id': None, 'status': 'conflict', 'detail': detail})
         else:
             result.append({**item, 'booking_id': booking.pk, 'status': booking.status, 'detail': ''})
     from apps.audit import services as audit

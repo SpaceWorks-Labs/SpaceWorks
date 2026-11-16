@@ -1,4 +1,9 @@
+from .notification_cutover import guarded
 import random
+
+# Register the shared worker even when no separable domain adapter is installed.
+from .broadcasts_worker import broadcast_batch, resume_broadcasts  # noqa: F401
+from .notification_tasks import deliver_envelope, sweep_notification_outbox  # noqa: F401
 
 from celery import shared_task
 from django.db import transaction
@@ -23,6 +28,7 @@ from apps.integrations.smtp_validation import (
     soft_time_limit=email_task_soft_limit(),
     time_limit=email_task_hard_limit(),
 )
+@guarded(sending=True)
 def deliver_email_task(self, log_id):
     record_worker_heartbeat()
     log = _claim_log(log_id)
@@ -56,6 +62,17 @@ def _claim_log(log_id):
         log = EmailLog.objects.select_for_update().filter(pk=log_id).first()
         if log is None or log.status in (EmailLog.Status.SENT, EmailLog.Status.SKIPPED):
             return None
+        from .mail_providers.outbox import claim_due
+        from .mail_retry_policy import unresolved_acceptance
+        if unresolved_acceptance(log) or not claim_due(log):
+            return None
+        from .broadcasts_delivery import attempt_limit
+        from .broadcasts_registry import ADAPTERS
+        # Duplicate tasks must leave exhausted failures available for manual retry.
+        # Only that locked retry renews the budget, including subsequent retries.
+        if (log.status == EmailLog.Status.FAILED and log.source_kind in ADAPTERS
+                and log.attempts >= attempt_limit(log)):
+            return None
         if log.status == EmailLog.Status.SENDING and not sending_claim_is_stale(log):
             return None
         log.status = EmailLog.Status.SENDING
@@ -70,6 +87,7 @@ def _claim_log(log_id):
     soft_time_limit=email_task_soft_limit(),
     time_limit=email_task_hard_limit(),
 )
+@guarded(sending=True)
 def deliver_notification_task(self, log_id):
     record_worker_heartbeat()
     log = _claim_notification_log(log_id)
@@ -106,6 +124,9 @@ def _claim_notification_log(log_id):
         )
         if log is None or log.status in (NotificationDeliveryStatus.SENT, NotificationDeliveryStatus.SKIPPED):
             return None
+        from .mail_providers.budget_config import free_profile
+        if free_profile() and log.attempts >= 4:
+            return None
         if (
             log.status == NotificationDeliveryStatus.SENDING
             and not sending_claim_is_stale(log)
@@ -115,3 +136,9 @@ def _claim_notification_log(log_id):
         log.error = ""
         log.save(update_fields=["status", "error", "updated_at"])
         return log
+
+from .tasks_messaging_settings import wipe_messaging_credentials_task  # noqa: F401
+
+from .tasks_messaging import canonical_retention_task, deliver_messaging_task, sweep_messaging_task  # noqa: F401
+
+from .tasks_transient import deliver_transient_email_task, deliver_transient_sms_task  # noqa: F401

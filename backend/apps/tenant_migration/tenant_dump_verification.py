@@ -86,12 +86,15 @@ def verify_projection_database(
 ):
     validate_catalog()
     validate_raw_column_allowlists()
-    validate_unowned_tables(connections[using].introspection.table_names())
+    from .cloud_portable import application_table_names
+    validate_unowned_tables(application_table_names(using))
     verify_foreign_key_closure(using)
     verify_open_tenant_fence(using, makerspace_id)
     verify_tables_empty(using, {"spaceworks_cache"})
     verify_source_disposition_tables_empty(using)
     verify_cross_tenant_projection(using, makerspace_id)
+    from .staff_postconditions import verify_staff_transport
+    verify_staff_transport(using, makerspace_id, exclusive=True)
     actual = mapped_raw_digest(mapped_rows(using, mapped_identities))
     if actual != expected_mapped_digest:
         raise TenantDumpVerificationError(

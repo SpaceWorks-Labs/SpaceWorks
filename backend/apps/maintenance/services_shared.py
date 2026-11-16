@@ -1,13 +1,13 @@
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.audit.services import record
 from apps.accounts import rbac
 from apps.machines import access
 from apps.machines.models import Machine
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import MACHINES_MAINTENANCE, require_capability
 from apps.makerspaces.servability import is_servable
 from apps.maintenance.exceptions import (
     MaintenanceStatusConflict,
@@ -25,9 +25,8 @@ def lock_machine(machine, actor):
     return row
 
 
-def prepare_machine(machine, actor, *, manage):
-    require_module(machine.makerspace, "maintenance")
-    require_module(machine.makerspace, "machines")
+def prepare_machine(machine, actor, *, manage, technician=False):
+    require_capability(machine.makerspace, MACHINES_MAINTENANCE)
     # Archived makerspaces are soft-deleted for everyone; reject after the row lock
     # reloads the makerspace so a per-machine operator can't complete an in-flight
     # mutation (and finalize an attachment) during the archive->purge window.
@@ -40,28 +39,32 @@ def prepare_machine(machine, actor, *, manage):
         if manage
         else access.can_operate_machine(actor, machine)
     )
+    if not allowed and technician:
+        # L16: a covering Technician logs and completes maintenance, never edits schedules.
+        from apps.maintenance.repairs.authority import technician_on_machine
+        allowed = technician_on_machine(actor, machine)
     if not allowed:
         raise PermissionDenied()
 
 
 def clean_text(value, field, *, allow_blank=False):
     if not isinstance(value, str):
-        raise ValidationError({field: "Must be a string."})
+        raise ValidationError({field: gettext("Must be a string.")})
     value = value.strip()
     if not value and not allow_blank:
-        raise ValidationError({field: "This field may not be blank."})
+        raise ValidationError({field: gettext("This field may not be blank.")})
     return value
 
 
 def clean_interval(value):
     if isinstance(value, bool):
-        raise ValidationError({"interval_days": "A positive integer is required."})
+        raise ValidationError({"interval_days": gettext("A positive integer is required.")})
     try:
         value = int(value)
     except (TypeError, ValueError):
-        raise ValidationError({"interval_days": "A positive integer is required."})
+        raise ValidationError({"interval_days": gettext("A positive integer is required.")})
     if value <= 0:
-        raise ValidationError({"interval_days": "Must be greater than zero."})
+        raise ValidationError({"interval_days": gettext("Must be greater than zero.")})
     return value
 
 
@@ -69,7 +72,7 @@ def clean_date(value, field="next_due"):
     try:
         return MaintenanceSchedule._meta.get_field("next_due").clean(value, None)
     except (TypeError, ValueError):
-        raise ValidationError({field: "Enter a valid date."})
+        raise ValidationError({field: gettext("Enter a valid date.")})
 
 
 def clean_performed_at(value):
@@ -77,9 +80,9 @@ def clean_performed_at(value):
     try:
         value = MaintenanceLog._meta.get_field("performed_at").clean(value, None)
     except (TypeError, ValueError):
-        raise ValidationError({"performed_at": "Enter a valid date/time."})
+        raise ValidationError({"performed_at": gettext("Enter a valid date/time.")})
     if timezone.is_naive(value):
-        raise ValidationError({"performed_at": "Timezone information is required."})
+        raise ValidationError({"performed_at": gettext("Timezone information is required.")})
     return value
 
 
@@ -89,13 +92,13 @@ def clean_cost(value):
     try:
         value = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
-        raise ValidationError({"cost": "Enter a valid amount."})
+        raise ValidationError({"cost": gettext("Enter a valid amount.")})
     if not value.is_finite() or value < 0:
-        raise ValidationError({"cost": "Must be zero or greater."})
+        raise ValidationError({"cost": gettext("Must be zero or greater.")})
     try:
         return MaintenanceLog._meta.get_field("cost").clean(value, None)
     except Exception:
-        raise ValidationError({"cost": "Enter an amount with at most 10 whole digits and 2 decimals."})
+        raise ValidationError({"cost": gettext("Enter an amount with at most 10 whole digits and 2 decimals.")})
 
 
 def validate_log_values(*, summary, performed_at, cost, parts_note):
@@ -117,13 +120,5 @@ def ensure_idle_transition(machine, set_idle):
 
 
 def apply_idle_transition(machine, actor):
-    old_status = machine.status
-    machine.status = Machine.Status.IDLE
-    machine.save(update_fields=["status", "updated_at"])
-    record(
-        actor,
-        "machine.status_changed",
-        makerspace=machine.makerspace,
-        target=machine,
-        meta={"old": old_status, "new": Machine.Status.IDLE},
-    )
+    from apps.machines.status_tracking import change_status
+    change_status(machine, Machine.Status.IDLE, source="maintenance", actor=actor)

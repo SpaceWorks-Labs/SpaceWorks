@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 
 from cryptography.fernet import InvalidToken
@@ -12,7 +13,7 @@ from apps.makerspaces.lookup import get_makerspace_by_public_code
 from apps.makerspaces.servability import is_servable
 from apps.payments.models import MakerspacePaymentSettings
 from apps.payments.providers import WebhookVerificationError, get_provider
-from apps.payments.resolution import resolve_payment_source
+from apps.payments.resolution import razorpay_source, stripe_keys_retained
 from apps.payments.serializers import WebhookResponseSerializer
 from apps.payments.services import apply_razorpay_webhook_event, apply_webhook_event
 from apps.payments.stripe_client import PaymentsUnavailable, StripeWebhookSignatureError, construct_event
@@ -30,6 +31,9 @@ WEBHOOK_RESPONSES = {
 class StripeWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(tags=["Payments"], summary="Receive a makerspace Stripe webhook", description="Verifies the Stripe signature using request.body and the addressed makerspace's webhook secret before applying an idempotent event.", auth=[], request=None, responses=WEBHOOK_RESPONSES)
     def post(self, request, public_code):
@@ -40,11 +44,15 @@ class StripeWebhookView(APIView):
         makerspace = get_makerspace_by_public_code(public_code, allow_archived=True)
         if makerspace is None or not is_servable(makerspace, allow_archived=True):
             logger.warning("stripe_webhook_unknown_makerspace", extra={"public_code": public_code})
-            return Response({"detail": "Makerspace not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": gettext("Makerspace not found.")}, status=status.HTTP_404_NOT_FOUND)
         payment_settings = MakerspacePaymentSettings.for_makerspace(makerspace)
-        if not payment_settings.raw_credentials_configured:
+        # Retained Stripe keys authenticate late captures, refunds and disputes even after the
+        # space switches its new collections to Razorpay (PAY-REVIEW 0.12.0; the mirror of
+        # RazorpayWebhookView). Gating on the selection-aware `raw_credentials_configured`
+        # answered 400 to every such event, so a pending Stripe refund never settled.
+        if not stripe_keys_retained(payment_settings):
             logger.warning("stripe_webhook_unconfigured", extra={"makerspace_id": makerspace.id})
-            return Response({"detail": "Payments are not configured."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": gettext("Payments are not configured.")}, status=status.HTTP_400_BAD_REQUEST)
         try:
             event = construct_event(request.body, request.headers.get("Stripe-Signature", ""), payment_settings.get_stripe_webhook_secret())
         except (
@@ -55,11 +63,11 @@ class StripeWebhookView(APIView):
             ValueError,
         ):
             logger.warning("stripe_webhook_rejected", extra={"makerspace_id": makerspace.id})
-            return Response({"detail": "Invalid Stripe webhook signature."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": gettext("Invalid Stripe webhook signature.")}, status=status.HTTP_400_BAD_REQUEST)
         apply_webhook_event(
             makerspace, event, provider="raw"
         )
-        return Response({"detail": "Verified."}, status=status.HTTP_200_OK)
+        return Response({"detail": gettext("Verified.")}, status=status.HTTP_200_OK)
 
 
 class RazorpayWebhookView(APIView):
@@ -78,6 +86,9 @@ class RazorpayWebhookView(APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(
         tags=["Payments"],
@@ -98,17 +109,14 @@ class RazorpayWebhookView(APIView):
         makerspace = get_makerspace_by_public_code(public_code, allow_archived=True)
         if makerspace is None or not is_servable(makerspace, allow_archived=True):
             logger.warning("razorpay_webhook_unknown_makerspace", extra={"public_code": public_code})
-            return Response({"detail": "Makerspace not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": gettext("Makerspace not found.")}, status=status.HTTP_404_NOT_FOUND)
         settings_row = MakerspacePaymentSettings.for_makerspace(makerspace)
-        if settings_row.provider != "razorpay":
-            # A Razorpay callback for a Stripe space is either a misconfiguration or a
-            # probe. Either way there is no secret to verify it with.
-            logger.warning("razorpay_webhook_wrong_provider", extra={"makerspace_id": makerspace.id})
-            return Response({"detail": "Razorpay is not configured."}, status=status.HTTP_400_BAD_REQUEST)
-        source = resolve_payment_source(makerspace)
+        # Retained Razorpay credentials authenticate late captures even after the
+        # space switches its new collections to Stripe.
+        source = razorpay_source(settings_row)
         if source is None:
             logger.warning("razorpay_webhook_unconfigured", extra={"makerspace_id": makerspace.id})
-            return Response({"detail": "Payments are not configured."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": gettext("Payments are not configured.")}, status=status.HTTP_400_BAD_REQUEST)
         try:
             event = get_provider("razorpay").verify_webhook(
                 source, payload=request.body, headers=request.headers
@@ -116,10 +124,10 @@ class RazorpayWebhookView(APIView):
         except (WebhookVerificationError, ImproperlyConfigured, InvalidToken, ValueError):
             logger.warning("razorpay_webhook_rejected", extra={"makerspace_id": makerspace.id})
             return Response(
-                {"detail": "Invalid Razorpay webhook signature."},
+                {"detail": gettext("Invalid Razorpay webhook signature.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         apply_razorpay_webhook_event(makerspace, event)
         # 200 even for an event we chose not to act on: Razorpay retries a non-2xx, and
         # retrying an event that is correctly ignored achieves nothing but load.
-        return Response({"detail": "Verified."}, status=status.HTTP_200_OK)
+        return Response({"detail": gettext("Verified.")}, status=status.HTTP_200_OK)

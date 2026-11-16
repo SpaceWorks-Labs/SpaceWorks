@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 import uuid
 
 from django.conf import settings
@@ -8,8 +9,9 @@ from django.db.models import Q
 
 class TenantImportJob(models.Model):
     class Status(models.TextChoices):
+        UPLOADING = "uploading", "Uploading"
         PENDING = "pending", "Pending"
-        AWAITING_IDENTITY = "awaiting_identity", "Awaiting identity decisions"
+        AWAITING_IDENTITY = "awaiting_identity", gettext_noop("Awaiting identity decisions")
         READY = "ready", "Ready"
         MATERIALIZING = "materializing", "Materializing"
         FINALIZING = "finalizing", "Finalizing"
@@ -35,6 +37,8 @@ class TenantImportJob(models.Model):
         related_name="tenant_import_jobs",
     )
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.PENDING)
+    run_request = models.JSONField(default=dict, blank=True)
+    run_attempt = models.UUIDField(null=True, blank=True)
     # SET_NULL is deliberate: PROTECT would make tenant purge impossible. CASCADE would
     # not solve the wider lifecycle either, because failed/abandoned pre-tenant jobs have
     # no makerspace FK and would still retain attacker-supplied identity data forever.
@@ -47,6 +51,8 @@ class TenantImportJob(models.Model):
     )
     aggregate_outcome = models.JSONField(default=dict, blank=True)
     archive_path = models.CharField(max_length=1024, blank=True)
+    upload_total_bytes = models.BigIntegerField(null=True, blank=True)
+    upload_received_bytes = models.BigIntegerField(default=0)
     materialization_report = models.JSONField(default=dict, blank=True)
     verification_report = models.JSONField(default=dict, blank=True)
     failure_code = models.CharField(max_length=64, blank=True)
@@ -68,12 +74,12 @@ class TenantImportJob(models.Model):
 
 class ImportIdentityDecision(models.Model):
     class IdentityResolution(models.TextChoices):
-        LINK_EXISTING = "link_existing", "Link existing account"
-        CREATE_WALK_IN = "create_walk_in", "Create walk-in account"
+        LINK_EXISTING = "link_existing", gettext_noop("Link existing account")
+        CREATE_WALK_IN = "create_walk_in", gettext_noop("Create walk-in account")
 
     class MembershipDisposition(models.TextChoices):
-        IMPORT_MEMBERSHIP = "import_membership", "Import membership"
-        NO_MEMBERSHIP = "no_membership", "Do not import membership"
+        IMPORT_MEMBERSHIP = "import_membership", gettext_noop("Import membership")
+        NO_MEMBERSHIP = "no_membership", gettext_noop("Do not import membership")
 
     job = models.ForeignKey(
         TenantImportJob, on_delete=models.CASCADE, related_name="identity_decisions"
@@ -100,6 +106,11 @@ class ImportIdentityDecision(models.Model):
         on_delete=models.SET_NULL,
         related_name="tenant_import_identity_decisions",
     )
+    # One account per person: a source person's staff-track rows travel with them. Linked
+    # to an existing target person they arrive REVOKED unless the superadmin grants them
+    # here, explicitly (audited tenant_migration.staff_roles_granted). Created people keep
+    # the source status.
+    grant_staff_roles = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -127,5 +138,9 @@ class ImportIdentityDecision(models.Model):
             and self.target_user_id is not None
         ):
             raise ValidationError(
-                {"target_user": "A walk-in decision cannot name an existing account."}
+                {"target_user": gettext("A walk-in decision cannot name an existing account.")}
+            )
+        if self.grant_staff_roles and self.identity_resolution != self.IdentityResolution.LINK_EXISTING:
+            raise ValidationError(
+                {"grant_staff_roles": gettext("Only a linked person's staff roles need an explicit grant.")}
             )

@@ -1,0 +1,27 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/session.stop.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_minutes": {
+      "maximum": 100000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "idle_minutes": {
+      "maximum": 100000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "reason": {
+      "enum": [
+        "member",
+        "device",
+        "idle"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [],
+  "type": "object"
+}

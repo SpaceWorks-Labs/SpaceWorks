@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.events import event_authority
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events import collaborator_services
 from apps.events.exceptions import UseSeriesCollaborators
@@ -43,9 +44,7 @@ def _collaborator_makerspace(actor, makerspace_id):
         ),
         pk=makerspace_id,
     )
-    require_module(makerspace, "events")
-    if not rbac.can(actor, rbac.Action.MANAGE_EVENTS, makerspace.pk):
-        raise PermissionDenied()
+    event_authority.require_tenant(actor, makerspace)
     return makerspace
 
 
@@ -73,13 +72,7 @@ def _manageable_collaboration(actor, pk):
         ),
         pk=pk,
     )
-    require_module(collaborator.makerspace, "events")
-    if not rbac.can(
-        actor,
-        rbac.Action.MANAGE_EVENTS,
-        collaborator.makerspace_id,
-    ):
-        raise PermissionDenied()
+    event_authority.require_tenant(actor, collaborator.makerspace)
     return collaborator
 
 

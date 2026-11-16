@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post" action="{{ request.path }}">
@@ -10,24 +11,24 @@
 
   <fieldset class="module aligned">
     <div class="form-row">
-      <label for="id_count">Quantity:</label>
+      <label for="id_count">{% translate "Quantity:" %}</label>
       <input id="id_count" type="number" name="count" min="1" max="200" required>
     </div>
     <div class="form-row">
-      <label for="id_name_prefix">Name prefix:</label>
+      <label for="id_name_prefix">{% translate "Name prefix:" %}</label>
       <input id="id_name_prefix" type="text" name="name_prefix">
     </div>
     <div class="form-row">
-      <label for="id_serial_numbers">Serial numbers:</label>
+      <label for="id_serial_numbers">{% translate "Serial numbers:" %}</label>
       <textarea id="id_serial_numbers" name="serial_numbers" rows="5"></textarea>
-      <p class="help">Optional. Enter one serial number per line or separate them with commas.</p>
+      <p class="help">{% translate "Optional. Enter one serial number per line or separate them with commas." %}</p>
     </div>
     <div class="form-row">
-      <label for="id_print_batch_id">Print batch ID:</label>
+      <label for="id_print_batch_id">{% translate "Print batch ID:" %}</label>
       <input id="id_print_batch_id" type="number" name="print_batch_id" min="1">
     </div>
     <div class="form-row">
-      <label for="id_create_print_batch">Create print batch:</label>
+      <label for="id_create_print_batch">{% translate "Create print batch:" %}</label>
       <input id="id_create_print_batch" type="checkbox" name="create_print_batch" value="1">
     </div>
   </fieldset>

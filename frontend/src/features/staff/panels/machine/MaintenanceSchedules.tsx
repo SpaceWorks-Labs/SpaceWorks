@@ -1,7 +1,9 @@
+import { formatLocale } from "../../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { MaintenanceMeterFields } from "./MaintenanceMeterFields";
 import { useState } from "react";
 
-import { ConfirmDialog, EmptyState } from "../../../../components/ui";
+import { ConfirmDialog, EmptyState, ListRow, StatusPill } from "../../../../components/ui";
 import {
   useCreateMaintenanceSchedule,
   useDeactivateMaintenanceSchedule,
@@ -9,6 +11,7 @@ import {
   type MaintenanceSchedule,
   type ScheduleInput,
 } from "./maintenanceApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const emptySchedule = (): ScheduleInput => ({
   description: "",
@@ -45,8 +48,7 @@ export function MaintenanceSchedules({
   ) => (
     <>
       <label className="eyebrow grid gap-1">
-        Description
-        <input
+        {t`Description`}<input
           className="desk-input"
           aria-label={`${prefix} description`}
           value={value.description}
@@ -55,8 +57,7 @@ export function MaintenanceSchedules({
         />
       </label>
       <label className="eyebrow grid gap-1">
-        Interval (days)
-        <input
+        {t`Interval (days)`}<input
           className="desk-input"
           type="number"
           min={1}
@@ -67,15 +68,13 @@ export function MaintenanceSchedules({
       </label>
       {metersEnabled ? <MaintenanceMeterFields value={value} change={change} /> : null}
       <label className="eyebrow grid gap-1">
-        Recurrence anchor
-        <select className="desk-input" value={value.anchor ?? "completion"} onChange={(event) => change({ ...value, anchor: event.target.value as ScheduleInput["anchor"] })}>
-          <option value="completion">From completion date</option>
-          <option value="calendar">Fixed calendar (skip missed dates)</option>
+        {t`Recurrence anchor`}<select className="desk-input" value={value.anchor ?? "completion"} onChange={(event) => change({ ...value, anchor: event.target.value as ScheduleInput["anchor"] })}>
+          <option value="completion">{t`From completion date`}</option>
+          <option value="calendar">{t`Fixed calendar (skip missed dates)`}</option>
         </select>
       </label>
       <label className="eyebrow grid gap-1">
-        Next due
-        <input
+        {t`Next due`}<input
           className="desk-input"
           type="date"
           value={value.next_due}
@@ -83,22 +82,23 @@ export function MaintenanceSchedules({
           required
         />
       </label>
+      <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-3">
+        <input type="checkbox" checked={value.blocks_use ?? false} onChange={(event) => change({ ...value, blocks_use: event.target.checked })} />
+        {t`Lock the machine out when overdue`}</label>
     </>
   );
 
   return (
     <section className="grid gap-3" aria-labelledby="maintenance-schedules-title">
       <h3 id="maintenance-schedules-title" className="title-section">
-        Maintenance schedules
-      </h3>
+        {t`Maintenance schedules`}</h3>
       {!schedules.length ? (
         <EmptyState
-          title="No maintenance schedules"
-          description="Create a recurring schedule to track upcoming maintenance."
+          message={t`No maintenance schedules yet. Create the first recurring schedule.`}
         />
       ) : null}
       {[...active, ...inactive].map((schedule) => (
-        <article key={schedule.id} className="rounded-lg border border-line bg-bg p-3">
+        <article key={schedule.id} className="grid gap-3">
           {editing === schedule.id ? (
             <form
               className="grid gap-2 sm:grid-cols-3"
@@ -111,37 +111,27 @@ export function MaintenanceSchedules({
               }}
             >
               {fields(editDraft, setEditDraft, "Edit schedule")}
-              <div className="flex gap-2 sm:col-span-3">
+              <div className="flex flex-wrap gap-2 sm:col-span-3">
                 <button className="desk-button-primary" type="submit" disabled={update.isPending}>
-                  {update.isPending ? "Saving..." : "Save schedule"}
+                  {update.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save schedule`}
                 </button>
                 <button className="desk-button-ghost" type="button" onClick={() => setEditing(null)}>
-                  Cancel
-                </button>
+                  {t`Cancel`}</button>
               </div>
             </form>
           ) : (
-            <div className="flex flex-wrap items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <strong className="block text-sm text-ink">{schedule.description}</strong>
-                <span className="text-xs text-muted">
-                  {schedule.trigger !== "days" && schedule.trigger ? `Usage: ${[schedule.usage_hours && `${schedule.usage_hours} hours`, schedule.job_count && `${schedule.job_count} jobs`].filter(Boolean).join(" or ")}. ` : ""}
-                  {schedule.trigger !== "usage" ? `Every ${schedule.interval_days} days (${schedule.anchor === "calendar" ? "fixed calendar" : "from completion"}) · ${formatDate(schedule.next_due)}` : "Resets when maintenance is completed."}
-                </span>
-              </div>
-              <span className={schedule.overdue
-                ? "rounded-md bg-danger/15 px-2 py-1 text-xs font-semibold text-danger"
-                : schedule.is_active
-                  ? "rounded-md bg-accent/15 px-2 py-1 text-xs font-semibold text-ink"
-                  : "rounded-md bg-surface px-2 py-1 text-xs font-semibold text-muted"}
-              >
-                {schedule.overdue ? "Maintenance due" : schedule.is_active ? schedule.trigger === "usage" ? "Within usage threshold" : "Due as scheduled" : "Inactive"}
-              </span>
+            <ListRow title={schedule.description} meta={<span>
+                  {schedule.trigger !== "days" && schedule.trigger ? t`Usage: ${[schedule.usage_hours && `${schedule.usage_hours} hours`, schedule.job_count && `${schedule.job_count} jobs`].filter(Boolean).join(" or ")}. ` : ""}
+                  {schedule.trigger !== "usage" ? (schedule.anchor === "calendar" ? t`Every ${schedule.interval_days} days (fixed calendar) · ${formatDate(schedule.next_due)}` : t`Every ${schedule.interval_days} days (from completion) · ${formatDate(schedule.next_due)}`) : t`Resets when maintenance is completed.`}
+                  {schedule.blocks_use ? t` · Locks the machine when overdue` : ""}
+                </span>}
+              right={<div className="flex flex-wrap items-center gap-2"><StatusPill
+                label={schedule.overdue ? t`Maintenance due` : schedule.is_active ? schedule.trigger === "usage" ? t`Within usage threshold` : t`Due as scheduled` : t`Inactive`}
+                tone={schedule.overdue ? "danger" : schedule.is_active ? "accent" : "neutral"} />
               {canEdit && schedule.is_active && !retired ? (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button className="desk-button-success" type="button" onClick={() => onComplete(schedule)}>
-                    Complete
-                  </button>
+                    {t`Complete`}</button>
                   <button
                     className="desk-button-ghost"
                     type="button"
@@ -152,23 +142,21 @@ export function MaintenanceSchedules({
                         interval_days: schedule.interval_days,
                         anchor: schedule.anchor ?? "completion",
                         next_due: schedule.next_due,
+                        blocks_use: schedule.blocks_use ?? false,
                       });
                       setEditing(schedule.id);
                     }}
                   >
-                    Edit
-                  </button>
+                    {t`Edit`}</button>
                   <button
                     className="desk-button-danger"
                     type="button"
                     disabled={deactivate.isPending}
                     onClick={() => setDeactivateId(schedule.id)}
                   >
-                    Deactivate
-                  </button>
+                    {t`Deactivate`}</button>
                 </div>
-              ) : null}
-            </div>
+              ) : null}</div>} />
           )}
         </article>
       ))}
@@ -180,10 +168,10 @@ export function MaintenanceSchedules({
             create.mutate(draft, { onSuccess: () => setDraft(emptySchedule()) });
           }}
         >
-          <h4 className="title-section sm:col-span-3">New schedule</h4>
+          <h4 className="title-section sm:col-span-3">{t`New schedule`}</h4>
           {fields(draft, setDraft, "New schedule")}
           <button className="desk-button-primary sm:col-span-3 sm:w-fit" type="submit" disabled={create.isPending}>
-            {create.isPending ? "Creating..." : "Create schedule"}
+            {create.isPending ? <><BoxArt size={16} mono />{t`Creating...`}</> : t`Create schedule`}
           </button>
         </form>
       ) : null}
@@ -192,9 +180,9 @@ export function MaintenanceSchedules({
       )}
       <ConfirmDialog
         open={deactivateId !== null}
-        title="Deactivate maintenance schedule?"
-        message="Deactivate this maintenance schedule?"
-        confirmLabel="Deactivate schedule"
+        title={t`Deactivate maintenance schedule?`}
+        message={t`Deactivate this maintenance schedule?`}
+        confirmLabel={t`Deactivate schedule`}
         tone="danger"
         pending={deactivate.isPending}
         onConfirm={() => {
@@ -209,5 +197,5 @@ export function MaintenanceSchedules({
 }
 
 function formatDate(value: string) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString();
+  return new Date(`${value}T00:00:00`).toLocaleDateString(formatLocale());
 }

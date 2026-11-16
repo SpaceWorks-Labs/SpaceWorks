@@ -21,6 +21,16 @@ def check_scope_registry(app_configs=None, **_kwargs):
             hint="Every supported scope must authorize a registered route.",
             id="apiclients.E002",
         ))
+    from .scope_registry_coverage import unclassified_routes
+    unclassified = unclassified_routes()
+    if unclassified:
+        errors.append(Error(
+            "Routes are neither API-client routes nor deliberately out of scope: "
+            + "; ".join(f"/{route} ({name or 'unnamed route'})" for route, name in unclassified),
+            hint="Register the route under a protected prefix, or list its prefix in "
+                 "apps/apiclients/scope_registry_coverage.py with the credential that serves it.",
+            id="apiclients.E003",
+        ))
     missing = unregistered_protected_routes()
     if not missing:
         return errors

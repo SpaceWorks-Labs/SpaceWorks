@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 
 from django.conf import settings
@@ -95,12 +96,11 @@ class EvidenceDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        qs = rbac.scope_by_action(
+        return rbac.scope_by_action(
             self.request.user,
             rbac.Action.UPLOAD_EVIDENCE,
             qs,
         )
-        return rbac.hide_from_superadmin(self.request.user, qs, "makerspace_id")
 
     @extend_schema(
         responses={
@@ -137,7 +137,7 @@ class EvidenceDetailView(generics.RetrieveAPIView):
                 EvidenceCleaningResponseSerializer(
                     {
                         "code": "evidence_cleanup_in_progress",
-                        "detail": "This never-used upload is being cleaned up.",
+                        "detail": gettext("This never-used upload is being cleaned up."),
                     }
                 ).data,
                 status=status.HTTP_409_CONFLICT,
@@ -148,8 +148,8 @@ class EvidenceDetailView(generics.RetrieveAPIView):
                     {
                         "code": "evidence_expired",
                         "detail": (
-                            "The evidence object expired under the makerspace "
-                            "retention policy."
+                            gettext("The evidence object expired under the makerspace "
+                            "retention policy.")
                         ),
                         "object_expired_at": retention_state.object_expired_at,
                     }

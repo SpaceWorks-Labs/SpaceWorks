@@ -1,3 +1,5 @@
+import { staffRequest } from "../../../lib/api";
+
 export type RawRow = Record<string, unknown>;
 export type Field =
   | "name"
@@ -16,7 +18,8 @@ export type Field =
   | "public_availability_mode"
   | "storage_location"
   | "category"
-  | "box_code";
+  | "box_code"
+  | "qr_code";
 export type Mapping = Partial<Record<Field, string>>;
 export type RowMessages = Record<string, string>;
 export type ImportRow = { row: number; action?: string; data?: RawRow; errors?: RowMessages; warnings?: RowMessages };
@@ -48,7 +51,7 @@ const sampleBytes = 256 * 1024;
 export const fields: Field[] = [
   "name", "total_quantity", "available_quantity", "reserved_quantity", "issued_quantity", "damaged_quantity", "lost_quantity",
   "description", "image_key", "tracking_mode", "is_public", "public_self_checkout_enabled", "show_public_count",
-  "public_availability_mode", "storage_location", "category", "box_code",
+  "public_availability_mode", "storage_location", "category", "box_code", "qr_code",
 ];
 const aliases: Record<Field, string[]> = {
   name: ["name", "item", "product"],
@@ -68,23 +71,22 @@ const aliases: Record<Field, string[]> = {
   storage_location: ["location", "storage", "storage location", "shelf"],
   category: ["category", "category name", "type"],
   box_code: ["box", "box code", "container", "container code"],
+  qr_code: ["qr", "qr code", "qr value", "qr label", "label code", "external qr"],
 };
 
-export async function parseFileSample(file: File) {
-  if (file.name.toLowerCase().endsWith(".xlsx")) return parseFile(file);
+export async function parseFileSample(file: File, makerspaceId: number) {
+  if (file.name.toLowerCase().endsWith(".xlsx")) return readSheetOnServer(file, makerspaceId);
   const data = await file.slice(0, sampleBytes).arrayBuffer();
   return parseDelimited(new TextDecoder().decode(data), file.name.toLowerCase().endsWith(".tsv") ? "\t" : undefined);
 }
 
-export async function parseFile(file: File) {
-  const data = await file.arrayBuffer();
-  if (file.name.toLowerCase().endsWith(".xlsx")) {
-    const XLSX = await import("xlsx");
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    return XLSX.utils.sheet_to_json<RawRow>(sheet, { defval: "" });
-  }
-  return parseDelimited(new TextDecoder().decode(data), file.name.toLowerCase().endsWith(".tsv") ? "\t" : undefined);
+// Workbooks are read by the server (openpyxl) rather than a browser spreadsheet library,
+// which kept unpatched advisories out of the staff bundle. Same row shape as before.
+async function readSheetOnServer(file: File, makerspaceId: number) {
+  const body = new FormData();
+  body.append("file", file);
+  const result = await staffRequest<{ rows: RawRow[] }>(`/admin/makerspace/${makerspaceId}/inventory/import/sheet`, { method: "POST", body });
+  return result.rows;
 }
 
 export function parseDelimited(text: string, forcedDelimiter?: string) {
@@ -126,6 +128,11 @@ export function suggestMapping(headers: string[]): Mapping {
 
 export function mapRow(row: RawRow, mapping: Mapping) {
   return Object.fromEntries(fields.filter((field) => mapping[field]).map((field) => [field, row[mapping[field] as string] ?? ""])) as RawRow;
+}
+
+/** QR conflicts are never skipped: the server refuses to apply until the file is fixed. */
+export function hasQrConflicts(result?: ImportResult) {
+  return Boolean(result?.errors?.some((item) => item.errors && "qr_code" in item.errors));
 }
 
 export function messageFor(messages: RowMessages) {

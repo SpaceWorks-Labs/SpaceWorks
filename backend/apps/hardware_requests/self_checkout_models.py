@@ -1,14 +1,15 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
 
 class PublicToolLoan(models.Model):
     class Source(models.TextChoices):
-        PUBLIC_SELF_CHECKOUT = "public_self_checkout", "Public Self Checkout"
-        ADMIN_DIRECT = "admin_direct", "Admin Direct"
+        PUBLIC_SELF_CHECKOUT = "public_self_checkout", gettext_noop("Public Self Checkout")
+        ADMIN_DIRECT = "admin_direct", gettext_noop("Admin Direct")
 
     class Status(models.TextChoices):
-        CHECKED_OUT = "checked_out", "Checked Out"
+        CHECKED_OUT = "checked_out", gettext_noop("Checked Out")
         RETURNED = "returned", "Returned"
 
     makerspace = models.ForeignKey(
@@ -100,10 +101,10 @@ class PublicToolLoan(models.Model):
 
 class PublicProblemReport(models.Model):
     class Outcome(models.TextChoices):
-        NO_ISSUE = "no_issue", "No Issue"
+        NO_ISSUE = "no_issue", gettext_noop("No Issue")
         DAMAGED = "damaged", "Damaged"
         MISSING = "missing", "Missing"
-        NEEDS_FIX = "needs_fix", "Needs Fix"
+        NEEDS_FIX = "needs_fix", gettext_noop("Needs Fix")
 
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace",

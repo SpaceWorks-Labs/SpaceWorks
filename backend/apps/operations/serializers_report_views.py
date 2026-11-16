@@ -1,5 +1,6 @@
 """Report preferences reuse SavedView, with a bounded report-specific state contract."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.operations.models_saved_views import SavedView
@@ -17,7 +18,7 @@ class ReportViewStateSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         # Nested serializers receive raw data here, before DRF drops unknown keys.
         if isinstance(data, dict) and set(data) - set(self.fields):
-            raise serializers.ValidationError({"non_field_errors": ["Unknown report-state key."]})
+            raise serializers.ValidationError({"non_field_errors": [gettext("Unknown report-state key.")]})
         return super().to_internal_value(data)
 
     def validate(self, attrs):
@@ -27,19 +28,19 @@ class ReportViewStateSerializer(serializers.Serializer):
         attrs.setdefault("filters", {})
         attrs.setdefault("columns", [])
         if "report_key" not in attrs:
-            raise serializers.ValidationError({"report_key": "Choose a report."})
+            raise serializers.ValidationError({"report_key": gettext("Choose a report.")})
         definition = REPORT_REGISTRY[attrs["report_key"]]
         attrs.setdefault("grain", (definition.grains or ("day",))[0])
         if not definition.previewable:
-            raise serializers.ValidationError({"report_key": "Report cannot be opened as a saved view."})
+            raise serializers.ValidationError({"report_key": gettext("Report cannot be opened as a saved view.")})
         if attrs["grain"] not in (definition.grains or ("day",)):
-            raise serializers.ValidationError({"grain": "Unsupported report grain."})
+            raise serializers.ValidationError({"grain": gettext("Unsupported report grain.")})
         columns = attrs["columns"]
         if len(columns) != len(set(columns)) or set(columns) - set(definition.fields):
-            raise serializers.ValidationError({"columns": "Choose distinct registered report columns."})
+            raise serializers.ValidationError({"columns": gettext("Choose distinct registered report columns.")})
         filters = attrs["filters"]
         if set(filters) - allowed_report_filters(attrs["report_key"]):
-            raise serializers.ValidationError({"filters": "Unsupported filters for this report."})
+            raise serializers.ValidationError({"filters": gettext("Unsupported filters for this report.")})
         attrs["filters"] = {key: item.isoformat() if hasattr(item, "isoformat") else item for key, item in filters.items()}
         return attrs
 

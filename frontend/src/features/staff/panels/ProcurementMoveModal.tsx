@@ -1,7 +1,9 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Modal } from "../../../components/ui";
+import { ErrorText } from "../../../components/ui";
+import { FlowLayout } from "../../../components/layouts";
 import { staffRequest } from "../../../lib/api";
 import { invalidateInventoryViews, invalidatePrintingViews } from "../queryInvalidation";
 import type { Machine } from "../machinesApi";
@@ -42,7 +44,7 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
 
   const moveHardware = useMutation({
     mutationFn: () => {
-      if (!item) return Promise.reject(new Error("Select an item first."));
+      if (!item) return Promise.reject(new Error(t`Select an item first.`));
       return staffRequest(`/procurement/to-buy/${item.id}/move-to-inventory`, { method: "POST", body: JSON.stringify(hardwarePayload(hardware)) });
     },
     onSuccess: () => {
@@ -54,11 +56,11 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
   });
   const movePrinting = useMutation({
     mutationFn: () => {
-      if (!item) return Promise.reject(new Error("Select an item first."));
+      if (!item) return Promise.reject(new Error(t`Select an item first.`));
       return staffRequest(`/procurement/to-buy/${item.id}/move-to-printing`, { method: "POST", body: JSON.stringify(printingPayload(printing)) });
     },
     onSuccess: () => {
-      invalidatePrintingViews(queryClient, makerspace.id);
+      invalidatePrintingViews(queryClient);
       queryClient.invalidateQueries({ queryKey: ["procurement", makerspace.id] });
       onMoved();
       onClose();
@@ -69,25 +71,14 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
   const error = moveHardware.error ?? movePrinting.error;
   const canSubmit = isHardware ? canSubmitHardware(hardware) : canSubmitPrinting(printing);
 
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={item?.kind === "printing" ? "Move to printing" : "Move to inventory"}
-      size="xl"
-      footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button><button className="desk-button-primary" type="button" disabled={pending || !canSubmit} onClick={() => (isHardware ? moveHardware.mutate() : movePrinting.mutate())}>Move</button></div>}
-    >
-      <div className="grid gap-3 text-sm">
-        <div><p className="font-semibold text-ink">{item?.name}</p><p className="font-mono text-xs text-muted">Received quantity: {item?.quantity ?? 0}</p></div>
-        {item?.kind === "hardware" ? (
-          <HardwareMoveForm form={hardware} setForm={setHardware} products={products.data?.results ?? []} categories={categoryResults(categories.data)} containers={containers.data?.results ?? []} />
-        ) : (
-          <PrintingMoveForm form={printing} setForm={setPrinting} printers={printers.data?.results ?? []} />
-        )}
-        {error ? <p className="text-sm text-danger">{error instanceof Error ? error.message : "Could not move item."}</p> : null}
-      </div>
-    </Modal>
-  );
+  return <FlowLayout presentation="dialog" open={open} title={isHardware ? t`Move to inventory` : t`Move to printing`} subject={item ? `${item.name} · ${item.quantity} received` : ""}
+    state={{ status: "ready" }} steps={[{ key: "destination", label: t`Choose a destination`, state: "current" }]} current="destination" onCancel={onClose}
+    footer={{ next: { label: t`Move`, pending, pendingLabel: t`Moving…`, disabled: !canSubmit, disabledReason: t`Choose a destination and complete the required fields.`, onClick: () => isHardware ? moveHardware.mutate() : movePrinting.mutate() } }}
+    work={<div className="grid gap-4">{isHardware ? <HardwareMoveForm form={hardware} setForm={setHardware} products={products.data?.results ?? []} categories={categoryResults(categories.data)} containers={containers.data?.results ?? []} />
+      : <PrintingMoveForm form={printing} setForm={setPrinting} printers={printers.data?.results ?? []} />}
+      <ErrorText message={error instanceof Error ? error.message : undefined} />
+      <ErrorText message={products.error?.message || categories.error?.message || containers.error?.message || printers.error?.message} />
+    </div>} />;
 }
 
 function hardwareDefaults(item: ToBuyItem | null): HardwareForm {

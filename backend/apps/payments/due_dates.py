@@ -14,7 +14,7 @@ def default_due_at(makerspace, *, actor, now=None):
     now = now or timezone.now()
     policies = MakerspaceBillingSettings.objects.all()
     # Internal charge seams also serve account-only borrowers. Scheduled-work scope
-    # admits a live tenant; explicit actor scope retains a hidden tenant's own staff.
+    # admits a live tenant; explicit actor scope admits the actor's own spaces.
     policies = (rbac.scope_by_makerspace(actor, policies) |
                 rbac.scope_for_scheduled_work(policies, makerspace_id=makerspace.pk))
     days = (policies.filter(makerspace=makerspace)

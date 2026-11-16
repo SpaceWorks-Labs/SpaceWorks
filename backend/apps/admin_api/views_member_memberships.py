@@ -1,3 +1,5 @@
+from apps.accounts.staff_identity import person_q
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter, PolymorphicProxySerializer
 from apps.admin_api.list_options import LIST_PARAMETERS, ORDER_PAGE_PARAMETERS, choice_filter, identity_filter, order_list
@@ -9,12 +11,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_member_memberships import (AdminMembershipSerializer, ApproveRequestSerializer,
-    InvitationSerializer, MembershipRequestSerializer, RevokeSerializer, RoleIdSerializer)
+    InvitationSerializer, MembershipRequestSerializer, RevokeSerializer)
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
+from apps.admin_api.serializers_role_sets import (
+    ROLE_SET_VALIDATION_ERROR, RoleSetInputSerializer, resolve_role_set,
+)
 from apps.admin_api.views_roles import ERRORS as ROLE_ERRORS
 from apps.makerspaces import membership_services, waiver_services
+from apps.makerspaces.member_unit_scope import (
+    narrow_by_unit_lookup, require_member_in_scope, require_request_in_scope,
+)
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.membership_gating import require_module_for_request, staff_invitation_q
 from apps.makerspaces.platform import module_enabled
@@ -64,21 +73,50 @@ def _admission_context(actor, rows):
     )}
 
 
+def _more_roster_filters(queryset, params):
+    """Decision 242 (PE4): name/email search, role, account standing and join-date filters."""
+    from django.db.models import Q
+    if term := (params.get("q") or "").strip():
+        queryset = queryset.filter(
+            Q(user__username__icontains=term) | Q(user__first_name__icontains=term)
+            | Q(user__last_name__icontains=term) | Q(user__email__icontains=term))
+    if str(params.get("role", "")).isdigit():
+        queryset = queryset.filter(Q(assigned_role_id=int(params["role"])) | Q(additional_roles__role_id=int(params["role"]))).distinct()
+    if params.get("standing") in ("active", "restricted", "suspended"):
+        queryset = queryset.filter(user__access_status=params["standing"])
+    for key, lookup in (("joined_after", "created_at__date__gte"), ("joined_before", "created_at__date__lte")):
+        if params.get(key):
+            try:
+                from datetime import date
+                queryset = queryset.filter(**{lookup: date.fromisoformat(params[key])})
+            except ValueError:
+                pass
+    return queryset
+
+
 class AdminMembershipRosterView(APIView):
     permission_classes = [IsActiveStaff]
     pagination_class = MembershipPagination
 
-    @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], parameters=[*LIST_PARAMETERS, OpenApiParameter("makerspace_id", int, required=True), OpenApiParameter("status", str), OpenApiParameter("id", int, description="Select one membership within the authorized roster.")], responses={200: MembershipListResponseSerializer, **ERRORS})
+    @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], parameters=[*LIST_PARAMETERS, OpenApiParameter("makerspace_id", int, required=True), OpenApiParameter("status", str), OpenApiParameter("id", int, description="Select one membership within the authorized roster."),
+        # Decision 242 (PE4): `q` also matches name and email; role, standing and join-date filters.
+        OpenApiParameter("role", int), OpenApiParameter("standing", str), OpenApiParameter("joined_after", str), OpenApiParameter("joined_before", str),
+        # Decision 248: plan id, and true/false flags for staff, verified, minor, volunteer; waiver_needed=true.
+        OpenApiParameter("plan", int), OpenApiParameter("staff", str), OpenApiParameter("verified", str), OpenApiParameter("minor", str), OpenApiParameter("volunteer", str), OpenApiParameter("waiver_needed", str),
+        # Parity O-B2: the shared register filter contract.
+        OpenApiParameter("title", int), OpenApiParameter("unit", int, description="A unit id; includes the units beneath it."), OpenApiParameter("chip", str, description="active | expiring | grace | lapsed | upcoming | no_term | approval | payment | changes")], responses={200: MembershipListResponseSerializer, **ERRORS})
     def get(self, request):
         makerspace = _makerspace(request.user, request.query_params.get("makerspace_id"))
         active = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceWaiver.objects.filter(makerspace=makerspace, is_active=True)).first()
-        queryset = MakerspaceMembership.objects.filter(makerspace=makerspace).select_related("user", "assigned_role").order_by("user__username")
+        queryset = MakerspaceMembership.objects.filter(person_q("user__"), makerspace=makerspace).select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch()).order_by("user__username")
         queryset = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, queryset)
         selected_id = identity_filter(request.query_params)
         if selected_id is not None:
             queryset = queryset.filter(pk=selected_id)
-        if request.query_params.get("q"):
-            queryset = queryset.filter(user__username__icontains=request.query_params["q"])
+        # Parity O-B2: the one filter contract shared with the register and the card-job resolver; it also applies
+        # the actor's unit scope (O-B1), so no filter can widen what a scoped lead sees.
+        from apps.admin_api.member_register_filters import apply_member_filters, from_query
+        queryset = apply_member_filters(queryset, from_query(request.query_params), makerspace, actor=request.user)
         selected_status = choice_filter(request.query_params, "status", dict(MakerspaceMembership._meta.get_field("status").choices))
         if selected_status:
             queryset = queryset.filter(status=selected_status)
@@ -111,6 +149,8 @@ class AdminMembershipRequestListView(APIView):
         makerspace = _makerspace(request.user, request.query_params.get("makerspace_id"))
         queryset = MembershipRequest.objects.filter(makerspace=makerspace).select_related("user", "assigned_role", "admission_payment").prefetch_related("vouches__voucher")
         queryset = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, queryset)
+        queryset = narrow_by_unit_lookup(queryset, request.user, makerspace.pk, "unit_choice__unit__path",
+                                         rbac.Action.MANAGE_MEMBERS)  # parity O-B1: unit-scoped staff
         if not module_enabled(makerspace, "membership"):
             # Staff must not be shown community join requests they have no enabled surface
             # to action -- but a STAFF invitation is core RBAC business and must stay
@@ -124,7 +164,7 @@ class AdminMembershipRequestListView(APIView):
         return pager.get_paginated_response(MembershipRequestSerializer(page, many=True, context=_admission_context(request.user, page)).data)
 
 
-class AdminInvitationView(APIView):
+class AdminInvitationView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=InvitationSerializer, responses={201: MembershipRequestSerializer, **ERRORS})
@@ -136,12 +176,13 @@ class AdminInvitationView(APIView):
         return Response(MembershipRequestSerializer(item, context=_admission_context(request.user, [item])).data, status=status.HTTP_201_CREATED)
 
 
-class AdminRequestApproveView(APIView):
+class AdminRequestApproveView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members. Returns an admission request when payment is due, otherwise the activated membership.", tags=["Admin memberships"], request=ApproveRequestSerializer, responses={200: PolymorphicProxySerializer(component_name="MembershipApprovalOutcome", serializers=[AdminMembershipSerializer, MembershipRequestSerializer], resource_type_field_name=None), **ERRORS})
     def post(self, request, pk):
         item = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MembershipRequest.objects.select_related("makerspace")), pk=pk)
+        require_request_in_scope(request.user, item, rbac.Action.MANAGE_MEMBERS)  # parity O-B1
         makerspace = _makerspace(request.user, item.makerspace_id)
         serializer = ApproveRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -166,24 +207,26 @@ class AdminRequestApproveView(APIView):
         )
 
 
-class AdminRequestRevokeView(APIView):
+class AdminRequestRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=RevokeSerializer, responses={200: MembershipRequestSerializer, **ERRORS})
     def post(self, request, pk):
         item = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MembershipRequest.objects.select_related("makerspace")), pk=pk)
+        require_request_in_scope(request.user, item, rbac.Action.MANAGE_MEMBERS)  # parity O-B1
         require_module_for_request(_makerspace(request.user, item.makerspace_id), item)
         serializer = RevokeSerializer(data=request.data); serializer.is_valid(raise_exception=True)
         item = membership_services.revoke_request(request.user, item, serializer.validated_data.get("reason", ""))
         return Response(MembershipRequestSerializer(item, context=_admission_context(request.user, [item])).data)
 
 
-class AdminMembershipRevokeM2View(APIView):
+class AdminMembershipRevokeM2View(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=RevokeSerializer, responses={200: AdminMembershipSerializer, **ERRORS})
     def post(self, request, pk):
         membership = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.select_related("makerspace")), pk=pk)
+        require_member_in_scope(request.user, membership, rbac.Action.MANAGE_MEMBERS)  # parity O-B1
         _makerspace(request.user, membership.makerspace_id)
         serializer = RevokeSerializer(data=request.data); serializer.is_valid(raise_exception=True)
         membership = membership_services.revoke_membership(request.user, membership, serializer.validated_data.get("reason", ""))
@@ -198,18 +241,25 @@ class AdminMembershipRevokeM2View(APIView):
         )
 
 
-class AdminMembershipRoleM2View(APIView):
+class AdminMembershipRoleM2View(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=RoleIdSerializer, responses={200: AdminMembershipSerializer, **ERRORS})
+    @extend_schema(
+        description="Requires manage_members; staff role changes require manage_makerspace. Replace the complete role set using exactly one of role_id or role_ids. Duplicate IDs are ignored; Space Manager and Member are exclusive. Unknown or foreign IDs return 404.",
+        tags=["Admin memberships"], request=RoleSetInputSerializer,
+        responses={200: AdminMembershipSerializer, **ERRORS, 400: ROLE_SET_VALIDATION_ERROR},
+    )
     def patch(self, request, pk):
-        membership = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.select_related("makerspace")), pk=pk)
+        # Role sets live on staff rows (any role) and community rows (Member only), so look in both.
+        membership = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.both_tracks().select_related("makerspace")), pk=pk)
+        require_member_in_scope(request.user, membership, rbac.Action.MANAGE_MEMBERS)  # parity O-B1
         makerspace = _makerspace(request.user, membership.makerspace_id)
-        serializer = RoleIdSerializer(data=request.data); serializer.is_valid(raise_exception=True)
-        membership = membership_services.change_role(request.user, membership, _role(makerspace, serializer.validated_data["role_id"]))
-        membership = MakerspaceMembership.objects.select_related(
+        serializer = RoleSetInputSerializer(data=request.data); serializer.is_valid(raise_exception=True)
+        roles = resolve_role_set(makerspace, serializer.validated_data)
+        membership = membership_services.change_role(request.user, membership, roles)
+        membership = MakerspaceMembership.track_manager(membership.track).select_related(
             "user", "assigned_role"
-        ).get(pk=membership.pk)
+        ).prefetch_related(additional_roles_prefetch()).get(pk=membership.pk)
         return Response(
             AdminMembershipSerializer(
                 membership,

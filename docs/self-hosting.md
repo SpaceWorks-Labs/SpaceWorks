@@ -7,16 +7,20 @@ This project is Docker-first for operators who do not want to build Django or Vi
 The supported fresh-install path needs no Git clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
+curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh
 ```
 
-The installer defaults to `/opt/spaceworks`; override it on the `bash` process with, for example,
-`curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash`.
+The installer defaults to `/opt/spaceworks`; override it on the `sh` process with, for example,
+`curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" sh`.
 It resolves the latest published, non-draft, non-prerelease GitHub release built from `main`,
-from `SPACEWORKS_REPOSITORY` (default `SpaceWorks-Labs/SpaceWorks`), downloads that tag's archive, and pins the published backend/frontend images to its immutable version.
-The accepted version format is `X.Y.Z-main.<run>.<12-hex sha>`; there is no release channel choice.
+from `SPACEWORKS_REPOSITORY` (default `SpaceWorks-Labs/SpaceWorks`), downloads that release's deploy bundle (verified against its `SHA256SUMS`, and its cosign signature when `cosign` is installed), and pins the published backend/frontend images to its immutable version.
+The accepted version format is `X.Y.Z-main.<run>.<12-hex sha>`; there is no release channel choice;
+`--version` pins one published release (0.12.0 or newer) and an older one is refused over an existing
+install (forward-only). New installs run on Linux or macOS; on Windows use WSL2 or a Linux VM.
 Before mutating the host it checks x86_64/aarch64 support, distribution/dependency handling, Docker,
-8 GiB of free disk, release availability, and existing state. Linux dependency
+8 GiB of free disk (and warns below about 4 GiB RAM), release availability, and existing state;
+`--dry-run` runs those checks and prints the plan without changing anything. Options and the
+troubleshooting table are in [Install and update](install-and-update.md#install-in-one-line). Linux dependency
 installation supports apt, dnf/yum, pacman and zypper families identified from `/etc/os-release`.
 
 Running the installer as a normal sudo-capable user keeps the install owned by that user, including
@@ -36,17 +40,41 @@ installation. After the database backup it replaces the closed host runtime bund
 layers and edge configuration), keeps replaced files in `backups/host-config-*`, and
 refreshes the Compose trust records. `.env`, database/object volumes and backups stay in place.
 
+### Optional free profile (opt-in)
+
+The installer deploys the **full-server** profile by default, and an unanswered or noninteractive run never
+changes that. An interactive run lists `4) Free profile (opt-in)` under the existing Hosting model question; Enter
+still selects option 1 and no other question changes. Noninteractive runs opt in only with `--profile free`
+(on `install.sh` or `setup.sh`) or `SPACEWORKS_DEPLOYMENT_PROFILE=free`; no answers file is needed for it.
+
+Choosing free writes a private `.env` from `deploy/cloud/free.env.example` with every secret generated the
+same way as the full profile (`SECRET_KEY`, `FREE_TICK_SECRET`, the Fernet keys, `SPACEWORKS_DEPLOYMENT_ID`
+and the continuity keys below), prints the free-tier notice and stops. It starts no service and claims no
+host port. Malware scanning is off in this profile, and scheduled work runs only when an external cron calls
+`POST /api/v1/internal/free/tick` with the `X-Cron-Secret` header. Fill in the external database, storage
+and email values, then follow [docs/deploy/cloud-free.md](deploy/cloud-free.md). Rerunning keeps an existing
+free `.env`; a directory that already holds a full installation is refused.
+
 ## Deployment questionnaire and confirmation
 
 The pinned archive is first unpacked in temporary storage. Its shared questionnaire asks hosting model
 (one space, several `/m/<slug>` spaces, or subdomain platform), whether to run the website here, HTTPS,
-standard/single-box containers, and bundled/external storage. It then asks the web address if needed,
-makerspace name/subdomain, edition and initial module profile, request access, admin identity/password,
-optional Google/Stripe credentials, the GitHub repository to follow, and
+and bundled/external storage. It then asks the web address if needed,
+organization name (its own question; it becomes the makerspace's owner), makerspace name/subdomain,
+platform two-step sign-in, chosen providers, eight yes/no areas with immediate follow-up settings, a
+derived edition, organization labels, quiet hours/digest defaults, staff MFA (only if platform MFA is on),
+admin identity/password, optional Stripe credentials, the GitHub repository to follow, and
 "Install a GitHub Actions runner on this server for automatic deploys? [y/N]" (default No).
 Only Linux with systemd supports runner installation; other hosts skip it.
 The curl installer asks the repository before downloading that repository's questionnaire. Every prompt displays its
 default; required values and invalid combinations are asked again.
+
+Every new makerspace created through the installer, staff console, API or `/control/` gets an owner
+organization. The installer creates a new organization with the supplied name; the console and
+`/control/` require either an existing active organization or a new name. API clients must supply exactly
+one of `organization_id` or `organization_name` on creation. Existing ownerless makerspaces keep working
+without a data migration; tenant import and `seed_e2e` are exceptions to this creation requirement.
+Rerunning `setup_instance` preserves an existing owner and can assign one to an ownerless space.
 
 One summary lists all answers (secrets hidden), services, DNS/proxy requirements and host actions, followed
 by `Proceed? [Y/n]`. It shows whether the runner will be installed and explains:
@@ -56,7 +84,7 @@ If requested, runner registration begins only after confirmation. No dependency
 installation, Docker changes, install-directory creation, image pull or `.env` write occurs before yes. curl or wget and tar must already exist to read the questionnaire;
 missing bootstrap utilities cause a read-only refusal with instructions. Ports are checked after the
 answers: 80/443 for Caddy, 8080 for an existing proxy, 80 for plain HTTP, and 9000/9001 with bundled
-storage (the SaaS layer keeps storage ports internal). Point DNS at the server before certificate issuance.
+storage (the hosting-other-spaces layer, key `saas`, keeps storage ports internal). Point DNS at the server before certificate issuance.
 Wildcard tenant DNS is convenient, but certificates are issued individually for registered tenant hosts.
 
 `bash setup.sh` from a fresh checkout asks the same questions first. A fetched install supplies a private
@@ -69,46 +97,111 @@ Existing `.env` installations retain their topology; updates never repeat the de
 Module-only reruns still use the live module selector without downloading a release.
 
 Only the superadmin and operator-named makerspace are provisioned, along with configuration defaults.
+Setup asks `Turn on two-step sign-in (authenticator app)? [Y/n]` before the area questions.
+The provider prompt defaults to Google on Enter; use `none` for no provider, or a comma list of
+`google,apple,github`. Provider keys are entered later in the platform console. All social/OIDC
+and phone sign-in is member-only; staff/platform retain independent password doors. Native
+staff additionally require MFA/attestation and fixed-tenant grants. The install choices are
+read-only in `/control/`.
+To change them later, use the host management command, which validates the complete proposed policy
+and refuses to strand social-only users or superadmins:
+
+```bash
+scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role management python manage.py set_login_methods --mfa off --providers google,github
+```
+
+For non-interactive first setup, pass `SETUP_MFA_ENABLED=y|n` and
+`SETUP_SOCIAL_PROVIDERS=google,apple,github` (or literal `none`) to `setup_instance` using `-e`.
+These choices apply only on first creation of the platform login-methods row; later setup runs
+preserve the operator's choices. The private answers file also preserves literal `none`.
+
 Production setup never calls `seed_demo` or `seed_e2e`. The developer demo seeder refuses `DEBUG=False`
 unless explicitly invoked with `--allow-production-demo`.
 
 ## API-only and external storage
 
-Choose **No, API only** to host React on Netlify or another service. The installer requires HTTPS API
-hosting, sets CORS/CSRF origins and the makerspace's verified `frontend_domain` to the first supplied
-site. Additional origins are public origins; the first is the staff site. A shared multi-tenant staff site
+Choose **API-only** (`--frontend api-only`) for a backend that serves mobile apps and integrations, or
+to host React on Netlify or another service. These installs must use HTTPS
+option 2 (automatic Caddy) or 3 (your own reverse proxy); plain HTTP is not offered. With a website
+elsewhere, the installer sets CORS/CSRF origins and the makerspace's verified `frontend_domain` to the
+first supplied site. With no website (blank answer), CORS/CSRF and `PUBLIC_APP_BASE_URL` are this
+server's own origin and no frontend domain is recorded; emailed links (password resets, invitations)
+then point at a host that answers only the API, so set `PUBLIC_APP_BASE_URL` in `.env` to the website or
+app-link domain that should open them and restart the services. The staff console is the React website:
+without one, use a hosted website pointed at this API, or `/control/` for superadmin work. Additional origins are public origins; the first is the staff site. A shared multi-tenant staff site
 is registered in `PLATFORM_STAFF_ORIGINS`. Set the external frontend's `VITE_API_URL` to
 `https://<server-domain>/api` (for a platform, the apex or first tenant API subdomain works).
 
 `SPACEWORKS_RUN_FRONTEND=no` adds `docker/compose.api-only.yml`: the website is behind an inactive
-profile and nginx `api-edge` exposes API, docs/static and live-event routes, while `/control/` and internal
-routes stay private. Automatic HTTPS adds `compose.api-only-edge.yml`, moves the public listener to
+profile and nginx `api-edge` exposes API, docs/static and live-event routes, while internal routes stay private.
+`/control/` is reachable only through the Caddy edge (automatic HTTPS) when you opt in; see
+[Reaching the control plane](#reaching-the-control-plane). Automatic HTTPS adds `compose.api-only-edge.yml`, moves the public listener to
 Caddy on 80/443, and removes its website dependency. With an existing reverse proxy, nginx binds only
 `127.0.0.1:8080`; forward the public API domain there, preserving Host, client forwarding and
 `X-Forwarded-Proto: https`. A normal local website behind an existing proxy uses the same loopback port.
-Single box supports a local website over HTTP; choose standard containers for HTTPS, hosted platforms,
-API-only or a source build.
 
 For bundled Silo with HTTPS, point `files.<server-domain>` (or `files.<platform-domain>`) to the server.
 Caddy serves this hostname automatically. With your own proxy, forward it to `127.0.0.1:9000`.
-The Silo console stays at loopback 9001. Configure proxy upload-size limits for your evidence files.
+The Silo console stays at loopback 9001. With your own proxy, allow at least `128m` uploads on
+`files.<domain>` (printing accepts up to 100 MiB; evidence and documents 10 MiB).
 
 Choose **External S3-compatible buckets** to set both backend/browser endpoint URLs, region, private
 evidence bucket, public-image bucket, credentials, public image base URL and presign method.
 `SPACEWORKS_STORAGE=external` adds `docker/compose.external-storage.yml`: `minio` and `createbuckets`
-have inactive profiles, and backend/candidate/single-app dependencies no longer start them. All app
+have inactive profiles, and backend/candidate dependencies no longer start them. All app
 processes inherit external credentials through the base environment anchor. Provision private evidence
 access, public image reads, bucket versioning and browser-origin CORS in the provider dashboard;
 the installer never changes remote bucket policies. HTTPS sites require HTTPS storage/image URLs.
 These overlays need Docker Compose 2.24.4 or newer (`!override` and `!reset`).
 
-The primary layer (`none`, `tls`, `saas`, `single`) persists in `.spaceworks-layer`; frontend/storage
+The primary layer (`none`, `tls`, `saas`) persists in `.spaceworks-layer`; frontend/storage
 selectors persist in `.env`. The wrapper appends those overlays and validates the matching hashed
 `compose-topology[-<layer>][-api-only][-external-storage].json` record. Source builds retain the selected
-TLS/SaaS layer. Updates exclude the website from their image list when disabled; failed-update rollback,
+TLS or hosting-other-spaces (`saas`) layer. Updates exclude the website from their image list when disabled; failed-update rollback,
 explicit snapshot rollback and restore all reuse the same wrapper/topology. The live-event process is
 included in image updates and writer fencing. Never activate `website-disabled` or `storage-disabled`
 profiles manually on a deployment that selected those services off.
+
+## Custom domain with your own nginx
+
+Choose HTTPS **option 3** if you already run a reverse proxy. Setup writes
+`spaceworks-proxy.nginx.conf` in the install directory and prints the steps below; you install the
+configuration and manage certificates yourself. nginx must already be running with the Certbot nginx
+plugin installed.
+
+The generated configuration redirects HTTP to HTTPS and forwards `<domain>` to `127.0.0.1:8080`.
+It keeps `/api/v1/live/` SSE streams unbuffered and keeps calendar subscription `.ics` URLs out of
+access and error logs because those URLs are bearer credentials. With bundled storage only, it also
+forwards `files.<domain>` to `127.0.0.1:9000`, preserving the Host header for presigned uploads.
+Both HTTPS servers allow uploads up to `128m`, except tenant-migration archive imports
+(`/api/v1/admin/platform/tenant-migrations/imports`), which allow `20g` to match the app's
+own archive ceiling. The bundled website and API-only edges apply the same rule internally: `10m` for
+API bodies (bulk inventory import is the largest at 5 MiB) and `20g` for that one import route; every
+other file goes straight to storage through a presigned URL.
+
+1. Point DNS A/AAAA for `<domain>` at this server, plus `files.<domain>` with bundled storage.
+2. Obtain the certificate (include the second `-d` only with bundled storage):
+
+   ```bash
+   sudo certbot certonly --nginx --cert-name <domain> -d <domain> [-d files.<domain>]
+   ```
+
+3. Copy the generated file, replacing `<install-dir>` with your installation directory:
+
+   ```bash
+   sudo cp "<install-dir>/spaceworks-proxy.nginx.conf" /etc/nginx/conf.d/spaceworks.conf
+   ```
+
+   Debian sites-available users may install and enable the file there instead.
+4. Test and reload nginx:
+
+   ```bash
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+5. Open `https://<domain>/api/v1/health/` to check.
+
+Automatic HTTPS (**option 2**, built-in Caddy) handles these routes and certificates for you.
 
 ## Production Compose
 
@@ -152,6 +245,17 @@ source tree can explicitly build locally:
 bash setup.sh --build
 ```
 
+The backend image is built on Ubuntu 24.04 LTS by default. A source build can pick another base with the
+`BASE_OS` build argument: `debian-trixie` (Debian stable) or `debian-forky` (Debian testing, zero known
+findings but a moving target). For example:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker/compose.build.yml build   --build-arg BASE_OS=debian-forky backend
+```
+
+The published release image uses the default. The trade-offs and how to verify a forky build are in
+[backend-image-cve-notes-0.12.0.md](security/backend-image-cve-notes-0.12.0.md#0b-building-with-zero-known-findings-optional).
+
 For a guided first run that generates secrets, the atomic pointer and `.env`, use the curl installer or
 `setup.sh` at the repo root (see [setup-for-makerspaces.md](setup-for-makerspaces.md)).
 
@@ -162,9 +266,9 @@ semantics and is deliberately not emulated on Windows.
 
 > The frontend container's nginx proxies `/api/`, `/static/`, and the docs routes to the backend.
 > The **single published port (80)** serves the public app, the React staff console at `/admin`,
-> and Swagger. The Django control plane is mounted at `/control/` on the backend and is
-> intentionally **not exposed** on the public frontend port; access it only through direct backend
-> access.
+> and Swagger. The Django control plane is mounted at `/control/` on the backend and is **server-only by
+> default**: the public port answers 404 for it unless you opt in — see
+> [Reaching the control plane](#reaching-the-control-plane).
 
 ## First Run
 
@@ -179,6 +283,11 @@ scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role manageme
 ```
 
 The command is idempotent. It creates missing records and upgrades the named user to a superadmin if needed.
+
+A fresh install sends notifications from the start: the first `migrate` runs against an empty database, so
+integrations migration `0046_fresh_install_sending` opens the notification cutover gate. The install has to
+be empty for this: no makerspace, no account other than a single bootstrap superuser, and no notification
+history. Anything else stays held (see [Updating](#updating)).
 
 ## Health Checks
 
@@ -220,6 +329,10 @@ bash scripts/update.sh --force --version 0.9.1-main.42.a1b2c3d4e5f6
 Without `--version`, the updater selects the newest published main release of `SPACEWORKS_REPOSITORY`.
 A pinned version must match `X.Y.Z-main.<run>.<12-hex sha>` and exist as a published, non-draft,
 non-prerelease release in that repository; unavailable or invalid versions refuse deployment.
+
+An existing deployment that upgrades into the notification cutover stays in receipt-only mode, with sending
+disabled, until you finish the [reconciliation rollout](notification-reconciliation-rollout.md) and run
+`python manage.py notification_cutover activate`. `notification_cutover status` shows the current state.
 
 ### Install the runner and enable deploys
 
@@ -305,16 +418,22 @@ The fork's own release workflow must have run at least once so those images and 
 Register the runner in that fork and set the fork's own `SPACEWORKS_DEPLOY=true` repository variable;
 apply all the security settings above. No upstream runner or setting is shared with forks.
 
+The upstream GitHub org was renamed from `SpaceWorks-HQ` to `SpaceWorks-Labs`,
+and its images moved from `ghcr.io/spaceworks-hq/*` to `ghcr.io/spaceworks-labs/*`. An existing install
+needs no manual step: the updater, an installer re-run and the compose wrapper rewrite a saved
+`SPACEWORKS_REPOSITORY=SpaceWorks-HQ/...` or `ghcr.io/spaceworks-hq/...` image value to the new name,
+persist it to `.env` and print a `NOTICE:` line. Any other owner, including a fork, is left as it is.
+
 For example:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | \
-  SPACEWORKS_REPOSITORY=YourOwner/YourFork bash
+curl -fsSL https://github.com/YourOwner/YourFork/releases/latest/download/install.sh | \
+  SPACEWORKS_REPOSITORY=YourOwner/YourFork sh
 ```
 
 ### Module changes
 
-When run in a terminal, the updater can review the live module tick list after the release is healthy.
+When run in a terminal, the updater can review the live area menu after the release is healthy.
 Automatic deployments use `--no-module-changes`. Explicit operator forms are:
 
 ```bash
@@ -327,7 +446,14 @@ bash scripts/update.sh --all-modules --all-makerspaces
 ```
 
 With several makerspaces select `--makerspace <slug>` or explicitly use `--all-makerspaces`.
-Unticking modules retains their rows; setup and update never invoke the destructive purge command.
+Turning areas off retains their rows; setup and update never invoke the destructive purge command.
+Inventory off keeps the six core modules and disables `loans.enabled`.
+See [the area mapping](MODULES.md#areas-used-by-setup) and
+[all questions and defaults](setup-for-makerspaces.md#area-follow-up-questions).
+Use `--areas=events,reports` to select an exact area set; `--confirm-removals` acknowledges
+retained-data uninstalls. Existing automation flags continue to work. Area application reads
+JSON from stdin (`manage.py apply_setup_areas --answers-json -`), validates its settings,
+and writes an audit for each change. Already matching answers are safe to apply again.
 Native Windows Git Bash uses the crash-recoverable PID/timestamp directory lock when `flock` is absent.
 A live or unreadable owner is never discarded automatically; use `--override-lock` only after checking
 no update is active. Backup restore supervisors require Linux/WSL2 host trust and locking semantics.
@@ -335,7 +461,7 @@ no update is active. Backup restore supervisors require Linux/WSL2 host trust an
 ## Publishing new images (maintainers)
 
 Every push to `main` runs `release.yml`, publishes matching backend and frontend images, and creates a
-GitHub Release titled `SpaceWorks vX.Y.Z-main.<run>.<12-hex sha>` using the version series from `VERSION`.
+GitHub Release titled `SpaceWorks X.Y.Z` using the version series from `VERSION`.
 Its tag identifies the exact build used by the updater. When both images succeed for the current branch
 head, the workflow promotes them to the rolling `:X.Y`, `:main`, and `:latest` tags, then prunes older GHCR
 image versions. GitHub releases and their tags remain permanently available.
@@ -350,8 +476,11 @@ so operators can `docker compose pull` without authenticating.
 
 ## HTTPS & security hardening
 
-TLS-dependent settings are **env-gated, not `DEBUG`-gated**, so the default HTTP stack works out of
-the box. The default frontend nginx does **not** trust inbound `X-Forwarded-Proto`; it forwards only
+TLS-dependent settings are **env-gated, not `DEBUG`-gated**. Plain HTTP setup is restricted to
+`localhost` or `127.0.0.1` and binds website and bundled storage ports to loopback. LAN addresses
+and other hostnames require HTTPS through automatic Caddy or your own trusted reverse proxy.
+Setup writes `AUTH_COOKIE_SECURE=false` and `AUTH_COOKIE_SAMESITE=Lax` only for the loopback
+trial; HTTPS deployments use secure cookies with `SameSite=None`. The default frontend nginx does **not** trust inbound `X-Forwarded-Proto`; it forwards only
 its own scheme to Django.
 
 For a real domain with automatic TLS, use the Caddy overlay:
@@ -378,13 +507,322 @@ Always-on protections (any transport): `django-axes` locks out brute-force admin
 (`AXES_FAILURE_LIMIT`, keyed by ip+username), a scoped throttle limits the JWT login endpoint, the
 public submit endpoint has its own anti-spam throttle + a honeypot, and a Content-Security-Policy is
 sent on every response. The Django control plane at `/control/` is restricted to active
-superusers only and must be reached through direct backend access, never through the public
-frontend port.
+superusers only and is server-only by default: the public port answers 404 unless you opt in (next section).
 
 Secrets (`SECRET_KEY`, `API_CLIENT_ENC_KEY`, makerspace Telegram bot tokens, makerspace SMTP
 passwords) live only in the backend. `API_CLIENT_ENC_KEY` is the Fernet key that encrypts the
 per-makerspace integration secrets at rest — **back it up and do not rotate it casually**, or
 previously stored tokens/passwords can no longer be decrypted.
+
+## Reaching the control plane
+
+The Django control plane (`/control/`, with its MFA step at `/mfa/control/` and its re-authentication
+step at `/mfa/reauth/`) is the superadmin's **server-side power tool and fallback**. Day-to-day platform
+work happens in the **web superadmin console** (`/admin` → Platform), which offers every operation the
+control plane has except the few that need the server by design: platform and server backup key rotation
+(and the platform-wide re-encryption that follows it), whole-platform restore, recovery commands (row-level
+security sync, sign-in lockout resets), and repair of plumbing rows no workflow owns. Platform SMS, push,
+WhatsApp and app-attestation credentials are entered under **Platform settings → Messaging & apps** (secrets
+are write-only: the page only says whether each is set and when it last changed; SMS has a "Send test",
+push and WhatsApp a "Check credentials"); mobile app identities under **Platform settings → Mobile apps**;
+a space's key rotation, its archives on a retired backup key and its capability-data purge from that
+space's card under **Platform → Spaces → Manage → Keys / Capability data** (each one typed back, then a
+fresh sign-in). The control plane's home page lists what needs attention and
+says, for each item, where the web console handles it.
+
+**By default the control plane is server-only** (`CONTROL_PLANE_PROXY=false`). It answers only:
+
+- on the server itself (a loopback request with no proxy in between), or
+- through the **SSH tunnel** listener below.
+
+In the Docker install, "the server itself" means inside the backend container: the backend publishes no
+port, and a browser on the host reaches it through the website proxy or Docker's port forwarding, which
+Django does not count as loopback. So with the installer's defaults (website route off, no tunnel port)
+`/control/` is off altogether, and the web superadmin console covers day-to-day platform work. To keep a
+way in, set `CONTROL_PLANE_TUNNEL_PORT` (automatic HTTPS only) or, on plain HTTP or your own proxy, opt in
+to the website route below.
+
+Everywhere else, including the website's own address, `/control/` answers **404**: no login page, no hint
+that a console exists. Django enforces this itself as well as the proxies, so a misrouted proxy or an
+exposed backend port does not open it either. Superadmin-only access, MFA, re-authentication and the
+django-axes lockout apply behind this, unchanged.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `CONTROL_PLANE_TUNNEL_PORT` | empty (off) | Automatic HTTPS only: a `127.0.0.1`-only HTTPS port that serves nothing but the control plane, for an SSH tunnel. The recommended way in. |
+| `CONTROL_PLANE_PROXY` | `false` | `true` also serves `/control/` on the site's own address through the bundled proxy (Caddy with automatic HTTPS, or the website nginx). Opt-in; see "Through the website" below. |
+| `CONTROL_PLANE_ALLOW_CIDRS` | empty (anyone) | With `CONTROL_PLANE_PROXY=true` only: space-separated addresses/CIDRs, e.g. `203.0.113.7 10.8.0.0/16`. Everyone else gets 403. |
+
+A plain SSH tunnel to the backend container does not work once HTTPS is on: the backend publishes no port,
+and Django answers a plain-HTTP request with a redirect to `https://localhost:8000/…`, where nothing
+listens for TLS. Use the tunnel listener instead.
+
+**SSH tunnel (`CONTROL_PLANE_TUNNEL_PORT`, automatic HTTPS only), recommended.** Caddy listens on
+`127.0.0.1:<port>` of the server with its own internal certificate and serves only the control plane, so
+nothing is reachable from the network. It needs Docker Engine 28 or newer (older engines let neighbouring
+hosts reach `127.0.0.1`-published ports); the wrapper refuses to start it otherwise. From your computer:
+
+```bash
+ssh -N -L 8443:127.0.0.1:<port> you@your-server
+```
+
+Then open `https://localhost:8443/control/` and accept the certificate warning once (or trust Caddy's root,
+`/data/caddy/pki/authorities/local/root.crt` in the `caddy_data` volume). Use `localhost`, not
+`127.0.0.1`: the certificate and `ALLOWED_HOSTS` (setup writes `localhost`) are for that name. Real TLS end to
+end means Secure cookies, the HTTPS redirect and CSRF behave exactly as on the public domain; Caddy strips
+`Strict-Transport-Security` here so your browser does not pin `localhost` to HTTPS. TLS ends at Caddy; the hop
+to Django is plain HTTP on the private Compose network. The tunnel site marks its requests with an internal
+header (`X-SpaceWorks-Control-Tunnel`) that Django believes only while the tunnel overlay is selected and
+only from a private Compose-network peer; the public sites never forward it. **If you put your own reverse
+proxy in front of the backend, strip `X-SpaceWorks-Control-Tunnel` from client requests there.**
+
+`setup.sh` asks about these settings on a fresh install. On an existing install, rerun the one-line installer
+and choose **6) Turn web access to the control plane on or off**, or run `bash scripts/control-plane-settings.sh`
+in the install directory. It shows the current values, asks the same questions, then runs:
+
+```bash
+bash scripts/apply-settings.sh --control-plane on|off [--allow-cidrs "..."] [--tunnel-port N]
+```
+
+This keeps `.env.before-control-plane` and edits `.env` under the update lock. On failure it restores the
+old `.env`; if applying had started, it also refreshes the topology records and restarts the services. If
+rollback cannot finish, it prints the exact manual steps. The backup is kept either way.
+
+As an advanced alternative, keep a copy of `.env` (`cp -p .env .env.before-control-plane`), edit the values,
+then apply them without changing the release:
+
+```bash
+bash scripts/apply-settings.sh
+```
+
+It takes the update lock, checks that every running container still matches its local image (it never pulls
+or changes the version), refreshes the Compose trust records, restarts what changed and probes the result. Run
+it from Linux or WSL2 (it needs `flock`). After a failed manual edit, restore `.env.before-control-plane` and
+run it again; the database is not touched. Updates keep these settings, because `.env` is preserved — but
+apply an edited `.env` with this script before the next update, or the updater refuses the changed file.
+This script is for these proxy settings; credential rotation and topology changes have their own procedures.
+
+**Through the website (`CONTROL_PLANE_PROXY=true`, opt-in).** Open `https://<your-domain>/control/`. Nothing
+extra is needed for DNS, certificates, `ALLOWED_HOSTS` or `CSRF_TRUSTED_ORIGINS`: it is the same host. Set
+`CONTROL_PLANE_ALLOW_CIDRS` to your own address or VPN range wherever you can. The allowlist uses the address
+the proxy itself sees, so:
+
+- it works with automatic HTTPS (Caddy) and with the plain-HTTP website on a published port;
+- behind your own reverse proxy every client looks like that proxy, so leave it empty and restrict
+  `/control/`, `/mfa/control/` and `/mfa/reauth/` in your proxy instead;
+- Docker's userland proxy (for example IPv6 clients on hosts without ip6tables) makes every client look like
+  the bridge gateway. Allowing a proxy, bridge or gateway address admits everyone behind it.
+
+Know what you are exposing: superadmin sign-in is protected by django-axes lockout, and by a TOTP challenge
+when the superadmin has enrolled an authenticator or platform policy requires one — an unenrolled
+superadmin's password alone signs in. `/control/` also shares an origin with the website, so a script bug in
+the website could act on an open control-plane session. Prefer the tunnel; if you keep this route, enrol MFA
+and use the allowlist. Plain HTTP is for loopback trials on this computer only. Use HTTPS for LAN access,
+including the control plane; authentication cookies and browser security depend on a secure origin.
+API-only installs support this route only with automatic HTTPS. Installs that already use this route keep it
+on update; nothing switches it off for you.
+
+**Development stack.** `docker-compose.dev.yml` sets `CONTROL_PLANE_PROXY=true` for the backend, because
+Docker Desktop hands the container the bridge gateway rather than a loopback address; `/control/` stays on
+`http://localhost:8000/control/` there.
+
+## Operating your spaces (superadmin controls)
+
+Everything below is in the web superadmin console under **Platform → Spaces** (each action asks you to
+confirm your identity and is audited); `/control/` → Makerspaces offers the same actions as a fallback.
+
+| Need | Do this | What people see |
+|---|---|---|
+| Stop a space for now (abuse, dispute, unpaid) | **Suspend** with a reason | Staff and members get "This space is paused"; public pages go offline; scheduled jobs and outgoing messages stop. Nothing is deleted; payments already made still settle. **Unblock** restores everything. |
+| Freeze changes but keep it readable | **Make read-only** with a reason | A banner explains it; everyone can still view and export, nothing new can be created. **Lift read-only** to end it. |
+| The Space Manager is leaving | **Transfer ownership** to the new manager's email | The new person becomes Space Manager at once if they already belong to the space (otherwise they get an invitation); the old manager stays as staff with the roles you pick, is revoked, or stays a co-manager. |
+| Close a space down | **Schedule archive & purge** (date + grace period, 90 days by default) | Space Managers get reminder emails before archiving and 30, 7 and 1 days before deletion. **Cancel schedule** stops it at any time before it runs. |
+| Tell space teams something | **Announcements** | A banner in every chosen space's staff console (optionally members too) between the start and end, plus an optional email to Space Managers. |
+| See how a space is doing | **Health** | State, usage against the limits, last activity, last backup and drill, blocked accounts, open problems, modules on. |
+
+Before purging, export what anyone may need: the purge is permanent. Suspension and read-only also
+apply on a single-space self-host. Onboarding requests, plans and per-space limits appear only after
+you switch on **Hosting other makerspaces** (next section).
+
+## Plans and hosting other makerspaces (optional)
+
+Space Works has one deployment mode: you run it yourself. If you also want to run spaces for other
+people (a regional network, a university, a hosting business), switch on **Hosting other makerspaces**.
+It is a setting on a normal install, not a different product. Nothing below is required to run a space.
+
+**Turn it on.** Sign in as superadmin and open **Platform → Spaces → Hosting other makerspaces**. The
+switch is off by default and every action is audited (`managed_hosting.hosting_switch_changed`).
+Switching it off hides everything described here and deletes nothing: plans, invoices, requests,
+overrides and rate settings stay in the database and reappear when you switch it back on.
+
+What the switch turns on:
+
+| Feature | What it gives you |
+| --- | --- |
+| Host-your-makerspace requests | A public form on the platform landing page, plus invitations from an existing space or organization. Applicants confirm their email before a request reaches review. |
+| Plans and fair-use limits | Plan tiers (limits, optional trial, optional recorded invoices) and per-space limits with current usage. |
+| Stripe Connect | Hosting-only: new Connect onboarding and new Connect charges need the switch. A configured Connect platform still settles, refunds and expires charges already raised when the switch is off. |
+| Platform subdomains | `<name>.your-domain` for a space, when a platform domain is set (below). |
+
+### Legacy names
+
+Older installs and cloud recipes use these names. They still work and map to the setting above.
+
+| Name | Meaning |
+| --- | --- |
+| `MANAGED_PLANS_ENABLED` | Optional override. Unset: the console switch decides. `true` or `false` forces it and locks the switch. |
+| `MANAGED_BILLING_ONLINE_ENABLED` | Lets Space Managers pay hosting invoices online (needs the platform's own Stripe or Razorpay keys in **Billing settings**). |
+| `PLATFORM_DOMAIN_SUFFIX` | The domain your spaces live under, for example `space-works.tech`. Needed only for subdomains, custom-domain DNS checks and the built-in default limits. |
+| `docker-compose.managed*.yml`, `render.managed.yaml`, `SPACEWORKS_DEPLOYMENT_MODE=managed` | Presets for provider-run clouds where the provider owns the database and storage. They are packaging, not a separate product. |
+
+### Architecture
+
+One application stack serves every space. There is no database per space: every row is scoped to a
+makerspace and every query goes through the same role checks. Spaces are reached at
+`/m/<slug>`, at a platform subdomain, or at a verified custom domain. A browser staff session is
+bound to its own domain, so a space's domain cannot mint another space's session.
+Plan for one failure and capacity boundary on a single server: scale up first, and move to a managed
+database and object storage before adding application nodes.
+
+### Wildcard DNS and TLS
+
+For platform subdomains, point your domain at the server. On Cloudflare:
+
+| Type | Name | Target | Proxy |
+| --- | --- | --- | --- |
+| A | `space-works.tech` | server IP | Proxied |
+| A | `origin.space-works.tech` | server IP | DNS only |
+| CNAME | `files.space-works.tech` | `space-works.tech` | Proxied |
+| A | `*.space-works.tech` | server IP | Proxied |
+
+Use **Full (strict)** SSL and a Cloudflare Origin CA certificate for the apex and the wildcard, saved as
+`deploy/certs/spaceworks.crt` and `deploy/certs/spaceworks.key` (never commit them). `origin.` must be
+DNS only so tenant custom domains that CNAME to it reach Caddy with their own hostname for on-demand TLS.
+Set `PLATFORM_DOMAIN_SUFFIX`, `PLATFORM_ORIGIN_HOST=origin.space-works.tech`, `BEHIND_TRUSTED_PROXY=true`
+and start the layered stack:
+
+```bash
+SPACEWORKS_COMPOSE_LAYER=saas scripts/spaceworks-compose.sh bundled up -d
+```
+
+Keep the database, Redis, MinIO and backend ports closed; only Caddy is published (80 and 443).
+Set `MINIO_CORS_ALLOWED_ORIGINS` to the platform origins plus each verified custom domain, keep the
+private bucket private, and do not enable credentialed CORS.
+
+### The superadmin workflow
+
+1. **Request.** A visitor files the form (name, contact, expected size, proposed address), or accepts
+   an invitation from a space or organization. The invitation offers "Join" the inviting organization
+   only when the inviter governs it; otherwise only "create my own organization". Requests unverified
+   after 48 hours expire; rejected and withdrawn requests lose the applicant's personal details after 90 days.
+2. **Review.** **Platform → Spaces → Onboarding** (and `/control/` → Hosting requests) shows each request.
+   You can **request changes**, **reject** with a reason (the applicant is emailed), or **approve**.
+3. **Approve and create.** Approval accepts the request and creates the space in one audited step,
+   pre-filled from the request. The owner organization is the inviting one if the applicant chose "Join",
+   otherwise a new one; you can override it. The applicant is invited as Space Manager and Email is turned
+   on for the space. No trial is created unless you assign a plan with one.
+4. **Subdomain.** In the space's detail drawer, **Provision subdomain** assigns `<label>.<platform domain>`.
+   A space owner can instead request a custom domain; they add a TXT record and a CNAME to `origin.`,
+   then verify. A domain changes only after `DOMAIN_CHANGE_COOLDOWN_SECONDS` (default 86400 in the preset).
+5. **Limits and plan.** Assign a plan and, where needed, override single limits (below).
+6. **Onboarding.** The Space Manager signs in and answers the setup questionnaire (areas, not modules);
+   modules are switched on and off from the space's settings. Modules that a limit gates (for example
+   events or email) are installed by you until the limit is lifted.
+7. **Lifecycle.** Suspend, read-only, transfer ownership, scheduled archive and purge, announcements and
+   per-space health are under **Platform → Spaces**. You may act in a paused or read-only space; the
+   console warns first and the action is audited with `bypass_space_control`.
+
+### Plans and limits
+
+The effective limit for a space is, in order: the **space override**, then its **plan** (hosted spaces only), then the
+**platform default** you set for that limit, otherwise **unlimited**. Nothing is set by default, so a plain install
+is unrestricted. A limit only ever stops the *start* of something new; it never blocks reading, exporting, settling
+an existing charge, refunds, returns, or member privacy requests, and existing data is never changed or removed.
+
+Each space is either an **Own space** (no plan, no limits, no hosting billing) or a **Hosted space** (plan, limits,
+trial and hosting billing can apply). The superadmin chooses per space; one install can mix both.
+
+```mermaid
+flowchart TD
+  sw{"Hosting other makerspaces switched on?"}
+  sw -- no --> all["Every space behaves as Own: unlimited"]
+  sw -- yes --> type{"Hosting type of the space"}
+  type -- "Own space" --> own["Plans, limits and hosting invoices do not apply"]
+  type -- "Hosted space" --> hosted["Plan, trial and hosting billing apply"]
+  hosted --> lim{"Limit set by a plan or an override?"}
+  lim -- yes --> enf["That limit is enforced"]
+  lim -- no --> unl["Unlimited (the default)"]
+```
+
+* **Plans.** Create, edit and archive plans in **Platform → Spaces → Plans**; assign one from a space's
+  Manage menu. A plan may set any numeric limit, monthly allowances (email, SMS, WhatsApp, events) and
+  the modules it allows. Overdue invoices restrict a space (read-only after the grace period) only while
+  **Auto-enforce** is on; trials end read-only.
+* **Per-space overrides.** Open a space in **Platform → Spaces → Health → Details → Limits**. Each row shows
+  the effective value, where it comes from (override, plan, default, unlimited) and current usage.
+  Limits cover products, assets, machines, events, bookings, staff, members, storage, monthly print
+  requests, daily email and each notification channel, signed webhooks, API clients, machine-service
+  requests, data exports and **guest and day passes per day**. `-1` means unlimited; a blank field
+  follows the plan. The `custom_domain` switch allows a custom domain.
+* **Limits by module.** Limits are grouped by module, in the same order as the module switches (Inventory, Events,
+  Bookings, Membership, Notifications, Reports, Payments, Mobile, Connected devices, Shop). Every module either has
+  limits or is listed as exempt with a reason in `backend/apps/makerspaces/limit_modules.py` (`bulk_import`,
+  `containers`, `qr_print_batches` and `member_accounts` are counted by other limits). A guard test fails if a
+  module or key is added without one or the other. New in 0.12.0: hardware requests, stock transfers, stocktake
+  sessions, reimbursement claims, public-page images, scheduled reports, adapter media bytes, adapter telemetry
+  samples and Anthias players (plus the card, wallet and background-eraser limits already added).
+* **Platform defaults.** **Platform settings → Limits & hosting → Platform default limits** (superadmin only, audited as
+  `managed_hosting.limit_defaults_changed`) sets one default per key for every space. Blank means unlimited. A space
+  override (including `-1` for no limit) always wins. API: `GET/PUT /api/v1/admin/platform/limit-defaults`.
+* **Warnings and notices.** From 80% of an effective limit staff see a warning on the space dashboard and in the
+  area; at 100% new items are refused with a typed 409 naming the limit and telling the person to contact the
+  platform operator. A sweep every 30 minutes (`sweep_limit_thresholds_task`) tells the Space Managers and every
+  superadmin once per crossing of 80% and of 100%, through the in-app inbox when the space's Notifications module
+  is on, and records `managed_hosting.limit_threshold_crossed`. Usage that falls back under 80% resets the marker.
+  The 80% and 100% notices share a per-month key, so one space gets at most one of each per key per month even if
+  usage bounces around the threshold.
+* **Space Manager view.** **Usage & limits** shows every limited key of the space grouped by module with a bar, the
+  80% and 100% states and where the value comes from. It is read-only (`GET /api/v1/admin/makerspace/<id>/limits`).
+* **Request rate limits.** The deployment-wide API throttles (login, OTP, uploads and so on) are
+  listed under **Platform → Spaces → Request rate limits**. The environment variable (`THROTTLE_<SCOPE>`)
+  remains the default; you may override a scope within 10 times either side of it. **Use default** removes the override.
+  Every change is audited (`managed_hosting.throttle_rate_changed`).
+* **Messages.** A person who hits a limit sees which limit and, where a plan applies, its name.
+* **Storage counter.** When you switch hosting on for a database that already holds objects, run
+  `manage.py recompute_storage` once, and again occasionally to repair drift.
+
+### Per-space integrations and the platform fallback
+
+Each space brings its own Stripe or Razorpay account, SMTP/email, Slack/Discord/Telegram and
+other integration credentials; these are stored encrypted per space and are never visible to
+another space. The platform's own SMS, push, WhatsApp, app-attestation and Stripe Connect credentials
+(the platform provider settings in the console) are used only where a space has none, on every install, whatever the Hosting other makerspaces switch says
+(a space's own credentials always win). The one hosting-only piece is Stripe Connect: new Connect
+onboarding and new Connect charges need the switch, but a configured Connect platform keeps settling, refunding and
+expiring charges already raised with the switch off. Usage of the platform credentials can be capped per space (own or hosted) by the superadmin: monthly emails, SMS,
+WhatsApp, push, wallet passes and online payments through the platform rail (count and amount). There is no limit
+until a value is set, and a space's own credentials are never counted. At the limit a message channel is skipped with a
+recorded reason (the in-app inbox still delivers) and a new platform-rail payment page answers 409
+`platform_rail_limit_reached`; offline settlement keeps working. Platform OTP caps (`otp_email`, `otp_sms`) protect your sending reputation and cost.
+
+### Backups and tenant migration
+
+Back up the whole install as usual (see **Backups**). To move one space, use tenant export and
+**Move a space to this server**: a space travels without platform records (plans, invoices, requests,
+throttle overrides), which belong to the platform. Archiving a space never strands its members' money.
+Purge is permanent: export first.
+
+### Support and abuse
+
+Suspend a space for abuse or non-payment (reversible, reason recorded, Space Manager emailed). Use
+**Platform → Accounts** and IP rules for hostile accounts, announcements for planned work, and the audit
+log for evidence. Tighten a throttle scope under **Request rate limits** during an attack, then restore the default.
+
+### Upgrade path
+
+Upgrade like any install (see **Updating**). The migrations for this section are additive; switching
+the feature on or off never needs a migration. To go from the legacy presets to this model, remove
+`MANAGED_PLANS_ENABLED` from the environment so the console switch takes over, or keep it to pin the behaviour.
 
 ## Custom domain (self-host)
 
@@ -413,13 +851,13 @@ box; it stays dormant here.) End-to-end:
 
    Caddy (`deploy/Caddyfile`) terminates HTTPS and forwards both the public site and the `/admin`
    staff console to this deployment.
-3. **Set the domain in Settings.** As a **superadmin**, open the makerspace's Settings → **Custom
-   domain**, enter the hostname, and Save. It shows **Active** immediately (no TXT record, no Verify
-   step). Only a superadmin may set it — the staff-auth/CORS allowlist is process-global (not
-   tenant-scoped), so on a multi-makerspace box an untrusted Space Manager must never be able to inject
-   a globally-trusted origin. This holds even for a makerspace hidden from the superadmin
-   (`superadmin_access_enabled=False`): to set its domain, have its Space Manager re-enable superadmin
-   access, set the domain as the superadmin, then re-hide it.
+3. **Set the domain in Settings.** As a **superadmin**, open the makerspace's Settings → **Your own
+   domain or frontend**, enter the hostname, and Save. It is **Verified** immediately (no TXT record,
+   no Verify step): the operator's word is enough. A **Space Manager** may set a domain too,
+   but theirs stays **Waiting for DNS proof** — no CORS, staff-origin, Host or TLS trust — until the
+   DNS TXT record the page shows is found by **Verify domain**. The staff-auth/CORS allowlist is
+   process-global (not tenant-scoped), so an unproven tenant-set origin is never trusted. See
+   [own-domain-and-frontend.md](own-domain-and-frontend.md).
 4. **Point the branded frontend at this backend.** Set the frontend container's
    `TENANT_ORIGIN_BOOTSTRAP=true` (resolve the makerspace by request origin) **or**
    `TENANT_TOKEN=<public_code>`, plus `TENANT_API_URL=/api`. See
@@ -427,7 +865,9 @@ box; it stays dormant here.) End-to-end:
 
 If an instance flips from managed → self-host after deploy, run
 `python manage.py reconcile_selfhost_domains` once to promote any existing custom domains to trusted
-(the migration does this automatically on a fresh self-host deploy).
+(the migration does this automatically on a fresh self-host deploy). Running it is the operator
+vouching for every domain it promotes, including any a Space Manager has set but not yet proven, so
+check the list in `/control/` first. Saving a makerspace no longer trusts its domain on its own.
 
 ## Environment reference
 
@@ -443,13 +883,14 @@ every variable the backend reads, with its default — is
 | `ALLOWED_HOSTS` | yes | Comma-separated hostnames the backend will serve |
 | `DATABASE_URL` | no | Never put this in static `.env`; the atomic ops pointer is its only Compose source |
 | `CORS_ALLOWED_ORIGINS` | no | Browser origins allowed to call the API |
+| `PLATFORM_STAFF_ORIGINS` | yes for the superadmin | The only origins the platform superadmin can sign in from. The installer writes your site's own origin, and the 0.12.0 updater adds it to an older self-host that lacks it; without it the superadmin cannot reach the web console |
 | `API_CLIENT_ENC_KEY` | recommended | Fernet key encrypting integration secrets at rest |
 | `MINIO_ROOT_USER` | yes | MinIO/S3 access key used by the backend |
 | `MINIO_ROOT_PASSWORD` | yes | MinIO/S3 secret key used by the backend |
 | `AWS_STORAGE_BUCKET_NAME` | no (default `evidence`) | Private object-storage bucket for evidence and print files |
 | `PUBLIC_IMAGE_BUCKET` | no (default `public-images`) | Anonymous-read bucket for public item photos and makerspace logo/cover images |
 | `PUBLIC_IMAGE_BASE_URL` | yes for public images | Browser public base URL for `PUBLIC_IMAGE_BUCKET` (for example `https://files.inventory.example.org/public-images`) |
-| `PUBLIC_IMAGE_MAX_BYTES` | no (default `5242880`) | Maximum public image upload size |
+| `PUBLIC_IMAGE_MAX_BYTES` | no (default `10485760`) | Maximum public image upload size |
 | `PUBLIC_IMAGE_URL_TTL_SECONDS` | no (default `300`) | Presigned upload URL lifetime for public images |
 | `AWS_S3_ENDPOINT_URL` | no (default `http://minio:9000`) | Backend-to-MinIO endpoint inside Compose |
 | `AWS_S3_PUBLIC_ENDPOINT_URL` | yes for uploads | Browser-reachable MinIO/S3 endpoint used in presigned URLs |
@@ -461,16 +902,27 @@ every variable the backend reads, with its default — is
 | `HTTP_PORT` | no (default 80) | Published frontend port |
 | `EMAIL_*`, `DEFAULT_FROM_EMAIL` | no | Global fallback SMTP (per-makerspace SMTP overrides it) |
 | `MANAGED_POSTGRES` | no (default `False`) | `True` on managed Postgres (Supabase): purge suspends immutability triggers via a custom GUC instead of `session_replication_role` (which needs superuser) |
-| `CONN_MAX_AGE` | no (default `60`) | Persistent DB connection lifetime in seconds; set `0` on the Supabase transaction pooler (port 6543), which hands back a different server connection per transaction |
+| `CONN_MAX_AGE` | no (default `60`) | Persistent connection lifetime; direct/session transport is required. Transaction pooling is unsupported. |
 | `CONN_HEALTH_CHECKS` | no (default `True`) | Verify a persistent connection before reuse so a restarted Postgres does not surface as a request error |
 | `LOG_LEVEL`, `LOG_JSON` | no (`INFO`; JSON when `DEBUG` is off) | Log verbosity and format. Every line carries the `X-Request-ID` of the request that produced it |
 | `LIVE_REDIS_URL`, `LIVE_MAX_STREAM_SECONDS` | no (Celery broker; `3600`) | Redis the live-update stream (`/api/v1/live/`) publishes and subscribes on, and the longest a single stream stays open before the browser reconnects. Empty makes the stream answer 503 and the console keeps polling |
 | `METRICS_TOKEN` | no (unset) | Bearer token for `GET /api/v1/metrics/` (Prometheus text). Unset means the route answers 404 |
 | `SENTRY_DSN` | no (unset) | Opt-in error tracking; the SDK is only imported when set, and PII is never sent |
-| `DISABLE_SERVER_SIDE_CURSORS` | no (default `False`) | Set `True` on the Supabase transaction pooler (no server-side cursors) |
+| `DISABLE_SERVER_SIDE_CURSORS` | no (default `False`) | Keep the configured direct/session cursor policy; transaction pooling is unsupported. |
 | `STORAGE_PRESIGN_METHOD` | no (default `post`) | `put` for Supabase Storage presigned PUT uploads (server re-validates size at attach) |
 | `CRON_SECRET` | no (default empty) | Enables `POST /api/v1/internal/cron/return-reminders` (header `X-Cron-Secret`); 404s while unset |
 | `DEVICE_SIGNATURE_MAX_SKEW_SECONDS`, `DEVICE_NONCE_TTL_SECONDS`, `DEVICE_ENROLLMENT_TTL_SECONDS` | no (`300`, `86400`, `900`) | Enrolled-device protocol (module `devices`): signed-request clock skew, replay-nonce lifetime (must be at least twice the skew, or startup refuses with `devices.E003`) and one-time enrollment lifetime. The backend must sit behind a server that exposes the raw request target (gunicorn `RAW_URI`, uWSGI `REQUEST_URI` or ASGI); see [device-protocol.md](device-protocol.md) |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | no (unset) | Cloudflare Turnstile on sign-in after repeated failures; dormant until both are set. The website container reads the site key too, to allow the widget in its CSP |
+| `LOGIN_IP_BLOCK_ENABLED`, `PASSWORD_BREACH_CHECK_ENABLED` | no (`True`, `True`) | Automatic blocking of an IP that fails against many accounts, and the breached-password check (HIBP range API, fails open). Set the breach check `False` on an offline server |
+| `WEBAUTHN_RP_NAME` | no (`Space Works`) | Name the browser shows when someone creates a passkey |
+| `WEB_PUSH_VAPID_PRIVATE_KEY`, `WEB_PUSH_VAPID_SUBJECT` | no (unset) | Browser notifications; generate the key once and keep it |
+| `CARD_FONT_DOWNLOADS_ENABLED` | no (`True`) | Card designs fetch Google Fonts on demand; `False` keeps the bundled faces |
+| `CARD_PHOTO_MODEL_PATH` | no (`/var/lib/spaceworks/models/u2netp.onnx` in Compose) | The photo clean-up model on the `card_models` volume, shared by web and worker. Fetch it once with `scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role management python manage.py fetch_card_photo_model`; the clean-up button stays hidden until then |
+| `MESSAGING_WEBHOOK_BASE_URL`, `MIN_NATIVE_APP_VERSION_IOS`, `MIN_NATIVE_APP_VERSION_ANDROID` | no (unset) | Public base for inbound messaging webhooks, and the oldest native app allowed to sign in |
+
+The 0.12.0 keys above reach the backend, worker, beat and live processes through
+`docker-compose.prod.yml`, each defaulting to the value above; a value in `.env` that the compose file
+does not pass would never reach Django.
 
 > **Supabase free-tier deployment** (managed Postgres + Storage, env-toggled, demo/pilot scope):
 > see **[supabase-deployment.md](supabase-deployment.md)** for the full runbook. All five vars
@@ -503,6 +955,10 @@ access.
 
 ## Backups
 
+The single guide to what is backed up, how often, offsite copies, restore (bundled and outside database), rolling
+back an upgrade and verifying a backup is [Backup and restore](backup-and-restore.md); this section keeps the
+host commands.
+
 Operational data lives in Postgres and object files live in the `minio_data` Docker volume. Back up
 both before upgrades:
 
@@ -517,12 +973,92 @@ scripts/spaceworks-compose.sh bundled run --rm --entrypoint sh \
   -c 'tar -czf /backup/minio-$(date +%F).tgz -C /data .'
 ```
 
-Also keep a copy of your `.env` (it holds `API_CLIENT_ENC_KEY`, without which encrypted integration
-secrets are unrecoverable, and the MinIO credentials needed to read object backups).
+Also keep a copy of your `.env` off the server (it holds `API_CLIENT_ENC_KEY`, without which encrypted
+integration secrets are unrecoverable, and the MinIO credentials needed to read object backups).
+
+The installer generates the encryption and fingerprint keys on a fresh install: `SECRET_KEY`,
+`API_CLIENT_ENC_KEY`, `AUDIT_MAC_MASTER_KEY`, `PII_MASTER_KEY`, `PII_SEARCH_HASH_KEY` (scoped PII and finance
+encryption), `ACCOUNT_PII_MASTER_KEY` (Saved details), `EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY`,
+`EVENT_REGISTRATION_CREDENTIAL_KEYS`/`_KEY_VERSION` and `PUSH_TOKEN_HMAC_KEY`. A value you supply in the
+environment (for example one recovered from escrow) is used instead. Updates and reruns never regenerate or
+replace an existing key; a key that was never declared is added once, because nothing could have used it.
+Losing or changing any of them makes the data it protects unreadable, so back the `.env` up with the
+database and object backups and keep it in separate custody.
 
 Restore order is database first, then object files. Stop the stack, restore the Postgres dump into the
 `db` service, unpack the MinIO archive into the `minio_data` volume, then start the stack and check
 `/api/v1/health/readiness/`.
+
+### Restore one space
+
+Each live space also gets a nightly one-space backup, and the superadmin can "Back up now" any space.
+Those restore points are restored in the app (Backup and restore, choose the space): preview, confirm with
+your password and the space's slug, then watch progress. A safety backup of the space is taken first. This
+needs the server's restore key: set `TENANT_MIGRATION_AGE_RECIPIENT` and `TENANT_MIGRATION_AGE_IDENTITY_FILE`.
+
+To restore one space from a **whole-platform** backup instead, extract it on the host first. The platform
+key opens whole-platform archives and must stay off the server, so decrypt on a trusted machine and copy
+only the decrypted directory to the host:
+
+```bash
+# On a trusted machine holding the platform key (never copy the key to the server):
+mkdir decrypted && age --decrypt -i platform.key spaceworks-deployment-<id>.tar.age | tar -x -C decrypted
+# On the host, with the decrypted directory mounted into the backend container:
+scripts/spaceworks-compose.sh bundled run --rm -v "$PWD/decrypted:/extract:ro" backend --role management   python manage.py extract_space_restore_point --username <superadmin> --source /extract --makerspace <slug>
+rm -rf decrypted   # the decrypted copy holds every space's data
+```
+
+The command reads that space out of a scratch copy of the archived database (migrated to this release),
+re-encrypts it to the platform key and the server's restore key, and adds it to the space's restore points
+("From a whole-platform backup"), audited in the space. It refuses a link or special file in the
+directory, an age identity left in it, an archive that does not cover the space, a partial legacy archive,
+or one made by a newer release. Then restore it in the app as above.
+
+### Rotate a backup key
+
+To replace the platform key (for example after a suspected compromise), generate a new age key pair on a
+trusted machine, put its public key in `BACKUP_AGE_RECIPIENT` and restart the stack. To replace this server's
+restore key, set a new `TENANT_MIGRATION_AGE_RECIPIENT` and `TENANT_MIGRATION_AGE_IDENTITY_FILE` (keep the old
+identity file until re-encryption is done). Then record the rotation, in `/control/` (Backup keys, drills and
+notices) or on the host:
+
+```bash
+scripts/spaceworks-compose.sh bundled run --rm backend --role management   python manage.py backup_keys rotate --kind platform --actor-id <superadmin id>   # or --kind server
+scripts/spaceworks-compose.sh bundled run --rm backend --role management   python manage.py backup_keys status                                              # archives on a retired key
+scripts/spaceworks-compose.sh bundled run --rm -v "$PWD/old-server.key:/old.key:ro" backend --role management   python manage.py backup_keys reencrypt --actor-id <id> [--old-identity-file /old.key]
+```
+
+Recording retires every earlier key of that kind; backups refuse a retired key from then on, so it is never
+used again. One-space archives are re-encrypted to the current keys on the server (`--old-identity-file` is
+only needed after a server-key rotation and is read in place for that run). Whole-platform archives are
+encrypted to the platform key alone, which never lives on the server: keep them until they expire, or purge
+them (`backup_keys purge --archive <id>` or the Purge button). Every step is audited.
+
+### Restore drills
+
+Every hour the server drills one space whose last drill is older than the configured interval (default 7 days;
+0 turns drills off, in `/control/` under Backup keys, drills and notices). A drill restores the space's latest
+backup into a throwaway database with a throwaway key, checks every row and object, then destroys both; the
+live database, bucket and keys are never written. A failed drill emails the superadmins. The same page turns
+on the optional "archive ready" email: a link to the archive's control-plane page, never the file.
+
+### Move a space to this server (self-host move)
+
+A Space Manager asks the platform operator to move their space (Backup and restore, "Move to your own
+server"). On the source, the superadmin approves the request in `/control/` (Self-host move requests) and runs
+the export with **this server's** `TENANT_MIGRATION_AGE_RECIPIENT` as the one-shot key. Copy the encrypted file
+and its SHA-256 here, then import it as this server's superadmin:
+
+```bash
+scripts/spaceworks-compose.sh bundled run --rm -v "$PWD/move.tar.age:/move.tar.age:ro" backend --role management   python manage.py import_portable_tenant_dump --archive /move.tar.age --sha256 <digest> --actor-id <superadmin id>   [--slug <new-slug>] [--decisions decisions.json] [--no-activate]
+```
+
+It runs the ordinary import (admission, staging, identity decisions, materialization) and activates the
+space. Every person is created: staff keep their roles, and staff and members keep their password,
+authenticator and recovery codes (passkeys only when this server answers on the same domain); sessions and
+devices never travel, so everyone signs in again. If an email already exists here, the import refuses: pass a
+`--decisions` file that links that person instead. Re-issue kiosk station URLs and PINs afterwards. Archive
+the space on the source once the move is confirmed.
 
 ## Tenant Frontends
 
@@ -552,18 +1088,8 @@ appear for `reports` or printing-related workflows.
 A makerspace's `frontend_domain` and its `cors_allowed_origins` (API-client origins) are used for
 per-tenant browser access; only the `frontend_domain` origin may hold a staff session.
 
-## The single-box install
-
-`setup.sh` asks "How should it run?". **Single box** runs nginx, the built frontend, gunicorn, the live
-update stream, a Celery worker, the scheduler loop and Redis in ONE container (`spaceworks-allinone`,
-built from `Dockerfile.allinone`) beside Postgres and MinIO. It is the same code and the same fail-closed
-process entrypoint per role; it only reduces what an operator has to run. The choice is persisted in
-`.spaceworks-layer`, which `scripts/spaceworks-compose.sh` reads so updates keep the shape. To switch by
-hand: `SPACEWORKS_COMPOSE_LAYER=single scripts/spaceworks-compose.sh bundled up -d` (or write `single`
-to `.spaceworks-layer`). The container listens on 8080 internally and is published on `HTTP_PORT`; the
-Django control plane (`/control/`) is still not proxied through it. Redis state lives in the
-`allinone_state` volume so rate-limit counters survive a restart; queued deliveries do not need to (tasks
-acknowledge late and are re-enqueued on commit).
 
 
 Connected printer delivery uses `DEVICE_COMMAND_LEASE_SECONDS=60` and `DEVICE_COMMAND_MAX_ATTEMPTS=10`. These positive operational knobs govern acknowledgement and bounded delivery retries. An acknowledged print may finish after its delivery lease expires. Device key rotation/revocation invalidates prior command ownership. Automatic terminal application defaults off per printer binding; staff review uses existing machine scope and charging rules.
+
+Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.

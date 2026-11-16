@@ -1,5 +1,6 @@
 """Subject export job lifecycle; storage/quota/retention reuse tenant export seams."""
 
+from django.utils.translation import gettext
 import logging
 import uuid
 from datetime import timedelta
@@ -35,11 +36,11 @@ def create_subject_export(user, makerspace):
         locked = require_feature_locked(makerspace, "membership.self_export")
         require_module(locked, "member_accounts")
         if active_membership(user, locked.pk) is None:
-            raise ValidationError({"detail": "An active membership is required."})
+            raise ValidationError({"detail": gettext("An active membership is required.")})
         # The DB lock makes the expensive-job limit hold even if distributed throttle
         # cache is cold or two simultaneous browser requests reach different workers.
         if own_jobs(user, locked.pk).filter(created_at__gt=timezone.now() - timedelta(days=1)).exists():
-            raise Throttled(wait=86400, detail="A personal export was already requested in the last day.")
+            raise Throttled(wait=86400, detail=gettext("A personal export was already requested in the last day."))
         limits.check_quota(locked, "data_exports", adding=1)
         identifier = uuid.uuid4()
         job = DataExportJob.objects.create(
@@ -71,7 +72,7 @@ def run_subject_export(job_id):
             # Recheck access at execution; leaving while queued cannot create a fresh
             # disclosure job after the account has lost its makerspace membership.
             if active_membership(job.requested_by, job.makerspace_id) is None:
-                raise ValidationError("Membership is no longer active.")
+                raise ValidationError(gettext("Membership is no longer active."))
             from apps.makerspaces.guards import require_feature
 
             require_feature(job.makerspace, "membership.self_export")
@@ -109,11 +110,11 @@ def signed_download(job, user):
         space = require_feature_locked(job.makerspace_id, "membership.self_export")
         require_module(space, "member_accounts")
         if active_membership(user, job.makerspace_id) is None:
-            raise ValidationError({"detail": "An active membership is required."})
+            raise ValidationError({"detail": gettext("An active membership is required.")})
         locked = own_jobs(user, job.makerspace_id).select_for_update().get(pk=job.pk)
         now = timezone.now()
         if locked.status != DataExportJob.Status.AVAILABLE or locked.expires_at <= now:
-            raise ValidationError({"detail": "This export is not available for download."})
+            raise ValidationError({"detail": gettext("This export is not available for download.")})
         ttl = min(settings.DATA_EXPORT_DOWNLOAD_TTL_SECONDS,
                   max(1, int((locked.expires_at - now).total_seconds())))
         url = storage.signed_archive_url(locked.object_key, ttl)

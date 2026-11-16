@@ -1,0 +1,182 @@
+/*
+ * /control/ (django-unfold) on the Space Works brand: the app's fonts, the solid-black dark
+ * family (decision 316) and status badges. Colours are the brand tokens from
+ * frontend/src/index.css and docs/brand/README.md; config/unfold.py maps the same values onto
+ * Unfold's base/primary ramps. Fonts are the free Gilroy weight and Outfit (OFL), see
+ * ./fonts/LICENSES. No shadows, gradients or glass (brand rules).
+ */
+@font-face {
+  font-family: "Outfit";
+  src: url("./fonts/Outfit-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("./fonts/Gilroy-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --sw-font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --sw-font-display: "Gilroy", "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --sw-ink: 20 44 42;
+  --sw-teal: 0 110 99;
+  --sw-link: 0 110 99;
+  --sw-focus: 0 110 99;
+  --sw-success: 223 255 143;
+  --sw-warn: 255 212 71;
+  --sw-info: 181 205 255;
+  --sw-danger: 185 28 28;
+  --sw-on-danger: 255 244 232;
+  --sw-neutral: 239 230 219;
+  --sw-on-neutral: 20 44 42;
+  --font-sans: var(--sw-font-body);
+}
+html.dark {
+  --sw-link: 128 177 166;
+  --sw-focus: 223 255 143;
+  --sw-danger: 252 165 165;
+  --sw-on-danger: 20 44 42;
+  --sw-neutral: 28 28 28;
+  --sw-on-neutral: 255 244 232;
+  color-scheme: dark;
+}
+
+html body,
+html body .font-sans,
+html body input,
+html body select,
+html body textarea,
+html body button {
+  font-family: var(--sw-font-body);
+  font-synthesis: none;
+}
+html body h1,
+html body h2,
+html body #site-name,
+html body .sw-display {
+  font-family: var(--sw-font-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+html body .tabular-nums,
+html body td,
+html body .sw-figure {
+  font-variant-numeric: tabular-nums;
+}
+
+/* True black page in dark mode; raised surfaces are the neutral greys from the ramp (decision 316). */
+html.dark body {
+  background-color: rgb(0 0 0);
+}
+html.dark a.text-primary-600,
+html.dark .dark\:text-primary-500,
+html.dark .dark\:text-primary-400 {
+  color: rgb(var(--sw-link));
+}
+
+/* Browser surfaces carry the brand too. */
+::selection {
+  background-color: rgb(var(--sw-teal));
+  color: rgb(255 244 232);
+}
+html body :focus-visible {
+  outline: 2px solid rgb(var(--sw-focus));
+  outline-offset: 2px;
+}
+html body a {
+  text-underline-offset: 0.18em;
+}
+
+/* Status badges (config/admin_display.py): a word plus a brand fill, never colour alone. */
+.sw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  padding: 0.0625rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  background-color: rgb(var(--sw-neutral));
+  color: rgb(var(--sw-on-neutral));
+}
+.sw-badge--success { background-color: rgb(var(--sw-success)); color: rgb(var(--sw-ink)); }
+.sw-badge--warning { background-color: rgb(var(--sw-warn)); color: rgb(var(--sw-ink)); }
+.sw-badge--info { background-color: rgb(var(--sw-info)); color: rgb(var(--sw-ink)); }
+.sw-badge--danger { background-color: rgb(var(--sw-danger)); color: rgb(var(--sw-on-danger)); }
+.sw-secret { font-style: italic; }
+.sw-json {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+/* Home dashboard: the group map and figures. */
+.sw-group-map {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+.sw-group-map a {
+  display: block;
+  border-radius: 0.625rem;
+  padding: 0.75rem;
+  text-decoration: none;
+  transition: background-color 120ms ease-out;
+}
+.sw-group-map a:hover {
+  background-color: rgb(var(--sw-neutral));
+}
+.sw-group-map .material-symbols-outlined {
+  color: rgb(var(--sw-link));
+}
+.sw-figure {
+  font-family: var(--sw-font-display);
+  font-weight: 800;
+  font-size: 1.75rem;
+  line-height: 2rem;
+}
+.sw-meter {
+  height: 0.375rem;
+  border-radius: 9999px;
+  background-color: rgb(var(--sw-neutral));
+  overflow: hidden;
+}
+.sw-meter > span {
+  display: block;
+  height: 100%;
+  background-color: rgb(var(--sw-teal));
+}
+.sw-meter--warning > span { background-color: rgb(var(--sw-warn)); }
+.sw-meter--danger > span { background-color: rgb(var(--sw-danger)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-group-map a { transition: none; }
+}
+
+/* Capability matrix (Makerspace change form): areas, search and state filter. Flat, no shadows. */
+.capability-toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
+.capability-search-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.capability-search { flex: 1 1 16rem; min-height: 2.75rem; padding: 0 0.75rem; border: 1px solid rgb(var(--sw-teal)); border-radius: 0.5rem; background: transparent; color: inherit; }
+.capability-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.capability-filters button { min-height: 2.75rem; padding: 0 1rem; border: 1px solid rgb(var(--sw-teal) / 0.4); border-radius: 999px; background: transparent; color: inherit; font-weight: 600; cursor: pointer; }
+.capability-filters button[aria-pressed="true"] { border-color: rgb(var(--sw-teal)); background: rgb(var(--sw-success)); color: rgb(var(--sw-ink)); }
+.capability-search:focus-visible, .capability-filters button:focus-visible, .capability-area > summary:focus-visible { outline: 2px solid rgb(var(--sw-focus)); outline-offset: 2px; }
+.capability-area { margin-bottom: 0.75rem; border: 1px solid rgb(var(--sw-teal) / 0.3); border-radius: 0.5rem; padding: 0.5rem 1rem; }
+.capability-area > summary { min-height: 2.75rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; cursor: pointer; }
+.capability-area-note { flex-basis: 100%; font-size: 0.875rem; opacity: 0.75; }
+.capability-count { padding: 0 0.5rem; border-radius: 999px; background: rgb(var(--sw-neutral)); color: rgb(var(--sw-on-neutral)); font-size: 0.75rem; }
+.capability-group { margin: 0.5rem 0; padding: 0.5rem 0 0; border: 0; border-top: 1px solid rgb(var(--sw-teal) / 0.2); }
+.capability-group label, .capability-area > label { display: flex; align-items: flex-start; gap: 0.5rem; min-height: 2.25rem; }
+.capability-feature { margin-left: 1.5rem; }
+.capability-module { font-weight: 600; }
+.capability-matrix [hidden] { display: none; }

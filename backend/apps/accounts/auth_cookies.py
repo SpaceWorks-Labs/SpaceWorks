@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -10,7 +11,7 @@ def _refresh_max_age():
     return int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
 
 
-def set_refresh_cookies(response, refresh_token, request=None):
+def set_refresh_cookies(response, refresh_token, request=None, *, context=None):
     """Set the long-lived httpOnly refresh cookie.
 
     Explicit max_age (review fix #7) - without it the cookie would be a session cookie
@@ -23,8 +24,20 @@ def set_refresh_cookies(response, refresh_token, request=None):
         max_age = max(0, int(token["exp"]) - int(__import__("time").time()))
     except Exception:
         pass
+    from apps.accounts.session_context import cookie_name, decode_cookie, token_context
+    if context is None:
+        from apps.accounts.claim_tokens import ClaimRefreshToken
+        from apps.accounts.tokens import SpaceWorksRefreshToken
+        from rest_framework_simplejwt.exceptions import TokenError
+        try:
+            decoded = ClaimRefreshToken(refresh_token)
+        except TokenError:
+            decoded = SpaceWorksRefreshToken(refresh_token)
+        context = token_context(decoded)
+    else:
+        decode_cookie(refresh_token, context)
     response.set_cookie(
-        settings.AUTH_REFRESH_COOKIE,
+        cookie_name(context),
         str(refresh_token),
         max_age=max_age,
         httponly=True,
@@ -34,8 +47,19 @@ def set_refresh_cookies(response, refresh_token, request=None):
     )
 
 
-def clear_refresh_cookies(response):
-    response.delete_cookie(settings.AUTH_REFRESH_COOKIE, path=settings.AUTH_COOKIE_PATH)
+def clear_refresh_cookies(response, *, context="person", request=None):
+    """Expire the selected context's cookie; with ``request``, also every release-1
+    ``refresh_token_staff_<slug>`` cookie the browser still holds (one release)."""
+    from apps.accounts.session_context import cookie_name, legacy_staff_cookie_names
+    response.delete_cookie(cookie_name(context), path=settings.AUTH_COOKIE_PATH)
+    for name in legacy_staff_cookie_names(request) if request is not None else ():
+        response.delete_cookie(name, path=settings.AUTH_COOKIE_PATH)
+
+
+def csrf_surface(context):
+    """The origin policy for a cookie context: a person's session is refreshed from any
+    first-party origin (member or staff console); the superadmin's from staff origins."""
+    return "staff" if context == "platform" else "member"
 
 
 def _origin_allowed(raw, surface=None):
@@ -68,7 +92,7 @@ def assert_csrf(request, *, surface=None):
     that an attacker origin cannot pass) AND the Origin/Referer to exactly match an
     allowlisted origin. No readable cookie is needed, so this works across separate origins."""
     if settings.AUTH_REFRESH_CSRF_HEADER not in request.headers:
-        raise PermissionDenied("Missing CSRF header.")
+        raise PermissionDenied(gettext("Missing CSRF header."))
     origin = request.headers.get("Origin") or request.headers.get("Referer", "")
     if not _origin_allowed(origin, surface=surface):
-        raise PermissionDenied("Origin not allowed.")
+        raise PermissionDenied(gettext("Origin not allowed."))

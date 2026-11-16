@@ -2,7 +2,7 @@
 
 
 def label_routes(route, signed_mode):
-    kinds = frozenset({"label_printer"})
+    kinds = frozenset({"label_printer", "adapter"})  # an adapter serving label.print
     modules = ("devices", "qr_print_batches")
     return {
         ("devices:device-label-command-content", "GET"): route(signed_mode, "labels.content", kinds, modules),

@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "entrypoint": "image-default; never override",
+  "mode": "managed",
+  "default_profile": "full",
+  "roles": {
+    "web": {
+      "argv": [
+        "--role",
+        "backend",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "web"
+      ],
+      "replicas": 1,
+      "credentials": "runtime-only"
+    },
+    "live": {
+      "argv": [
+        "--role",
+        "backend",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "live"
+      ],
+      "replicas": 1,
+      "credentials": "runtime-only"
+    },
+    "worker": {
+      "argv": [
+        "--role",
+        "worker",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "worker"
+      ],
+      "replicas": 1,
+      "credentials": "runtime-only"
+    },
+    "beat": {
+      "argv": [
+        "--role",
+        "beat",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "beat"
+      ],
+      "replicas": 1,
+      "credentials": "runtime-only"
+    },
+    "scheduler": {
+      "argv": [
+        "--role",
+        "cron",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "scheduler"
+      ],
+      "replicas": 1,
+      "credentials": "runtime-only"
+    },
+    "release": {
+      "argv": [
+        "--role",
+        "migrate",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "release"
+      ],
+      "replicas": 1,
+      "credentials": "release-only-maintenance-and-runtime"
+    }
+  },
+  "release_gate": [
+    "Provision external services and private files manually; validate read-only.",
+    "Run a finite release with separate maintenance secrets and the frozen release role; it owns serialization, migrations, grants, identity and idempotent setup.",
+    "Do not enable any resident service before release success. Deploy the same immutable image digest to all roles.",
+    "Verify real core flows, email acceptance/inbox, worker or tick progress and storage before completion."
+  ],
+  "free": {
+    "resident_roles": [
+      "web"
+    ],
+    "image_target": "free",
+    "workers": 1,
+    "threads": 1,
+    "release": "external/local Linux job; no Render Free predeploy or shell",
+    "tick_path": "/api/v1/internal/free/tick",
+    "header": "X-Cron-Secret",
+    "interval_seconds": 600,
+    "browser_internal_routes": "deny",
+    "secret_custody": "backend and scheduled trigger only"
+  },
+  "private_files": [
+    "secrets.json 0600",
+    "recovery-age-identity.txt 0600, independent offline custody",
+    "state directory 0700; never public CI artifacts"
+  ],
+  "runtime_forbidden": [
+    "DATABASE_MAINTENANCE_URL",
+    "CLOUD_SCRATCH_DATABASES_FILE",
+    "SETUP_SUPERADMIN_PASSWORD",
+    "host marker/socket"
+  ],
+  "recovery": [
+    "DB provider backups/PITR and object/key custody have independent recovery points.",
+    "Eligible portable tenant dump uses its existing supervised target import; managed destination unsupported.",
+    "Ordinary tenant archives are archive-and-purge records and cannot be restored."
+  ]
+}

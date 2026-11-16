@@ -1,5 +1,6 @@
 """Closed JSON schemas for cross-tenant reference snapshots."""
 
+from django.utils.translation import gettext
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
@@ -111,7 +112,7 @@ def validate_snapshot(source_model_label, field_name, snapshot):
             return
     schema = EDGE_SCHEMAS.get(edge)
     if schema is None:
-        raise ValidationError({"snapshot": f"Unknown external reference edge: {edge!r}."})
+        raise ValidationError({"snapshot": gettext('Unknown external reference edge: {edge!r}.').format(edge=edge)})
     _validate_value(snapshot, schema, path="snapshot")
 
 
@@ -119,22 +120,22 @@ def _validate_value(value, schema, *, path):
     if isinstance(schema, dict):
         if schema["type"] == "array":
             if not isinstance(value, list):
-                raise ValidationError({"snapshot": f"{path} must be an array."})
+                raise ValidationError({"snapshot": gettext('{path} must be an array.').format(path=path)})
             for index, item in enumerate(value):
                 _validate_value(item, schema["items"], path=f"{path}[{index}]")
             return
         if not isinstance(value, dict):
-            raise ValidationError({"snapshot": f"{path} must be an object."})
+            raise ValidationError({"snapshot": gettext('{path} must be an object.').format(path=path)})
         fields = schema["fields"]
         missing = schema["required"] - value.keys()
         if missing:
             raise ValidationError(
-                {"snapshot": f"{path} is missing required keys: {', '.join(sorted(missing))}."}
+                {"snapshot": gettext('{path} is missing required keys: {value}.').format(path=path, value=', '.join(sorted(missing)))}
             )
         extra = value.keys() - fields.keys()
         if extra:
             raise ValidationError(
-                {"snapshot": f"{path} has unknown keys: {', '.join(sorted(extra))}."}
+                {"snapshot": gettext('{path} has unknown keys: {value}.').format(path=path, value=', '.join(sorted(extra)))}
             )
         for key, field_schema in fields.items():
             _validate_value(value[key], field_schema, path=f"{path}.{key}")
@@ -147,7 +148,7 @@ def _validate_value(value, schema, *, path):
         TIMESTAMP: _is_timestamp,
     }[schema](value)
     if not valid:
-        raise ValidationError({"snapshot": f"{path} must be a {schema}."})
+        raise ValidationError({"snapshot": gettext('{path} must be a {schema}.').format(path=path, schema=schema)})
 
 
 def _is_timestamp(value):

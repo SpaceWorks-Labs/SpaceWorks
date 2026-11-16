@@ -1,6 +1,5 @@
-"""Short-lived target child for tenant identity proof and DEK installation."""
+"""Short-lived target child for tenant DEK installation."""
 
-import base64
 import json
 import os
 from pathlib import Path
@@ -95,36 +94,6 @@ def install_deks(request):
             handle.close()
 
 
-def decrypt_challenge(request):
-    from .tenant_dump_target_identities import _validated_identity_mount
-
-    ciphertext = _decode_unpadded(request["ciphertext"])
-    identity = None
-    process = None
-    try:
-        path = _validated_identity_mount(
-            request["identity_path"], mountinfo_path="/proc/self/mountinfo"
-        )
-        identity = path.open("rb", buffering=0)
-        process = subprocess.Popen(
-            ["age", "-d", "-i", f"/proc/self/fd/{identity.fileno()}"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            pass_fds=(identity.fileno(),),
-            close_fds=True,
-        )
-        plaintext, _unused = process.communicate(ciphertext)
-        if process.returncode != 0 or not plaintext:
-            raise ValueError
-        return {"submitted_nonce": plaintext.decode("ascii")}
-    finally:
-        if process is not None:
-            _reap(process)
-        if identity is not None:
-            identity.close()
-
-
 def _assert_derived_tables_empty():
     from apps.encryption.models import (
         MakerspaceEncryptionKey,
@@ -179,12 +148,6 @@ def _require_bytes(handle, expected):
         raise ValueError
 
 
-def _decode_unpadded(value):
-    return base64.b64decode(
-        value + ("=" * (-len(value) % 4)), altchars=b"-_", validate=True
-    )
-
-
 def _reap(process):
     if process.poll() is None:
         process.kill()
@@ -197,20 +160,13 @@ def _reap(process):
 def main():
     _disable_core_dumps_best_effort()
     django.setup()
-    from .tenant_dump_target_protocol import (
-        CHALLENGE_PROTOCOL,
-        INSTALL_PROTOCOL,
-        decode_request,
-    )
+    from .tenant_dump_target_protocol import INSTALL_PROTOCOL, decode_request
 
     try:
         protocol, request = decode_request(sys.stdin.buffer.read())
-        if protocol == INSTALL_PROTOCOL:
-            result = install_deks(request)
-        elif protocol == CHALLENGE_PROTOCOL:
-            result = decrypt_challenge(request)
-        else:
+        if protocol != INSTALL_PROTOCOL:
             raise ValueError
+        result = install_deks(request)
         sys.stdout.buffer.write(
             (json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n").encode()
         )

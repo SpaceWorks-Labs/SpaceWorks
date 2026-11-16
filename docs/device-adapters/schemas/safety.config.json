@@ -1,0 +1,38 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/safety.config.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "auto_apply_terminal": {
+      "type": "boolean"
+    },
+    "auto_off_idle_minutes": {
+      "maximum": 1440,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "laser_max_power_pct": {
+      "maximum": 100,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "max_on_seconds": {
+      "maximum": 600,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "max_session_minutes": {
+      "maximum": 1440,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "require_area_clear": {
+      "type": "boolean"
+    },
+    "require_filter_ok": {
+      "type": "boolean"
+    }
+  },
+  "required": [],
+  "type": "object"
+}

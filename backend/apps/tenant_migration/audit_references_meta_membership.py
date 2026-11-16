@@ -15,6 +15,7 @@ _TERM_ACTIONS = (
     "membership.term_cancelled",
     "membership.term_expired",
     "membership.renewal_raised",
+    "membership.term_charge_raised",  # #184: a staff-opened term's own charge
 )
 _INVITATION_ACTIONS = (
     "invitation_request.submitted",
@@ -52,7 +53,8 @@ MEMBERSHIP_AUDIT_EDGES = {
             ("membership_plan.updated", "plan_id"),
         ),
     ),
-    **_edges("payments.Payment", (("membership.renewal_raised", "payment_id"),)),
+    **_edges("payments.Payment", (("membership.renewal_raised", "payment_id"),
+                                  ("membership.term_charge_raised", "payment_id"))),
     **_edges(
         "makerspaces.InvitationRequest",
         tuple((action, "invitation_request_id") for action in _INVITATION_ACTIONS),

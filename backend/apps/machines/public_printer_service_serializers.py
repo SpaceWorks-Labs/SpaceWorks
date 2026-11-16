@@ -3,6 +3,8 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.machines.service_queue_eta_serializers import ServiceRequestEtaSerializer, eta_for
+
 
 class PublicPrinterQueueSerializer(serializers.Serializer):
     machine_type_id = serializers.IntegerField()
@@ -55,10 +57,18 @@ class PublicPrinterStatusSerializer(serializers.Serializer):
     accepted_at = serializers.DateTimeField(allow_null=True)
     started_at = serializers.DateTimeField(allow_null=True)
     completed_at = serializers.DateTimeField(allow_null=True)
+    cancelled_at = serializers.DateTimeField(allow_null=True)
     estimated_minutes = serializers.IntegerField()
     queue_position = serializers.SerializerMethodField()
     queue_approved_ahead = serializers.SerializerMethodField()
     queue_awaiting_review_ahead = serializers.SerializerMethodField()
+
+    eta = serializers.SerializerMethodField()
+
+    @extend_schema_field(ServiceRequestEtaSerializer(allow_null=True))
+    def get_eta(self, obj):
+        # Context-only: the view/projection built ONE snapshot; no ORM work per object.
+        return eta_for(self, getattr(obj, "_row", obj))
 
     @extend_schema_field({"type": "integer", "nullable": True})
     def get_queue_position(self, obj):

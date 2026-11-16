@@ -1,3 +1,6 @@
+import { t } from "@lingui/core/macro";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState, type FormEvent } from "react";
 
 import type {
@@ -17,9 +20,11 @@ type Props = {
 // deletes only old presign rows that no workflow ever consumed.
 export function AbandonedUploadCleanupSection({ policy, preview, pending, onChange }: Props) {
   const [days, setDays] = useState("");
+  const [daysTouched, setDaysTouched] = useState(false);
   useEffect(() => {
     setDays(String(policy.abandoned_upload_effective_days));
-  }, [policy.abandoned_upload_effective_days]);
+    setDaysTouched(false);
+  }, [policy.abandoned_upload_effective_days, policy.abandoned_upload_override_days]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -27,59 +32,52 @@ export function AbandonedUploadCleanupSection({ policy, preview, pending, onChan
   };
 
   return (
-    <div className="mt-4 border-t border-line pt-4" aria-labelledby="abandoned-upload-title">
-      <h4 id="abandoned-upload-title" className="text-sm font-semibold text-ink">Abandoned upload cleanup</h4>
-      <p className="mt-1 text-sm text-muted">
-        Removes only old upload slots that were never used by any handover. Attached evidence rows
-        are immutable and are never deleted, and photos recorded before this feature (legacy) are
-        never eligible.
-      </p>
-      <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-ink">
+    <SettingsRow label={t`Abandoned upload cleanup`} helper={t`Removes only old upload slots that were never used by any handover. Attached evidence rows are immutable and are never deleted, and photos recorded before this feature (legacy) are never eligible.`}><div className="@container grid min-w-0 gap-4">
+
+
+      <label className="min-h-11 mt-3 flex items-center gap-2 text-sm font-semibold text-ink">
         <input
           type="checkbox"
           checked={policy.abandoned_upload_cleanup_enabled}
           disabled={pending}
           onChange={(event) => onChange({ abandoned_upload_cleanup_enabled: event.target.checked })}
         />
-        Clean up never-used uploads for this space
-      </label>
+        {t`Clean up never-used uploads for this space`}</label>
       <form className="mt-3 flex flex-wrap items-end gap-3" onSubmit={submit}>
         <label className="grid gap-1 text-sm font-semibold text-ink">
-          Abandoned upload age (days)
-          <input
+          {t`Abandoned upload age (days)`}<input
             className="desk-input w-40"
             type="number"
             min="1"
             max="3650"
             value={days}
-            onChange={(event) => setDays(event.target.value)}
+            onChange={(event) => { setDays(event.target.value); setDaysTouched(true); }}
             required
           />
         </label>
-        <button className="desk-button" type="submit" disabled={pending}>Save age</button>
+        <SettingsEditorActions dirty={days !== String(policy.abandoned_upload_effective_days) || (daysTouched && policy.abandoned_upload_override_days === null)} onDiscard={() => { setDays(String(policy.abandoned_upload_effective_days)); setDaysTouched(false); }} pending={pending} disabled={pending} />
         <button
           className="desk-button"
           type="button"
           disabled={pending || policy.abandoned_upload_override_days === null}
           onClick={() => onChange({ abandoned_upload_retention_days: null })}
         >
-          Use platform age
-        </button>
+          {t`Use platform age`}</button>
       </form>
       <p className="mt-2 text-xs text-muted">
-        {`Platform age ${policy.abandoned_upload_platform_default_days} days. `}
+        {t`Platform age ${policy.abandoned_upload_platform_default_days} days. `}
         {policy.abandoned_upload_global_enabled
-          ? "Cleanup is enabled for this deployment."
-          : "Cleanup is switched off for this deployment; nothing is deleted until the operator enables it."}
+          ? t`Cleanup is enabled for this deployment.`
+          : t`Cleanup is switched off for this deployment; nothing is deleted until the operator enables it.`}
       </p>
       {preview ? (
         <p className="mt-2 text-sm">
-          <span className="font-semibold">Abandoned uploads:</span>
+          <span className="font-semibold">{t`Abandoned uploads:`}</span>
           {` ${preview.abandoned_upload_candidates} never-used uploads are eligible.`}
-          {preview.abandoned_upload_has_more ? " Cleanup continues in bounded batches." : ""}
-          {` Late-write receipts: ${preview.late_write_receipts} (${preview.late_write_receipts_due} due).`}
+          {preview.abandoned_upload_has_more ? t` Cleanup continues in bounded batches.` : ""}
+          {t` Late-write receipts: ${preview.late_write_receipts} (${preview.late_write_receipts_due} due).`}
         </p>
       ) : null}
-    </div>
+    </div></SettingsRow>
   );
 }

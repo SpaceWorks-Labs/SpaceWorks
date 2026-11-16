@@ -1,5 +1,6 @@
 """Calendar-day safety reminders, one pair per schedule due-date occurrence."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db.models import CharField, Value, Q
@@ -61,7 +62,7 @@ def build(makerspace, reminder, now, local_tz):
     if reminder.kind == "due_soon" and schedule.next_due < to_local(makerspace, now).date():
         return None
     return ReminderMessage(title=schedule.machine.name, event=reminder.kind,
-                           body=f"Maintenance due {schedule.next_due.isoformat()}")
+                           body=gettext('Maintenance due {value}').format(value=schedule.next_due.isoformat()))
 
 
 def dispatch(makerspace, reminder, message):

@@ -37,14 +37,14 @@ Docker Desktop installation on Windows/macOS:
 On Linux, paste:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
+curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh
 ```
 
 It installs into `/opt/spaceworks` by default. To choose another directory, export it for the `bash`
 side of the pipe:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash
+curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" sh
 ```
 
 Use the second form in Windows Git Bash. The installer downloads the newest **tagged GitHub release**
@@ -53,6 +53,8 @@ architecture, dependencies, Docker, ports, disk space and install directory befo
 or creating the install root.
 
 ## Step 3 — Answer the setup questions
+
+See [area follow-up questions](#area-follow-up-questions) for every area prompt and default.
 
 The installer asks every deployment question before installing anything, shows one summary, and
 continues only after `Proceed? [Y/n]`. It then hands confirmed answers to `setup.sh` privately;
@@ -64,19 +66,29 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 |---|---|
 | Hosting model | one space, several `/m/<slug>` spaces, or a subdomain platform |
 | Website here? | yes, or API only (enter your external HTTPS website origins) |
-| HTTPS | LAN HTTP, automatic Caddy (domain/email), or your existing proxy |
-| How it runs | standard containers; single box is available for a local website over HTTP |
+| HTTPS | localhost-only HTTP, automatic Caddy (domain/email), or your existing HTTPS proxy |
 | File storage | bundled Silo, or your S3 buckets/credentials/public image URL |
-| Edition and initial modules | choose the purpose and a module profile before confirmation |
+| Areas | Inventory, Machines and Reports default yes; Events, Bookings, Membership, Online payments and Chat default no. Each yes immediately asks its settings. |
 | Web address people will type | `localhost` to start (you can change it later) |
+| Organization name | your network, university, company or community, e.g. `Riverside Community Trust` (required) |
 | Name of your makerspace | e.g. `Riverside Makerspace` |
 | Admin login username | `admin` is fine |
 | Admin email | your email |
 | Admin password | type one, or leave blank and it makes a strong one for you |
 | Who can submit borrow requests? | members, signed-in accounts (default), or anyone |
-| Optional integrations | Google Web client ID; Stripe secret/webhook keys and currency |
+| Sign-in choices | Two-step sign-in [Y/n]; Google, Apple, GitHub comma list [google], or `none`; provider keys are entered later in the console |
+| Optional integrations | Stripe secret/webhook keys and currency |
 | GitHub repository | `SpaceWorks-Labs/SpaceWorks`, or your fork as `Owner/Repo` (asked before download by curl) |
 | Automatic deploys | optional GitHub Actions runner; press Enter for No. Linux with systemd only; setup prints the GitHub steps |
+
+Setup creates an organization with that name and links it as the owner of your first makerspace. If you
+run only one space, you can type its name here too. The summary shows the organization and the
+makerspace it will own. Rerunning setup preserves an existing owner.
+
+When a Super Admin adds another makerspace in the staff console, they must search for and choose an
+active organization, or select **New organization** and enter a name (the makerspace name is suggested).
+The API and `/control/` also require an owner organization for new makerspaces. Existing spaces with no
+owner continue to work; importing a tenant and the development `seed_e2e` command are exceptions.
 
 The summary lists the selected services and whether the runner will be installed, and explains:
 "migrate builds the database tables. It runs once and stops. It's required."
@@ -97,10 +109,17 @@ When the script finishes it prints two web addresses. Open them in a browser:
 
 - **Public catalog** — what your community sees (browse + request).
 - **Staff console** (`…/admin`) — the React console where Space Managers, Inventory Managers,
-  custom handover staff, and the Super Admin do day-to-day work.
+  Handover staff, and the Super Admin do day-to-day work. Machine, Event and Booking Managers use
+  their assigned workflows; the seventh built-in role, Member, is for community members.
 
-The Django control plane is at `/control/` on the backend only. It is an operator-only tool and is
-not exposed on the public website/port.
+The Django control plane at `/control/` is for superadmins. Website access is **off by default**;
+on supported bundled installs, setup can enable `CONTROL_PLANE_PROXY` to route it and its MFA page
+through the website. `CONTROL_PLANE_ALLOW_CIDRS` can limit access to allowed peer IPs/networks
+(blank allows any peer; forwarded client-IP headers do not bypass it). With automatic HTTPS,
+`CONTROL_PLANE_TUNNEL_PORT` can provide a loopback-only HTTPS listener for an SSH tunnel instead
+(Docker Engine 28+). SaaS and API-only behind your own proxy do not offer this switch. Operators can
+change these choices later with installer option 6 or `scripts/apply-settings.sh`; see the
+[control-plane rules](INVARIANTS.md#container--deployment-invariants).
 
 **Write down the admin username and password it shows.** If you let it generate a password, that
 line is the only time it's displayed.
@@ -112,8 +131,9 @@ Log into the **staff console** address (`/admin`) and:
 1. **Add your inventory** — the tools and equipment people can borrow.
 2. **Turn on public visibility** — open your makerspace and enable **"public inventory"** so it
    shows on the public catalog.
-3. **Add your team** — create accounts for staff and assign one of the protected default or custom
-   action-based roles. Front-desk handover is a custom role, not a built-in Guest Admin role.
+3. **Add your team** — create accounts for staff and assign a set of fixed built-in roles.
+   Space Manager and Member each stand alone; use built-in Handover for front-desk work.
+   After assigning Machine Manager, choose that person's machine types (none means no machines).
 4. **Check enabled modules** - in makerspace settings, enable the workflows your space actually
    uses. Public self-checkout/direct handout, 3D printing, stocktake, containers, QR tools, reports,
    transfers, and procurement are shown or hidden from the public/staff screens based on these module
@@ -149,18 +169,15 @@ read their name.
 
 ## Letting people on your network reach it
 
-By default it's at `localhost` (only that computer). To let others at your space use it:
+Plain HTTP trials are restricted to `localhost` or `127.0.0.1` on that computer.
+To let people on your LAN reach it, choose automatic HTTPS with Caddy or an existing HTTPS
+reverse proxy during setup. Use a DNS name with a browser-trusted certificate, point it at
+this server, and open `https://<that-name>/`. LAN IPs and hostnames over plain HTTP are refused:
+sign-in cookies and browser security require a secure origin.
 
-1. Find that computer's address on your network (its local IP, like `192.168.1.50`, or its
-   hostname).
-2. Edit the
-   `ALLOWED_HOSTS` and `CORS_ALLOWED_ORIGINS` lines in the `.env` file to include it, then run
-   `scripts/spaceworks-compose.sh bundled up -d`.
-3. People then visit `http://<that-address>/` in their browser.
-
-> For a public website with a real domain and HTTPS, you'll want someone technical to put a
-> reverse proxy (e.g. Caddy or Nginx with a certificate) in front and set `ENABLE_HTTPS=true`.
-> See [self-hosting.md](self-hosting.md).
+For an existing local trial, have someone technical configure the HTTPS domain, trusted origins,
+proxy and storage URLs before opening it to the network. See
+[self-hosting.md](self-hosting.md#https--security-hardening).
 
 ## No spare computer?
 
@@ -171,8 +188,8 @@ You have two good options before giving up:
    you'll get your own catalog, your own web address, and your own admin, all on their shared
    backend. Most makers are glad to help another space, and it's an easy way for them to contribute.
 2. **Use a hosted database (Supabase).** If partnering isn't possible, you can host the app on a
-   cloud platform and use a free **Supabase** Postgres database. This is more technical — see
-   **Option C** in the [README](../README.md#hosting).
+   cloud platform and use a free **Supabase** Postgres database. This is more technical — see the
+   [hosting overview](deploy/cloud-overview.md) and [Supabase PostgreSQL](supabase-deployment.md).
 
 ---
 
@@ -188,14 +205,14 @@ You have two good options before giving up:
   [security settings](self-hosting.md#security). Forks use their own release workflow, runner and variable.
   See [Updating](self-hosting.md#updating). Run `bash scripts/update.sh --force` on Linux, macOS or Windows
   Git Bash to update immediately, optionally adding `--version X.Y.Z-main.<run>.<12-hex sha>`;
-  the interactive command also opens the current module tick list. The updater backs up
+  the interactive command also opens the current area menu. The updater backs up
   PostgreSQL and verifies the new release before marking it installed. If the new application fails,
   it automatically returns to the previous retained release. Your `.env` and data are preserved. The
   database snapshot is retained but never restored automatically; forward migrations remain applied.
   The dump does not cover uploaded photos/files; back up object storage separately.
 - **Change modules without upgrading:** run `bash scripts/update.sh --modules-only --makerspace <slug>`.
   With several makerspaces, select one slug or explicitly use `--all-makerspaces`; the updater never
-  guesses. Use `--modules` to force the tick list during an update, or `--no-module-changes` to update only
+  guesses. Use `--modules` to review the area menu during an update, or `--no-module-changes` to update only
   the release. Unticking asks for confirmation and retains all module data; install and update never run
   the separate destructive `purge_module_data` command.
 
@@ -220,3 +237,68 @@ treated as a safe live deployment.
 - **See what's happening:** run
   `scripts/spaceworks-compose.sh bundled logs backend`.
 - Still stuck? Open an issue on GitHub describing what you did and what you saw.
+
+## Area follow-up questions
+
+First, "Enable every area?" [y/N] selects all eight areas when answered yes, while still asking
+their normal follow-ups in order. No keeps the individual area questions below. Each yes immediately asks the
+applicable follow-ups. Enter accepts the bracketed default. All answers appear in the summary and
+private answers file. Areas map to [modules and features](MODULES.md#areas-used-by-setup). An existing events/bookings edition
+preselects its corresponding area plus Membership, Online payments and Reports, keeping plans,
+checkout and reporting; Inventory and Machines default off. Core, backup, notifications, email and
+per-person accounts are always on. Accounts provide self sign-up, password/Google/Apple/GitHub/phone
+sign-in and the member area. Membership adds plans, vouching, renewals and the mobile app.
+
+| Area question | Follow-ups in order (defaults) | Editable later |
+| --- | --- | --- |
+| Use Inventory? [Y/n] | Maximum active loans [0]; outstanding items [0] (zero = unlimited); loan length [7 days]; maximum renewals [1]; renewal length [7 days]; self-checkout [Y/n]; kiosk [Y/n]; deposit mode [none] (`none/fixed/per_product`); fixed amount [0.00] if fixed; late fee/day [0.00]; cap [0.00] (zero = uncapped); fee grace [0 days]; require deposit settlement before issue [y/N] if using deposits; charge currency [usd]; who can submit borrow requests [accounts] (`accounts/anyone` while Membership is off) | General / loan policy, Features, loan charges, Borrow request access, Location & hours |
+| Use Machines? [Y/n] | Enforce certification gating [Y/n] (blocks use until certified for the type); certification reminder lead [14 days]; maintenance reminder lead [7 days]. Zero disables advance notices. | Features, machine-type reminder policy |
+| Use Events? [y/N] | New event audience [accounts] (`members/accounts/invite`); ticket currency [usd], reusing the shared charge currency if already answered. Promo codes, ticket types and offline check-in enabled. | Event defaults, each event/series, Location & hours |
+| Use Bookings? [y/N] | No numeric follow-up: buffers and cancellation cutoff belong to each bookable resource; there is no space-level default. Recurring bookings enabled. | Bookable resource editor |
+| Use Membership? [y/N] | Join mode [approval] (`approval/vouch/open/invite_only/closed`); if vouching: vouches [1], voucher tenure [30 days], pending applicants/voucher [3], vouch validity [30 days], vouches replace staff approval [y/N]; application form [Y/n] (editable question: why join); create first plan [y/N] (skippable); if chosen: name [Standard], interval [monthly] (`monthly/yearly/custom_days`), custom days [30] if applicable, amount [0.00], currency [usd], auto-renew [Y/n]; if renewing: open window [7 days], grace [0 days], retries [0], reminders before [14,7,1], after [none]. If Inventory is on, confirm who can submit requests [members]. | Membership admission and form builder, membership plans, Features |
+| Use Online payments? [y/N] | Checkout for chosen domains is enabled; default checkout currency [usd] if no earlier area set it; Stripe keys remain optional integration questions later. Money owed and receipts remain enabled without this area. | Payment settings |
+| Use Reports? [Y/n] | Reports and analytics for every installed module, saved views and scheduled exports; no numeric follow-ups. | Reports |
+| Use Chat alerts? [y/N] | All five channels enabled and idle until configured; no token/URL questions here. | Integration settings |
+
+Before the area questions, setup asks:
+
+- `Turn on two-step sign-in (authenticator app)? [Y/n]`
+- `Which sign-in options besides email + password? Google, Apple, GitHub — comma list, or none [google]`
+
+Enter selects Google; `none` selects no built-in provider. OIDC remains configured separately.
+Provider keys are entered later in the platform console, never in the installer. These deployment
+choices are read-only in `/control/`; change them with `manage.py set_login_methods --mfa on|off
+--providers google,apple,github` (or `--providers none`). Setup applies them only when creating the
+platform login-methods row; rerunning setup preserves later changes.
+
+After the area questions:
+
+1. Label this as an organization instead of a makerspace? [y/N]
+2. Makerspace IANA timezone [UTC, or the host TZ value], then quiet hours start [22:00] and end [08:00], in the makerspace timezone. Equal times disable the window.
+3. Daily digests on by default? [y/N]; if yes, delivery time [08:00]. Members can override this default.
+4. Require two-step sign-in (MFA) for staff? [y/N], only when platform two-step sign-in is on. When off, this question is skipped and no staff-MFA feature is written.
+5. Admin username [admin], email [required], password [auto-generate].
+6. Stripe secret/webhook keys [skip] only with Online payments; checkout reuses the shared currency.
+7. Repository [SpaceWorks-Labs/SpaceWorks] unless selected before download; optional Linux/systemd runner [y/N].
+8. The summary lists areas, all settings and deployment actions, followed by Proceed? [Y/n].
+
+The Membership module currently enforces members-only borrow requests. Enabling it explicitly
+confirms the earlier request-access answer as members. Disable Membership to admit any signed-in
+account; personal accounts remain on in setup. A space later run without Member accounts takes
+account-less requests confirmed by an email code. Inventory off skips borrowing questions, keeps
+the six core modules and hides loans without touching loan/evidence data. Enabling self-checkout or kiosk never bypasses
+authentication, eligible-tool checks or evidence requirements.
+
+Only Events (with optional Membership/Payments/Reports/Chat) derives the `events` edition; only
+Bookings similarly derives `bookings`. Other combinations derive `makerspace`; the organization
+question overrides the label to `organization`, without changing tenancy.
+
+Change areas through installer menu 2/3 or `scripts/update.sh --modules-only`. The menu shows
+on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks settings only for newly
+enabled areas, then confirms. `--all-modules` enables every area and every supported feature in it;
+existing settings and staff MFA are kept, newly enabled areas get defaults, and `--without` exclusions
+still apply. Unavailable modules are reported rather than installed. Optional uninstalls
+retain all data; Inventory off disables `loans.enabled`, and Membership off keeps personal accounts.
+Automation can select an exact set using
+`--areas=inventory,machines`, or retain the existing `--all-modules`, `--without=...`,
+`--makerspace`, `--all-makerspaces` and `--confirm-removals` flags.

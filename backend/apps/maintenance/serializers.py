@@ -1,8 +1,12 @@
+from django.utils.translation import gettext
 from decimal import Decimal
 from collections.abc import Mapping
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.settings import api_settings
+
+from apps.maintenance.serializers_cost import MaintenanceCostFields
 
 from apps.maintenance.models import (
     MaintenanceLog,
@@ -17,7 +21,7 @@ class StrictFieldsSerializer(serializers.Serializer):
             # Serializer.errors wraps this as a ReturnDict, so object-level
             # errors must have a mapping shape rather than a bare error list.
             raise serializers.ValidationError(
-                {api_settings.NON_FIELD_ERRORS_KEY: ["Expected an object."]}
+                {api_settings.NON_FIELD_ERRORS_KEY: [gettext("Expected an object.")]}
             )
         unexpected = set(data) - set(self.fields)
         if unexpected:
@@ -35,6 +39,8 @@ class MaintenanceScheduleWriteSerializer(StrictFieldsSerializer):
     usage_hours = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), allow_null=True, required=False)
     job_count = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     anchor = serializers.ChoiceField(choices=MaintenanceSchedule.Anchor.choices, required=False)
+    blocks_use = serializers.BooleanField(required=False, help_text="Lock the machine out once this schedule is "
+                                                                      "overdue past the type's grace days.")
 
 
 class MaintenanceScheduleSerializer(serializers.ModelSerializer):
@@ -45,7 +51,7 @@ class MaintenanceScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaintenanceSchedule
         fields = (
-            "id", "machine_id", "description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count", "meter_started_at",
+            "id", "machine_id", "description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count", "meter_started_at", "blocks_use",
             "is_active", "created_by_id", "created_at", "updated_at", "overdue",
         )
         read_only_fields = fields
@@ -83,11 +89,11 @@ class MaintenanceLogSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class MaintenanceLogWriteSerializer(StrictFieldsSerializer):
+class MaintenanceLogWriteSerializer(MaintenanceCostFields, StrictFieldsSerializer):
     summary = serializers.CharField()
     performed_at = serializers.DateTimeField(required=False)
-    cost = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=0,
+    cost = MoneyField(
+        max_digits=13, decimal_places=3, min_value=0,
         allow_null=True, required=False,
     )
     parts_note = serializers.CharField(allow_blank=True, default="", required=False)

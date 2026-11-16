@@ -1,11 +1,14 @@
 """F1 owns delayed email/chat claims; uncertain deliveries are never auto-reclaimed."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 
 from apps.accounts import rbac
 from apps.integrations.models import EmailLog, NotificationDeliveryLog
+from apps.integrations.delivery_content import content, recipient_address
 from apps.integrations.notify import NotificationResult
 from apps.integrations.timing_dispatch import RELEASING
+from apps.makerspaces.capability_eligibility import feature_enabled_servable_ids
 from apps.operations.reminder_types import ReminderMessage, ReminderSource
 
 
@@ -19,10 +22,19 @@ def discover(space, now, limit, tz):
 
 
 def build(space, row, now, tz):
-    return ReminderMessage(title='Deferred delivery', event=row.kind)
+    return ReminderMessage(title=gettext('Deferred delivery'), event=row.kind)
 
 
 def _allowed(log, space):
+    if (isinstance(log, EmailLog) and log.stream == 'notifications' and log.event == 'daily_digest'
+            and not feature_enabled_servable_ids([log.makerspace_id], 'notifications.digests')):
+        return False
+    if (isinstance(log, EmailLog) and log.source_kind == 'event_invitation'
+            and log.stream == 'events' and log.event == 'invitation'):
+        # Explicit invitations use the same policy as immediate mail. _deliver
+        # rechecks the live invitation/sender, modules, suppression and opt-outs;
+        # the automatic-notification matrix must not discard a quiet-hours invite.
+        return True
     from apps.integrations.email_preferences import blocked_reason
     from apps.integrations.dispatch_policy import email_module_blocks
     from apps.integrations.notification_catalog import is_notification_enabled, receipt_email_default
@@ -35,7 +47,7 @@ def _allowed(log, space):
         from apps.notifications.inbox import eligible_owner
         if log.recipient_id and not eligible_owner(space, log.recipient_id):
             return False
-        return not (blocked_reason(space, log.to_email, user_id=log.recipient_id,
+        return not (blocked_reason(space, recipient_address(log), user_id=log.recipient_id,
                                   feature=log.feature, stream=log.stream, event=log.event)
                     or email_module_blocks(space, log.stream, log.event)) and (
             not family or is_notification_enabled(space, family, 'email') or
@@ -56,9 +68,13 @@ def dispatch(space, row, message, now, tz):
     if quiet_until(space, 'email' if kind == 'email' else log.channel, now):
         defer_log(log, kind=kind, now=now)
         return NotificationResult(True)
-    if not _allowed(log, space):
+    from .delivery_sources import finished, prepare
+    # Sources resolve live recipients as well as content. Suppression must use
+    # that address, rather than the account address captured before quiet hours.
+    if (isinstance(log, EmailLog) and not prepare(log)) or not _allowed(log, space):
         log.status, log.error = 'skipped', 'notification_disabled_before_release'
         log.save(update_fields=['status', 'error', 'updated_at'])
+        finished(log)
         return NotificationResult(False)
     token = RELEASING.set(True)
     try:
@@ -79,13 +95,17 @@ def dispatch(space, row, message, now, tz):
 
 def _digest(space, row, now):
     from apps.integrations.dispatch import dispatch_email
+    from apps.integrations.dispatch_policy import never_deferred
     from apps.integrations.quiet_hours import quiet_until
     from apps.integrations.timing_dispatch import defer_log
     _, user_id, due = row.subject.split(':', 2)
     queryset = _logs(space, EmailLog).filter(
         recipient_id=int(user_id), status='pending', error=f'deferred:digest:{due}',
     ).order_by('pk')
-    if quiet_until(space, 'email', now):
+    digests_enabled = space.pk in feature_enabled_servable_ids([space.pk], 'notifications.digests')
+    quiet = quiet_until(space, 'email', now)
+    # A disabled digest must not be converted to ordinary quiet-hours email.
+    if digests_enabled and quiet:
         for log in queryset.iterator():
             defer_log(log, kind='email', now=now)
         return NotificationResult(True)
@@ -93,13 +113,25 @@ def _digest(space, row, now):
     # Bound each batch. Tail gets its own reminder identity rather than disappearing.
     with transaction.atomic():
         for log in queryset.select_for_update()[:200]:
-            allowed = _allowed(log, space)
+            from .delivery_sources import digestible, prepare
+            if not digestible(log) or never_deferred(log.stream, log.event):
+                # Campaign and safety mail keep their ordinary delivery policy.
+                if quiet and defer_log(log, kind='email', now=now):
+                    continue
+                token = RELEASING.set(True)
+                try:
+                    from .dispatch_delivery import _deliver
+                    _deliver(log)
+                finally:
+                    RELEASING.reset(token)
+                continue
+            allowed = digests_enabled and prepare(log) and _allowed(log, space)
             if allowed:
                 # Preserve family and address boundaries so a queued summary can
                 # still honour opt-outs and matrix changes at SMTP delivery time.
                 from apps.notifications.preferences import STREAM_FEATURES
                 family = log.feature or STREAM_FEATURES.get(log.stream, log.stream)
-                groups.setdefault((family, log.to_email, log.audience), []).append(log)
+                groups.setdefault((family, recipient_address(log), log.audience), []).append(log)
             log.status = 'skipped'
             log.error = 'included_in_daily_digest' if allowed else 'notification_disabled_before_release'
             log.save(update_fields=['status', 'error', 'updated_at'])
@@ -109,9 +141,11 @@ def _digest(space, row, now):
             for (family, address, audience), mails in groups.items():
                 summaries.append(dispatch_email(
                     makerspace=space, to_email=address, recipient_id=int(user_id), feature=family,
-                    subject=f'{space.name}: daily notification digest',
-                    text_body='\n\n'.join(f'{mail.subject}\n{mail.text_body}' for mail in mails),
+                    subject=gettext('{name}: daily notification digest').format(name=space.name),
+                    text_body='\n\n'.join(f'{content(mail).subject}\n{content(mail).text_body}' for mail in mails),
                     stream='notifications', event='daily_digest', audience=audience, sync=False,
+                    source_kind='notification_digest',
+                    source_metadata={'entries': [mail.pk for mail in mails]},
                 ))
         finally:
             RELEASING.reset(token)
@@ -127,5 +161,7 @@ def _digest(space, row, now):
                                   {'email': failed} if failed else {})
 
 
-DEFERRED_SOURCE = ReminderSource('notifications.deferred', 'request_workflow', discover, build,
+# Decision 254: not `request_workflow` -- that module answers off while the Inventory switch is off, which would
+# strand every deferred (quiet-hours, digest) email in a space that does not lend.
+DEFERRED_SOURCE = ReminderSource('notifications.deferred', 'staff_admin', discover, build,
                                  dispatch=dispatch, requires_notifications=False)

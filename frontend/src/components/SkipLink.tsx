@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 /**
  * "Skip to main content" — the first thing in the tab order on every page.
  *
@@ -12,7 +13,6 @@
 export function SkipLink() {
   return (
     <a className="skip-link" href="#main-content">
-      Skip to main content
-    </a>
+      {t`Skip to main content`}</a>
   );
 }

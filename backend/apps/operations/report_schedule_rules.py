@@ -1,5 +1,7 @@
 """Validated delivery predicates and live, tenant-local staff recipient selectors."""
 
+
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 import operator
 
@@ -7,8 +9,10 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.admin_api.permissions import active_user
 from apps.makerspaces.models import MakerspaceMembership, MakerspaceRole
+from apps.makerspaces.role_catalog import BUILTIN_ROLE_SLUGS
 from apps.operations.report_condition_metrics import condition_metrics
 
 COMPARISONS = {"gt": operator.gt, "gte": operator.ge, "lt": operator.lt, "lte": operator.le, "eq": operator.eq}
@@ -24,16 +28,16 @@ class ReportConditionSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         # Nested serializers receive raw data here, before DRF drops unknown keys.
         if isinstance(data, dict) and set(data) - set(self.fields):
-            raise serializers.ValidationError({"non_field_errors": ["Unknown condition key."]})
+            raise serializers.ValidationError({"non_field_errors": [gettext("Unknown condition key.")]})
         return super().to_internal_value(data)
 
     def validate(self, attrs):
         metric_keys = {"metric", "operator", "value"}
         present = metric_keys & attrs.keys()
         if present and present != metric_keys:
-            raise serializers.ValidationError("A threshold needs metric, operator and value.")
+            raise serializers.ValidationError(gettext("A threshold needs metric, operator and value."))
         if attrs.get("currency") and not present:
-            raise serializers.ValidationError("Currency requires a metric threshold.")
+            raise serializers.ValidationError(gettext("Currency requires a metric threshold."))
         return attrs
 
 
@@ -44,14 +48,14 @@ class ReportConditionField(serializers.DictField):
 
 def validate_condition(value, definition):
     if not isinstance(value, dict):
-        raise serializers.ValidationError("Condition must be an object.")
+        raise serializers.ValidationError(gettext("Condition must be an object."))
     payload = ReportConditionSerializer(data=value)
     payload.is_valid(raise_exception=True)
     result = payload.validated_data
     if result.get("metric") and result["metric"] not in condition_metrics(definition):
-        raise serializers.ValidationError("Metric must be a registered numeric report column.")
+        raise serializers.ValidationError(gettext("Metric must be a registered numeric report column."))
     if result.get("currency") and "currency" not in definition.fields:
-        raise serializers.ValidationError("This report has no currency dimension.")
+        raise serializers.ValidationError(gettext("This report has no currency dimension."))
     if "value" in result:
         result["value"] = str(result["value"])
     return result
@@ -89,22 +93,26 @@ def condition_matches(condition, rows):
 
 
 def validate_roles(actor, space, slugs, action):
-    roles = rbac.scope_by_action(actor, action, MakerspaceRole.objects.all()).filter(makerspace=space)
+    roles = rbac.scope_by_action(actor, action, MakerspaceRole.objects.all()).filter(makerspace=space, slug__in=BUILTIN_ROLE_SLUGS)
     if set(slugs) - set(roles.values_list("slug", flat=True)):
-        raise serializers.ValidationError("Unknown recipient role in this makerspace.")
+        raise serializers.ValidationError(gettext("Unknown recipient role in this makerspace."))
     return list(dict.fromkeys(slugs))
 
 
 def recipient_emails(schedule, definition):
     """Selectors are role slugs / action enums, resolved with current RBAC each send.
 
+    The file carries the creator's reach, so a local recipient must also reach that far
+    (``report_schedule_reach.recipient_reaches``).
+
     Explicit addresses remain for external recipients of existing schedules. If one
     names a local account, it is also subject to current report authority and opt-out.
     """
+    from .report_schedule_reach import recipient_reaches
     candidates = rbac.scope_for_scheduled_work(
-        MakerspaceMembership.objects.filter(makerspace=schedule.makerspace),
+        MakerspaceMembership.staff_tracks.filter(makerspace=schedule.makerspace),
         makerspace_id=schedule.makerspace_id,
-    ).select_related("user", "assigned_role")
+    ).select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
     explicit = {email.strip().lower(): email.strip() for email in schedule.recipient_emails or []}
     emails = {}
     for member in candidates:
@@ -115,10 +123,13 @@ def recipient_emails(schedule, definition):
         if is_explicit:
             explicit.pop(normalized)
         if not (member.status == "active" and member.receives_notifications and active_user(user)
-                and rbac.can(user, definition.required_action, schedule.makerspace_id)):
+                and rbac.can(user, definition.required_action, schedule.makerspace_id)
+                and recipient_reaches(user, schedule, definition)):
             continue
         role = member.assigned_role
-        role_selected = bool(role and role.makerspace_id == schedule.makerspace_id and role.slug in schedule.recipient_roles)
+        from apps.accounts.rbac_roles import membership_roles
+        role_selected = any(role.slug in schedule.recipient_roles
+                            for role in membership_roles(member))
         if role is None and schedule.recipient_roles:
             role_selected = bool(rbac.scope_for_scheduled_work(MakerspaceRole.objects.all(),
                 makerspace_id=schedule.makerspace_id).filter(

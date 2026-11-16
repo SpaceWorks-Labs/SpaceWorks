@@ -6,6 +6,7 @@ from django.db import connection
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
 from apps.makerspaces.servability import is_servable
@@ -46,7 +47,7 @@ def lock_and_validate_staff_authority(
         raise PermissionDenied()
 
     membership = (
-        MakerspaceMembership.objects.select_for_update()
+        MakerspaceMembership.staff_tracks.prefetch_related(additional_roles_prefetch()).select_for_update()
         .filter(user=locked_actor, makerspace=makerspace, status="active")
         .first()
     )
@@ -60,7 +61,7 @@ def lock_and_validate_staff_authority(
     is_global_superadmin = bool(
         locked_actor.is_superuser or locked_actor.role == User.Role.SUPERADMIN
     )
-    if is_global_superadmin and makerspace.superadmin_access_enabled:
+    if is_global_superadmin:
         effective_actions = set(rbac.ROLE_GRANTABLE_ACTIONS)
     else:
         effective_actions = rbac.actions_for_membership(membership)

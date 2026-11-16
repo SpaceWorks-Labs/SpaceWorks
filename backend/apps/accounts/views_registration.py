@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -30,6 +31,7 @@ GenericAckSerializer = inline_serializer(
 
 class MemberSignUpView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, MemberSignUpEmailThrottle]
     throttle_scope = "member_sign_up"
 
@@ -61,12 +63,14 @@ class MemberSignUpView(APIView):
             email=data["email"],
             phone=data["phone"],
             password=data["password"],
+            handle=data.get("handle", ""),
         )
         return _generic_ack()
 
 
 class EmailVerificationResendView(APIView):
     permission_classes = [IsAuthenticated]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, MemberVerificationEmailThrottle]
     throttle_scope = "email_verification_resend"
 
@@ -90,6 +94,7 @@ class EmailVerificationResendView(APIView):
 
 class EmailVerificationConfirmView(APIView):
     permission_classes = [IsAuthenticated]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "email_verification_confirm"
 
@@ -107,8 +112,8 @@ class EmailVerificationConfirmView(APIView):
         if not serializer.is_valid():
             raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
         confirm_challenge(request.user, **serializer.validated_data)
-        return Response({"detail": "Email verified."})
+        return Response({"detail": gettext("Email verified.")})
 
 
 def _generic_ack():
-    return Response({"detail": "If the details are valid, a verification email has been sent."})
+    return Response({"detail": gettext("If the details are valid, a verification email has been sent.")})

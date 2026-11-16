@@ -8,22 +8,32 @@ from apps.backup.models import (
     RestoreOperation,
 )
 from apps.backup.recovery import RESIDUAL_RISK
+from apps.backup.retention import DAILY_KEEP_DAYS, WEEKLY_KEEP_WEEKS
 
 
 class BackupArchiveSerializer(serializers.ModelSerializer):
     purge_warning = serializers.SerializerMethodField()
+    restorable_in_app = serializers.SerializerMethodField(
+        help_text="A one-space restore point this server can open and restore (its own restore key)."
+    )
 
     class Meta:
         model = BackupArchive
         fields = (
             "id", "scope", "makerspace", "status", "manifest", "size_bytes",
             "age_encrypted", "failure_detail", "started_at", "completed_at",
-            "expires_at", "created_at", "purge_warning",
+            "expires_at", "created_at", "purge_warning", "trigger", "format", "restorable_in_app",
         )
         read_only_fields = fields
 
     def get_purge_warning(self, _instance) -> str:
         return ARCHIVE_PURGE_WARNING
+
+    def get_restorable_in_app(self, instance) -> bool:
+        from apps.backup.space_restore_plan import READABLE_FORMATS
+        return bool(instance.scope == BackupArchive.Scope.MAKERSPACE and instance.format in READABLE_FORMATS
+                    and instance.status == BackupArchive.Status.AVAILABLE
+                    and (instance.manifest or {}).get("server_restorable"))
 
 
 class BackupArchiveCreateSerializer(serializers.Serializer):
@@ -37,13 +47,28 @@ class BackupDownloadSerializer(serializers.Serializer):
 
 
 class PlatformBackupSettingsSerializer(serializers.ModelSerializer):
+    # BK-09: nightly archives rotate 7 daily + 4 weekly (apps/backup/retention.py).
+    daily_keep_days = serializers.SerializerMethodField(
+        help_text="Days every nightly archive is kept."
+    )
+    weekly_keep_weeks = serializers.SerializerMethodField(
+        help_text="Weeks the first nightly archive of each week is kept."
+    )
+
     class Meta:
         model = PlatformBackupSettings
         fields = (
-            "automatic_backups_enabled", "retention_days", "last_scheduled_at",
-            "last_success_at", "last_error", "updated_at",
+            "automatic_backups_enabled", "retention_days", "daily_keep_days",
+            "weekly_keep_weeks", "last_scheduled_at", "last_success_at", "last_error", "updated_at",
         )
         read_only_fields = ("last_scheduled_at", "last_success_at", "last_error", "updated_at")
+        extra_kwargs = {"retention_days": {"help_text": "Days an on-demand archive is kept."}}
+
+    def get_daily_keep_days(self, obj) -> int:
+        return DAILY_KEEP_DAYS
+
+    def get_weekly_keep_weeks(self, obj) -> int:
+        return WEEKLY_KEEP_WEEKS
 
 
 class RestoreOperationSerializer(serializers.ModelSerializer):

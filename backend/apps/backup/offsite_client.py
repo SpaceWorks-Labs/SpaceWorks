@@ -1,3 +1,4 @@
+from apps.storage_clients import s3_client
 """S3-compatible client and byte primitives for one offsite destination.
 
 Every failure surfaces as `OffsiteDestinationError` carrying a short, stable code and
@@ -55,7 +56,7 @@ def client_for(
     *, endpoint_url, region, addressing_style, access_key_id, secret_access_key,
     signature_version="s3v4",
 ):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url or None,
         aws_access_key_id=access_key_id,

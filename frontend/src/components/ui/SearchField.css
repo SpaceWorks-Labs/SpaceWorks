@@ -1,0 +1,61 @@
+/* SearchField motion. Tokens only (styles/motionTokens.css); colours are theme tokens, so light and dark
+   follow. Components layer, so a utility class on the call site still wins. Mirrored in the design
+   system at motion/search/. Reduced motion keeps colour changes and the spinner swap, drops all movement. */
+@layer components {
+  .sw-search-slot { display: block; width: 100%; min-width: 0; }
+  .sw-search { position: relative; display: block; width: 100%; min-width: 0; }
+  .sw-search-slot > .sw-search[data-expand] { width: 72%; transition: width var(--sw-dur-slow) var(--sw-ease-standard); }
+  .sw-search-slot > .sw-search[data-expand]:focus-within { width: 100%; }
+  .sw-search-input { padding-inline-start: 2.5rem; padding-inline-end: 2.5rem; }
+  .sw-search-input::-webkit-search-cancel-button, .sw-search-input::-webkit-search-decoration { appearance: none; display: none; }
+  .sw-search[data-bare] .sw-search-icon { inset-inline-start: 0; }
+  .sw-search-bare { border: 0; background: transparent; outline: none; padding-inline-start: 2rem; padding-inline-end: 2rem; }
+  .sw-search-bare:focus { border: 0; outline: none; }
+  .sw-search-input:focus { border-color: rgb(var(--color-focus)); }
+
+  .sw-search-icon {
+    position: absolute; inset-block: 0; inset-inline-start: 0.75rem; display: grid; width: 1.125rem; place-items: center;
+    pointer-events: none; color: rgb(var(--color-muted));
+    transition: color var(--sw-dur-base) var(--sw-ease-standard);
+  }
+  .sw-search-glyph {
+    grid-area: 1 / 1; opacity: 1;
+    transition: opacity var(--sw-dur-fast) var(--sw-ease-standard), transform var(--sw-dur-base) var(--sw-ease-enter);
+  }
+  .sw-search:focus-within .sw-search-icon:not([data-fixed]) { color: rgb(var(--color-accent-ink)); }
+  .sw-search:focus-within .sw-search-glyph { transform: translateX(2px); }
+  .sw-search-icon[data-loading] .sw-search-glyph { opacity: 0; }
+  .sw-search-spin { grid-area: 1 / 1; display: inline-flex; animation: sw-search-fade var(--sw-dur-fast) var(--sw-ease-standard) both; }
+  .sw-search-spin .sw-box { margin: 0; }
+
+  .sw-search-clear {
+    position: absolute; inset-block: 0; inset-inline-end: 0.25rem; display: grid; width: 2.25rem; place-items: center;
+    border-radius: 0.5rem; color: rgb(var(--color-muted));
+    transition: color var(--sw-dur-fast) var(--sw-ease-standard);
+    animation: sw-search-clear-in var(--sw-dur-fast) var(--sw-ease-enter) both;
+  }
+  .sw-search-clear:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: -2px; }
+  @media (hover: hover) { .sw-search-clear:hover { color: rgb(var(--color-ink)); } }
+
+  .sw-search-kbd {
+    position: absolute; inset-block: 0; inset-inline-end: 0.625rem; display: flex; align-items: center; pointer-events: none;
+    opacity: 1; transition: opacity var(--sw-dur-fast) var(--sw-ease-standard);
+  }
+  .sw-search:focus-within .sw-search-kbd, .sw-search-kbd[data-text] { opacity: 0; }
+
+  /* Suggestion dropdown: 4px rise + fade, the first six rows stagger 20 ms; "No results" fades in. */
+  .sw-search-pop { animation: sw-search-rise var(--sw-dur-base) var(--sw-ease-enter) both; }
+  .sw-search-item { animation: sw-search-rise var(--sw-dur-base) var(--sw-ease-enter) both; animation-delay: calc(var(--sw-i, 0) * 20ms); }
+  .sw-search-empty { animation: sw-search-fade var(--sw-dur-base) var(--sw-ease-standard) both; }
+
+  @keyframes sw-search-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sw-search-clear-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+  @keyframes sw-search-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sw-search:focus-within .sw-search-glyph { transform: none; }
+    .sw-search-clear { animation-name: sw-search-fade; }
+    .sw-search-pop, .sw-search-item { animation-name: sw-search-fade; animation-delay: 0s; }
+    .sw-search-slot > .sw-search[data-expand] { width: 100%; transition: none; }
+  }
+}

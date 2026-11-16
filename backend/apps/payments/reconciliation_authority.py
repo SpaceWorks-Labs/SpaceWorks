@@ -5,6 +5,7 @@ Split out of `reconciliation.py` at the 300-line ceiling. Import through the
 from there, so the name must keep resolving at its old path.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
@@ -21,11 +22,77 @@ SUBJECT_ACTIONS = {
     # a space collecting renewals in cash had no way to mark one paid.
     Payment.SubjectType.MEMBERSHIP_TERM: rbac.Action.MANAGE_MAKERSPACE,
     Payment.SubjectType.MEMBERSHIP_REQUEST: rbac.Action.MANAGE_MEMBERS,
+    # #184: whoever may open a term (manage_members) settles the charge it raised.
+    Payment.SubjectType.MEMBERSHIP_TERM_START: rbac.Action.MANAGE_MEMBERS,
+    # Decision 223(b): whoever may issue guest passes (manage_members) settles a day-pass charge.
+    Payment.SubjectType.GUEST_PASS: rbac.Action.MANAGE_MEMBERS,
     # Loan charges follow the handover job: whoever may issue settles the deposit,
     # whoever may take a return settles the late fee.
     Payment.SubjectType.LOAN_DEPOSIT: rbac.Action.ISSUE_REQUEST,
     Payment.SubjectType.LOAN_LATE_FEE: rbac.Action.RETURN_REQUEST,
+    # Lane L15: rental, damage and lost are settled or waived by whoever takes returns,
+    # the same authority that raises damage/lost charges and waives loan fees (A14).
+    Payment.SubjectType.LOAN_RENTAL: rbac.Action.RETURN_REQUEST,
+    Payment.SubjectType.LOAN_DAMAGE: rbac.Action.RETURN_REQUEST,
+    Payment.SubjectType.LOAN_LOST: rbac.Action.RETURN_REQUEST,
+    # Lane L23: a machine session is settled by whoever manages that machine's type.
+    Payment.SubjectType.MACHINE_SESSION: rbac.Action.MANAGE_MACHINES,
+    # Lane L6: event money follows the Event Manager, like a registration charge.
+    Payment.SubjectType.EVENT_ORDER: rbac.Action.MANAGE_EVENTS,
+    Payment.SubjectType.EVENT_VENUE_FEE: rbac.Action.MANAGE_EVENTS,
+    # Lane L18: no area manager owns gifts or sponsor money. Decision 242(m): whoever runs
+    # donations does (the Fundraising role; the Space Manager through manage_makerspace);
+    # record_payment holders still record cash through `_require_record_authority`.
+    Payment.SubjectType.DONATION: rbac.Action.MANAGE_DONATIONS,
+    Payment.SubjectType.SPONSORSHIP: rbac.Action.MANAGE_DONATIONS,
+    # Lane L21b: entry fees and team charges, like every other events charge.
+    Payment.SubjectType.SUBMISSION_FEE: rbac.Action.MANAGE_EVENTS,
+    Payment.SubjectType.TEAM_REGISTRATION: rbac.Action.MANAGE_EVENTS,
+    Payment.SubjectType.EVENT_DEPOSIT: rbac.Action.MANAGE_EVENTS,  # hack-money G10
+    # Lane L22 (Q-S7, #137): the Shop Manager settles and decides refunds on shop orders.
+    Payment.SubjectType.SHOP_ORDER: rbac.Action.MANAGE_SHOP,
 }
+#: Lane L22 (#137): subjects whose cash (a desk refund handed back in person) may also be
+#: recorded by their own area's manager, not only by RECORD_PAYMENT holders. The Shop
+#: Manager refunds shop sales and nothing else.
+CASH_RECORD_ACTIONS = {
+    Payment.SubjectType.SHOP_ORDER: rbac.Action.MANAGE_SHOP,
+}
+# Decision 242(c): every area manager hands back cash on their OWN area's charges, like the shop.
+# Gifts and sponsorship map to `manage_donations`, which no area manager holds: only Fundraising
+# and the Space Manager (decision 252) record their cash. Machine charges are further narrowed
+# to the role's machine types by `_require_subject_authority` at the service.
+CASH_RECORD_ACTIONS |= {subject: action for subject, action in SUBJECT_ACTIONS.items()
+                        if action is not rbac.Action.RECORD_PAYMENT}
+
+
+def may_record_cash(actor, payment):
+    """RECORD_PAYMENT, or the subject's own cash authority (`CASH_RECORD_ACTIONS`)."""
+    if rbac.can(actor, rbac.Action.RECORD_PAYMENT, payment.makerspace_id):
+        return True
+    action = CASH_RECORD_ACTIONS.get(payment.subject_type)
+    return action is not None and rbac.can(actor, action, payment.makerspace_id)
+
+
+def payment_list_action(actor, makerspace_id, *, for_recording=False, subject_type=None):
+    """The one action that admits a payment LISTING in one makerspace.
+
+    Finance staff keep their cross-domain view: VIEW_FINANCE, or RECORD_PAYMENT for the
+    counter (`for_recording`). An Event Manager holds neither, yet is the person who
+    settles registration fees by hand when the online rail is off -- so a listing
+    explicitly filtered to event registrations is also admitted by MANAGE_EVENTS. Only
+    that listing: every other subject stays finance money, and an unfiltered request
+    from the same actor still scopes to nothing (404). Used by both the view's
+    makerspace lookup and `list_payments`, so the two can never disagree.
+    """
+    finance = rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE
+    if (
+        subject_type in Payment.EVENT_SUBJECT_TYPES
+        and not rbac.can(actor, finance, makerspace_id)
+        and rbac.can(actor, rbac.Action.MANAGE_EVENTS, makerspace_id)
+    ):
+        return rbac.Action.MANAGE_EVENTS
+    return finance
 
 
 def _require_record_authority(actor, payments):
@@ -57,11 +124,13 @@ def _require_subject_authority(actor, payments):
             ).values_list("pk", flat=True)
         )
         if visible != set(ids):
-            raise PermissionDenied("Payment action is not permitted.")
+            raise PermissionDenied(gettext("Payment action is not permitted."))
         if subject_type == Payment.SubjectType.MACHINE_SERVICE_REQUEST:
             _require_machine_scope(actor, payments)
+        if subject_type == Payment.SubjectType.MACHINE_SESSION:
+            _require_session_scope(actor, payments)
     if any(payment.subject_type not in SUBJECT_ACTIONS for payment in payments):
-        raise PermissionDenied("Payment subject type is not supported.")
+        raise PermissionDenied(gettext("Payment subject type is not supported."))
 
 
 def _require_machine_scope(actor, payments):
@@ -91,7 +160,7 @@ def _require_machine_scope(actor, payments):
         ).values_list("pk", flat=True)
     )
     if covered != live_ids:
-        raise PermissionDenied("Payment action is not permitted.")
+        raise PermissionDenied(gettext("Payment action is not permitted."))
 
     # A charge whose service request was purged names no machine, type or team, so there is
     # nothing left for machine scoping to answer. Comparing against `subject_ids` here made
@@ -112,4 +181,29 @@ def _require_machine_scope(actor, payments):
     }
     scopes = manage_scopes_for(actor, orphan_makerspace_ids)
     if any(scopes.get(ms_id) is not EXEMPT for ms_id in orphan_makerspace_ids):
-        raise PermissionDenied("Payment action is not permitted.")
+        raise PermissionDenied(gettext("Payment action is not permitted."))
+
+
+def _require_session_scope(actor, payments):
+    """Lane L23: a session charge follows its machine's type scope, like a job's.
+
+    A charge whose session was purged is actionable only by an actor machine scoping
+    already exempts (the same fail-closed rule as an orphaned job charge above).
+    """
+    from apps.machines.models import MachineSession
+    from apps.machines.role_scope import EXEMPT, manage_scopes_for, scope_covers_machine
+
+    rows = [payment for payment in payments if payment.subject_type == Payment.SubjectType.MACHINE_SESSION]
+    if not rows:
+        return
+    sessions = {row.pk: row for row in MachineSession.objects.select_related("machine").filter(
+        pk__in={payment.subject_id for payment in rows})}
+    scopes = manage_scopes_for(actor, {payment.makerspace_id for payment in rows})
+    for payment in rows:
+        scope = scopes.get(payment.makerspace_id)
+        session = sessions.get(payment.subject_id)
+        if session is None or session.makerspace_id != payment.makerspace_id:
+            if scope is not EXEMPT:
+                raise PermissionDenied(gettext("Payment action is not permitted."))
+        elif scope is None or not scope_covers_machine(scope, session.machine):
+            raise PermissionDenied(gettext("Payment action is not permitted."))

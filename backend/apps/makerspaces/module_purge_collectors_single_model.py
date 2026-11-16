@@ -47,14 +47,42 @@ def _cascade_model_labels(model, seen=None):
 def bookings_delete(makerspace, cursor):
     from apps.accounts import rbac
     from apps.bookings.models import BookableSpace, Booking, BookingCalendarFeed
+    from apps.bookings.models_staff_grants import BookingSpaceStaffGrant, BookingSpaceStaffGrantInvite
+    from apps.bookings.models_broadcasts import BookingBroadcast
+    from apps.integrations.models import EmailLog
+    # Summaries can reference other domains: remove booking entries, then let
+    # shared digest delivery rebuild the survivors; do not delete foreign mail.
+    rbac.scope_notification_policy(EmailLog.objects.all(), makerspace_id=makerspace.pk).filter(
+        source_kind__in=["booking_broadcast", "bookings.booking", "bookings.owner_mailbox", "bookings.guest_mailbox"]).delete()
+    campaigns, campaign_labels = _delete(BookingBroadcast.objects.filter(makerspace=makerspace))
+    grants, grant_labels = _delete(BookingSpaceStaffGrant.objects.filter(makerspace=makerspace))
+    invites, invite_labels = _delete(BookingSpaceStaffGrantInvite.objects.filter(makerspace=makerspace))
     feeds, feed_labels = _delete(rbac.scope_notification_policy(BookingCalendarFeed.objects.all(), makerspace_id=makerspace.pk))
 
+    from apps.bookings.models_arrival import BookingCheckInEvent
+    arrivals, arrival_labels = _delete(BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace))
+    from apps.bookings.purge_p2 import delete_departure_history
+    departures, departure_labels = delete_departure_history(makerspace)
+    from apps.bookings.models_loan_context import BookingLoanContext
+    contexts, context_labels = _delete(BookingLoanContext.objects.filter(makerspace=makerspace))
+    from apps.bookings.models_consumable_plan_context import BookingConsumablePlanContext
+    plan_contexts, plan_context_labels = _delete(BookingConsumablePlanContext.objects.filter(makerspace=makerspace))
+    from apps.bookings.models import OrganizationHoursAllowance, OrganizationHoursLedger
+    org_ledger, org_ledger_labels = _delete(OrganizationHoursLedger.objects.filter(makerspace=makerspace))  # B13
+    org_banks, org_bank_labels = _delete(OrganizationHoursAllowance.objects.filter(makerspace=makerspace))
+    from .booking_decision_purge import detach_booking_decisions
+    detach_booking_decisions(makerspace)
     bookings, booking_labels = _delete(
         rbac.scope_notification_policy(Booking.objects.all(), makerspace_id=makerspace.pk, field='space__makerspace_id')
     )
     spaces, space_labels = _delete(rbac.scope_notification_policy(BookableSpace.objects.all(), makerspace_id=makerspace.pk))
     return _counts(
-        model_labels=booking_labels | space_labels | feed_labels,
+        model_labels=(booking_labels | space_labels | feed_labels | grant_labels | invite_labels | arrival_labels
+                      | campaign_labels | departure_labels | context_labels | plan_context_labels
+                      | org_ledger_labels | org_bank_labels),
+        organization_hours_rows=org_ledger + org_banks, arrivals=arrivals, departures=departures, consumable_plan_contexts=plan_contexts,
+        broadcasts=campaigns,
+        staff_grants=grants, staff_invites=invites,
         calendar_feeds=feeds,
         bookings=bookings,
         bookable_spaces=spaces,
@@ -64,11 +92,12 @@ def bookings_delete(makerspace, cursor):
 def bookings_public_images(makerspace):
     from apps.bookings.models import BookableSpace
 
+    from apps.bookings.purge_p2 import photo_keys
     return list(
         BookableSpace.objects.filter(makerspace=makerspace).values_list(
             "image_key", flat=True
         )
-    )
+    ) + photo_keys(makerspace)
 
 
 def machine_service_private_keys(makerspace, add):

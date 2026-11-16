@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from apps.accounts import rbac
 from apps.machines import access
 from apps.machines.models import Machine
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import MACHINES_MAINTENANCE, require_capability
 from apps.makerspaces.models import Makerspace
 from apps.maintenance.models import (
     MaintenanceLog,
@@ -36,8 +36,7 @@ def resolve_collection(actor, makerspace_id, machine_id, *, manage=False):
         pk=machine_id,
         makerspace=makerspace,
     )
-    require_module(makerspace, "maintenance")
-    require_module(makerspace, "machines")
+    require_capability(makerspace, MACHINES_MAINTENANCE)
     require_machine_access(actor, machine, manage=manage)
     return machine
 
@@ -52,8 +51,7 @@ def resolve_schedule(actor, pk, *, manage=True):
         ), makerspace_field="machine__makerspace_id").filter(machine__in=machines),
         pk=pk,
     )
-    require_module(schedule.machine.makerspace, "maintenance")
-    require_module(schedule.machine.makerspace, "machines")
+    require_capability(schedule.machine.makerspace, MACHINES_MAINTENANCE)
     require_machine_access(actor, schedule.machine, manage=manage)
     return schedule
 
@@ -66,8 +64,7 @@ def resolve_log(actor, pk):
         ), makerspace_field="machine__makerspace_id").filter(machine__in=machines),
         pk=pk,
     )
-    require_module(log.machine.makerspace, "maintenance")
-    require_module(log.machine.makerspace, "machines")
+    require_capability(log.machine.makerspace, MACHINES_MAINTENANCE)
     require_machine_access(actor, log.machine, manage=False)
     return log
 
@@ -81,8 +78,7 @@ def resolve_document(actor, pk, *, manage=False):
         ), makerspace_field="log__machine__makerspace_id").filter(log__machine__in=machines),
         pk=pk,
     )
-    require_module(document.log.machine.makerspace, "maintenance")
-    require_module(document.log.machine.makerspace, "machines")
+    require_capability(document.log.machine.makerspace, MACHINES_MAINTENANCE)
     require_machine_access(actor, document.log.machine, manage=manage)
     return document
 

@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.operations.durable_dispatch import dispatch
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -11,14 +13,17 @@ from apps.admin_api import bulk_import
 from apps.admin_api.models import BulkImportJob
 from apps.admin_api.permissions import IsActiveStaff, require_action
 from apps.admin_api.serializers_bulk import (
+    BulkImportApplyResultSerializer,
     BulkImportJobCreateSerializer,
     BulkImportJobSerializer,
+    BulkImportPreviewResultSerializer,
     BulkImportPreviewSerializer,
 )
 from apps.admin_api.tasks import process_bulk_import_job
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.openapi import BULK_IMPORT_ROWS_EXAMPLE
+from apps.openapi_errors import errors
 
 
 def _rows_from_upload(uploaded_file):
@@ -30,7 +35,7 @@ def _rows_from_upload(uploaded_file):
     try:
         return bulk_import.rows_from_upload(uploaded_file)
     except ValueError as exc:
-        raise ValidationError({"file": str(exc) or "Uploaded file could not be parsed."})
+        raise ValidationError({"file": str(exc) or gettext("Uploaded file could not be parsed.")})
 
 
 def _authorized_makerspace(request, makerspace_id):
@@ -47,7 +52,8 @@ class BulkImportPreviewView(APIView):
         tags=["Bulk import"],
         summary="Preview inventory bulk import",
         request=BulkImportPreviewSerializer,
-        responses={200: OpenApiResponse(description="Import preview with row errors.")},
+        responses={200: OpenApiResponse(BulkImportPreviewResultSerializer, description="Import preview with row errors."),
+                   **errors(400, 401, 403, 404, 409)},
         examples=[BULK_IMPORT_ROWS_EXAMPLE],
     )
     def post(self, request, makerspace_id, *args, **kwargs):
@@ -62,10 +68,11 @@ class BulkImportPreviewView(APIView):
                 makerspace,
                 rows,
                 serializer.validated_data.get("mapping") or {},
+                actor=request.user,
             )
         except IntegrityError:
             return Response(
-                {"detail": "Import failed due to a data conflict; no changes were applied."},
+                {"detail": gettext("Import failed due to a data conflict; no changes were applied.")},
                 status=status.HTTP_409_CONFLICT,
             )
         return Response(result)
@@ -78,7 +85,8 @@ class BulkImportApplyView(APIView):
         tags=["Bulk import"],
         summary="Apply inventory bulk import",
         request=BulkImportPreviewSerializer,
-        responses={200: OpenApiResponse(description="Import application result.")},
+        responses={200: OpenApiResponse(BulkImportApplyResultSerializer, description="Import application result."),
+                   **errors(400, 401, 403, 404, 409)},
         examples=[BULK_IMPORT_ROWS_EXAMPLE],
     )
     def post(self, request, makerspace_id, *args, **kwargs):
@@ -97,7 +105,7 @@ class BulkImportApplyView(APIView):
             )
         except IntegrityError:
             return Response(
-                {"detail": "Import failed due to a data conflict; no changes were applied."},
+                {"detail": gettext("Import failed due to a data conflict; no changes were applied.")},
                 status=status.HTTP_409_CONFLICT,
             )
         return Response(result, status=status.HTTP_200_OK)
@@ -126,7 +134,7 @@ class BulkImportJobListCreateView(APIView):
             rows=rows,
             mapping=serializer.validated_data.get("mapping") or {},
         )
-        process_bulk_import_job.delay(job.id)
+        dispatch(process_bulk_import_job, job.id)
         job.refresh_from_db()
         return Response(BulkImportJobSerializer(job).data, status=status.HTTP_201_CREATED)
 

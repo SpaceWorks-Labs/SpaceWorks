@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import re
 
 from django.conf import settings
@@ -37,13 +38,13 @@ LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 def provision_subdomain(makerspace, label: str, actor) -> Makerspace:
     suffix = str(settings.PLATFORM_DOMAIN_SUFFIX or "").strip().lower()
     if not suffix:
-        raise ValidationError("Platform subdomains are not enabled.")
+        raise ValidationError(gettext("Platform subdomains are not enabled."))
 
     normalized_label = str(label or "").strip().lower()
     if "." in normalized_label or not LABEL_RE.fullmatch(normalized_label):
-        raise ValidationError("Enter a valid single subdomain label.")
+        raise ValidationError(gettext("Enter a valid single subdomain label."))
     if normalized_label in RESERVED_LABELS:
-        raise ValidationError("This subdomain label is reserved.")
+        raise ValidationError(gettext("This subdomain label is reserved."))
 
     domain = f"{normalized_label}{suffix}"
     canonical = canonical_host(domain)
@@ -52,7 +53,7 @@ def provision_subdomain(makerspace, label: str, actor) -> Makerspace:
         or canonical != domain
         or canonical[: -len(suffix)] != normalized_label
     ):
-        raise ValidationError("The platform domain suffix is invalid.")
+        raise ValidationError(gettext("The platform domain suffix is invalid."))
 
     try:
         with transaction.atomic():
@@ -79,4 +80,4 @@ def provision_subdomain(makerspace, label: str, actor) -> Makerspace:
             )
             return locked
     except IntegrityError as exc:
-        raise ValidationError("This platform subdomain is already in use.") from exc
+        raise ValidationError(gettext("This platform subdomain is already in use.")) from exc

@@ -45,6 +45,9 @@ case "${TENANT_ORIGIN_BOOTSTRAP:-}" in
   true|1) origin_bootstrap=true ;;
   *) origin_bootstrap=false ;;
 esac
+# On unless explicitly turned off; Compose passes Python-style "True"/"False".
+case "$(printf %s "${UI_DELIGHT_ENABLED:-true}" | tr "[:upper:]" "[:lower:]")" in false|0|no|off) delight_enabled=false ;; *) delight_enabled=true ;; esac
+case "$(printf %s "${UI_EASTER_EGGS_ENABLED:-true}" | tr "[:upper:]" "[:lower:]")" in false|0|no|off) eggs_enabled=false ;; *) eggs_enabled=true ;; esac
 config_path="${TENANT_CONFIG_PATH:-/usr/share/nginx/html/config.js}"
 
 validate_api_url "$api_url"
@@ -54,6 +57,8 @@ cat > "$config_path" <<EOF
 window.__TENANT__ = {
   apiUrl: "$(json_escape "$api_url")",
   tenantToken: "$(json_escape "$tenant_token")",
-  originBootstrap: $origin_bootstrap
+  originBootstrap: $origin_bootstrap,
+  uiDelightEnabled: $delight_enabled,
+  uiEasterEggsEnabled: $eggs_enabled
 };
 EOF

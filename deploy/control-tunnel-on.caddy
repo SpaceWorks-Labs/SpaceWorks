@@ -1,0 +1,15 @@
+# The loopback-published listener serves the control plane and its static assets only.
+# It stamps X-SpaceWorks-Control-Tunnel so Django (config.control_plane_access) can tell a
+# tunnel request from anything else while CONTROL_PLANE_PROXY is off (#189/#191).
+https://localhost:9443 {
+    tls internal
+    @control_plane path /control /control/* /mfa/control/* /mfa/reauth /mfa/reauth/* /static/*
+    handle @control_plane {
+        reverse_proxy backend:8000 {
+            header_up X-Forwarded-Proto https
+            header_up X-SpaceWorks-Control-Tunnel 1
+            header_down -Strict-Transport-Security
+        }
+    }
+    respond 404
+}

@@ -1,3 +1,6 @@
+from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework.exceptions import PermissionDenied
@@ -29,7 +32,7 @@ ERRORS = {400: ErrorSerializer, 401: ErrorSerializer, 403: ErrorSerializer, 404:
 
 def _membership(user, makerspace_id):
     return get_object_or_404(
-        servable_queryset(MakerspaceMembership.objects.select_related("makerspace", "assigned_role").filter(
+        servable_queryset(MakerspaceMembership.objects.select_related("makerspace", "assigned_role").prefetch_related(additional_roles_prefetch()).filter(
             user=user, user__is_active=True, user__access_status=User.AccessStatus.ACTIVE,
             makerspace_id=makerspace_id, status="active"
         ), relation="makerspace")
@@ -53,7 +56,10 @@ class PublicMembershipRequestView(APIView):
         require_module(makerspace, "membership")
         serializer = MembershipRequestCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        outcome = request_membership(request.user, makerspace, serializer.validated_data.get("application_answers"))
+        data = serializer.validated_data
+        outcome = request_membership(request.user, makerspace, data.get("application_answers"),
+                                     plan_id=data.get("plan_id"), invite_code=data.get("invite_code") or None,
+                                     unit_code=data.get("unit_code") or None, join_fields=data.get("join_fields"))
         return Response(MembershipOutcomeSerializer(outcome).data, status=201)
 
 
@@ -66,7 +72,7 @@ class MyMembershipsView(APIView):
             raise PermissionDenied()
         memberships = servable_queryset(
             MakerspaceMembership.objects.filter(user=request.user), relation="makerspace"
-        ).select_related("makerspace", "assigned_role")
+        ).select_related("makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
         requests = servable_queryset(
             MembershipRequest.objects.filter(user=request.user), relation="makerspace"
         ).select_related("makerspace", "admission_payment")
@@ -76,7 +82,7 @@ class MyMembershipsView(APIView):
             rows.append({"makerspace": {"slug": membership.makerspace.slug, "name": membership.makerspace.name},
                          "membership_status": membership.status,
                          "role": membership.assigned_role.name if membership.assigned_role_id else membership.get_role_display(),
-                         "actions": sorted(membership.assigned_role.granted_actions) if membership.assigned_role_id else [],
+                         "actions": sorted(rbac.actions_for_membership(membership)),
                          "can_refer": membership.can_refer,
                          "can_verify": membership.can_verify,
                          "verified_at": membership.verified_at,
@@ -93,6 +99,23 @@ class MyMembershipsView(APIView):
         ]})
 
 
+def _member_or_pass_holder(user, makerspace_id):
+    """Read access to the waiver text: an active member, or a holder of a live guest pass (0.12.0).
+
+    A guest must read the waiver before accepting it, and acceptance itself stays behind the
+    staff-witnessed guest-pass flow; this admits the holder to the read-only text only.
+    """
+    try:
+        return _membership(user, makerspace_id)
+    except Http404:
+        from apps.makerspaces.models import Makerspace
+        from apps.presence.guest_guard import planning_pass_for
+        space = get_object_or_404(servable_queryset(Makerspace.objects.all()), pk=makerspace_id)
+        if planning_pass_for(user, space) is None:  # m20: a pass that has not started yet can read the waiver
+            raise
+        return None
+
+
 class MemberWaiverView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -103,7 +126,7 @@ class MemberWaiverView(APIView):
     def get(self, request, makerspace_id):
         if not active_user(request.user):
             raise PermissionDenied()
-        membership = _membership(request.user, makerspace_id)
+        _member_or_pass_holder(request.user, makerspace_id)
         waiver = MakerspaceWaiver.objects.filter(makerspace_id=makerspace_id, is_active=True).first()
         if waiver is None:
             return Response({"has_waiver": False})

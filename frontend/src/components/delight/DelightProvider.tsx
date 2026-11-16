@@ -1,0 +1,43 @@
+import { runtimeTenantConfig } from "../../lib/runtimeConfig";
+import { spaceAllows } from "./spaceDelight";
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
+
+export type DelightArtwork = Partial<Record<"loader" | "welcome" | "success" | "waiting" | "empty" | "error" | "tag" | "companionWalk" | "companionFollow" | "companionNap" | "companionPrint" | "demo", { light: string; dark: string }>>;
+export type DelightPolicy = { enabled: boolean; eggsEnabled: boolean; artwork: DelightArtwork };
+const Policy = createContext<DelightPolicy | null>(null);
+function runtimePolicy() {
+  const runtime = runtimeTenantConfig();
+  return { enabled: runtime.uiDelightEnabled === true, eggsEnabled: runtime.uiEasterEggsEnabled === true };
+}
+
+/** G passes runtime flags and ARTWORK's manifest here when mounting the shell.
+ *  `spaceFeatures` is the showing makerspace's feature list: a space that turned
+ *  `ui.delight` / `ui.easter_eggs` off overrides the deployment default. */
+export function DelightProvider({ children, enabled, eggsEnabled, artwork = {}, spaceFeatures }: Partial<DelightPolicy> & { children: ReactNode; spaceFeatures?: readonly string[] | null }) {
+  const runtime = runtimePolicy();
+  return <Policy.Provider value={{
+    enabled: enabled ?? (runtime.enabled && spaceAllows(spaceFeatures, "ui.delight")),
+    eggsEnabled: eggsEnabled ?? (runtime.eggsEnabled && spaceAllows(spaceFeatures, "ui.easter_eggs")),
+    artwork,
+  }}>{children}</Policy.Provider>;
+}
+
+export function useDelight(): DelightPolicy {
+  const policy = useContext(Policy);
+  return policy ?? { ...runtimePolicy(), artwork: {} };
+}
+
+const query = "(prefers-reduced-motion: reduce)";
+function subscribe(change: () => void) {
+  const media = window.matchMedia?.(query);
+  media?.addEventListener("change", change);
+  return () => media?.removeEventListener("change", change);
+}
+export function useReducedMotion() {
+  return useSyncExternalStore(subscribe, () => window.matchMedia?.(query).matches ?? true, () => true);
+}
+
+export function eggsAllowed(path: string) {
+  const segments = path.toLowerCase().split(/[/?#_=&-]+/);
+  return !segments.some(part => ["kiosk", "scanner", "scan", "checkin", "check", "checkout", "payment", "payments", "pay"].includes(part));
+}

@@ -1,11 +1,13 @@
-"""Canonical PostgreSQL catalog facts captured outside E7 candidate databases."""
+"""Canonical PostgreSQL catalog facts for the deployment archive's main component."""
 
 import hashlib
 import json
 
 from django.db import connections
 
-from apps.backup.reservation_canonicalizers import canonicalize_catalog_definition
+from apps.backup.catalog_casts import (
+    canonicalize_varchar_array_text_casts as canonicalize_catalog_definition,
+)
 
 
 _DEFINITION_COLUMNS = {"constraints": 7, "indexes": 7}

@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.storage_clients import s3_client
 """Private-bucket storage for machine manuals/SOP documents.
 
 Mirrors apps/warranty/storage.py: same PRIVATE evidence bucket, presign POST/PUT per
@@ -36,7 +38,7 @@ class MachineObjectValidationResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -69,7 +71,7 @@ def staging_key(final_key):
 def assert_machine_object_key_for_makerspace(object_key, makerspace_id):
     if not str(object_key).startswith(f"machines/{makerspace_id}/"):
         raise ValidationError(
-            {"object_key": "Machine document key does not belong to this makerspace."}
+            {"object_key": gettext("Machine document key does not belong to this makerspace.")}
         )
 
 
@@ -81,44 +83,37 @@ def ext_for(content_type, filename):
         settings.MACHINE_DOC_ALLOWED_EXT,
         settings.MACHINE_DOC_ALLOWED_MIME,
     ):
-        raise ValidationError({"filename": "Unsupported document extension or content type."})
+        raise ValidationError({"filename": gettext("Unsupported document extension or content type.")})
     return ext
 
 
-def presigned_upload(object_key, content_type):
+from apps.makerspaces.storage_reservations import reserved_presign
+
+
+@reserved_presign("MACHINE_DOC_MAX_BYTES", public=False)
+def presigned_upload(object_key, content_type, *, exact_bytes=None):
+    from apps.private_uploads import presign as shared_presign
+    import sys
     try:
-        if settings.STORAGE_PRESIGN_METHOD == "put":
-            url = _public_client().generate_presigned_url(
-                "put_object",
-                Params={
-                    "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                    "Key": staging_key(object_key),
-                    "ContentType": content_type,
-                },
-                ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
-            )
-            return {"url": url, "method": "PUT", "headers": {"Content-Type": content_type}}
-        return _public_client().generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=object_key,
-            Fields={"Content-Type": content_type},
-            Conditions=[
-                {"Content-Type": content_type},
-                ["content-length-range", 1, settings.MACHINE_DOC_MAX_BYTES],
-            ],
-            ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
-        )
+        return shared_presign(sys.modules[__name__], object_key, content_type, settings.MACHINE_DOC_MAX_BYTES, exact_bytes=exact_bytes)
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
 
 
 def delete_object(object_key):
+    """Return None for confirmed absence, False for a logged provider failure.
+
+    Keep the historical successful return for existing callers and upload cleanup;
+    callers releasing quota must distinguish it from the explicit failure result.
+    """
     try:
         delete_all_versions(
             _client(), bucket=settings.AWS_STORAGE_BUCKET_NAME, key=object_key
         )
     except (BotoCoreError, ClientError):
         logger.exception("Failed to delete machine document %s.", object_key)
+        return False
+    return None
 
 
 def copy_object(source_key, dest_key):
@@ -150,9 +145,10 @@ def object_size(object_key):
 
 
 def finalize_upload(object_key, max_bytes):
-    if settings.STORAGE_PRESIGN_METHOD != "put":
-        return object_size(object_key)
-
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        import sys
+        from apps.private_uploads import finalize
+        return finalize(sys.modules[__name__], object_key, max_bytes)
     final_size = object_size(object_key)
     if final_size is not None:
         delete_object(staging_key(object_key))
@@ -165,7 +161,9 @@ def finalize_upload(object_key, max_bytes):
     if not (1 <= size <= max_bytes):
         return size
 
-    copy_object(upload_staging_key, object_key)
+    import sys
+    from apps.private_uploads import legacy_promote
+    legacy_promote(sys.modules[__name__], upload_staging_key, object_key, max_bytes)
     delete_object(upload_staging_key)
     final_size = object_size(object_key)
     if final_size is None or not (1 <= final_size <= max_bytes):
@@ -187,11 +185,11 @@ def presigned_get_url(object_key):
 def validate_machine_object(object_key):
     size = object_size(object_key)
     if size is None:
-        raise ValidationError({"object_key": "Machine document was not found."})
+        raise ValidationError({"object_key": gettext("Machine document was not found.")})
     if size == 0:
-        raise ValidationError({"object_key": "Machine document is empty."})
+        raise ValidationError({"object_key": gettext("Machine document is empty.")})
     if size > settings.MACHINE_DOC_MAX_BYTES:
-        raise ValidationError({"object_key": "Machine document exceeds the size limit."})
+        raise ValidationError({"object_key": gettext("Machine document exceeds the size limit.")})
 
     try:
         response = _client().get_object(
@@ -211,7 +209,7 @@ def validate_machine_object(object_key):
         settings.MACHINE_DOC_ALLOWED_MIME,
     ):
         raise ValidationError(
-            {"object_key": "Machine document extension and content type do not match."},
+            {"object_key": gettext("Machine document extension and content type do not match.")},
             code="invalid_document",
         )
 
@@ -220,14 +218,14 @@ def validate_machine_object(object_key):
     if strict_mime or sniffed:
         if not strict_mime or stored_content_type != strict_mime or sniffed != strict_mime:
             raise ValidationError(
-                {"object_key": "Machine document content does not match its extension."},
+                {"object_key": gettext("Machine document content does not match its extension.")},
                 code="invalid_document",
             )
         content_type = sniffed
     else:
         if not has_required_signature(ext, data):
             raise ValidationError(
-                {"object_key": "Machine document signature is invalid."},
+                {"object_key": gettext("Machine document signature is invalid.")},
                 code="invalid_document",
             )
         content_type = stored_content_type

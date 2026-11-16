@@ -2,7 +2,10 @@
 
 from apps.data_export.classification_wp4 import EXPORTED_MODEL_FIELDS, FIELD_ADDITIONS
 
-PROJECTED_LABELS = frozenset({"machines.MachineMaterial", "operations.StocktakePolicy", "operations.StocktakeSchedule"})
+PROJECTED_LABELS = frozenset({"machines.MachineMaterial", "operations.StocktakePolicy", "operations.StocktakeSchedule",
+                              "machines.MachineTypeConsumable", "machines.ServiceRequestConsumableUsage",
+                              "machines.MachineTypeTemplate", "machines.MachineTypeSetup",
+                              "machines.MachineTypeDocument"})
 FIELD_NAMES = {
     "inventory.InventoryWatch": frozenset("id makerspace product user created_at ready_at notified_at".split()),
     "maintenance.MaintenanceCalendarFeed": frozenset("id makerspace user token_digest token_hint created_at revoked_at".split()),

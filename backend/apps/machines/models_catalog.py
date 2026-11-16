@@ -1,4 +1,6 @@
+from django.utils.translation import gettext
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import models
@@ -13,6 +15,7 @@ from apps.machines.service_file_policies import (
 from apps.machines.printer_capabilities import validate_machine_payload, validate_printer_config
 
 from .intake import validate_intake_schema
+from apps.payments.money_model import MoneyDecimalField
 
 
 class MachineType(models.Model):
@@ -74,8 +77,8 @@ class MakerspaceMachineTypePricing(models.Model):
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="machine_type_pricing")
     machine_type = models.ForeignKey("machines.MachineType", on_delete=models.PROTECT, related_name="makerspace_pricing")
-    rate_per_unit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    flat_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    rate_per_unit = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    flat_fee = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     payment_enabled = models.BooleanField(default=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
@@ -92,7 +95,7 @@ class MakerspaceMachineTypePricing(models.Model):
     def clean(self):
         super().clean()
         if self.machine_type_id and self.machine_type.makerspace_id not in (None, self.makerspace_id):
-            raise ValidationError("Machine type must be global or belong to this makerspace.")
+            raise ValidationError(gettext("Machine type must be global or belong to this makerspace."))
 
 
 class Machine(models.Model):
@@ -126,6 +129,8 @@ class Machine(models.Model):
     image_key = models.CharField(max_length=300, blank=True, default="")
     is_public = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    # Decision 319: when on, every active member may use this machine with no grant.
+    open_to_all_members = models.BooleanField(default=False)
     service_file_policy = models.JSONField(
         default=default_service_file_policy,
         validators=[validate_service_file_policy],

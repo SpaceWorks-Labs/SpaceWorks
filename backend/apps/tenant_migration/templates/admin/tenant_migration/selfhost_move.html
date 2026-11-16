@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<p>{% translate "Status:" %} <strong>{{ move.get_status_display }}</strong>{% if move.failure_code %} ({{ move.failure_code }}){% endif %}{% blocktranslate trimmed with requested_at=move.requested_at %}.
+Requested {{ requested_at }}{% endblocktranslate %}{% if move.requested_by %} {% blocktranslate trimmed with requested_by=move.requested_by %}by {{ requested_by }}{% endblocktranslate %}{% endif %}.</p>
+{% if move.note %}<p>{% blocktranslate trimmed with note=move.note %}Their note: {{ note }}{% endblocktranslate %}</p>{% endif %}
+{% if move.status == "approved" or move.status == "failed" %}
+<h2>{% translate "Run the export" %}</h2>
+<p>{% translate "Paste the age public key (" %}<code>{% translate "age1..." %}</code>{% translate ") the TARGET server's operator gave you: their" %}
+<code>{% translate "TENANT_MIGRATION_AGE_RECIPIENT" %}</code>{% blocktranslate trimmed %}. The archive is encrypted to that key for this export only, plus the
+platform key. Staff and members keep their sign-in on the new server. The space stays read-only while the
+export runs.{% endblocktranslate %}</p>
+{% if move.status == "failed" %}<p>{% translate "The last export failed; you may run it again." %}</p>{% endif %}
+<form method="post">{% csrf_token %}
+  <label for="recipient">{% translate "Target server key" %}</label>
+  <input id="recipient" name="recipient" size="70" autocomplete="off" required>
+  <button type="submit" name="action" value="export">{% translate "Run export" %}</button>
+</form>
+{% endif %}
+{% if move.status == "exported" %}
+<h2>{% translate "Hand it over" %}</h2>
+<p>{% translate "SHA-256:" %} <code>{{ move.artifact_sha256 }}</code>{% translate ". Give the file and this digest to the target operator, who runs" %}
+<code>{% translate "manage.py import_portable_tenant_dump" %}</code> {% translate "on the new server. Then archive this space here." %}</p>
+{% if has_file %}<form method="post">{% csrf_token %}
+  <button type="submit" name="action" value="download">{% translate "Download the encrypted archive" %}</button>
+  <button type="submit" name="action" value="discard">{% translate "Delete the file from this server" %}</button>
+</form>{% else %}<p>{% translate "The export file was deleted from this server." %}</p>{% endif %}
+{% endif %}
+{% endblock %}

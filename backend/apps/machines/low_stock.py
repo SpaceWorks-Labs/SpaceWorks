@@ -8,10 +8,13 @@ from django.db import connection, transaction
 from apps.audit import services as audit
 from apps.procurement.models import ToBuyItem
 from apps.separability.registry import runtime_active
-from apps.makerspaces.platform import module_enabled
-from apps.makerspaces.guards import require_module_locked
+from apps.makerspaces.folded_capabilities import (
+    MACHINES_TOBUY, capability_on, require_capability_locked,
+)
 
 logger = logging.getLogger(__name__)
+# Neutral wording per pool unit (CO3): a resin pool is not a filament spool.
+_RESTOCK = {"grams": "Filament", "milliliters": "Resin"}
 OPEN_STATUSES = (ToBuyItem.Status.REQUESTED, ToBuyItem.Status.APPROVED, ToBuyItem.Status.ORDERED)
 
 
@@ -31,15 +34,16 @@ def maybe_flag_low_stock(actor, pool):
             locked = MachineConsumablePool.objects.select_for_update(of=("self",)).select_related(
                 "machine"
             ).get(pk=pool.pk)
-            if not module_enabled(locked.makerspace, "procurement"):
+            # Machine consumables feed the machines parent's To-Buy switch (#97, C-9).
+            if not capability_on(locked.makerspace, MACHINES_TOBUY):
                 return None
-            # Serialize the cross-app writer with procurement uninstall, which
-            # holds this same tenant lock. An unlocked check can race a disable.
-            require_module_locked(locked.makerspace, "procurement")
+            # Serialize the cross-app writer with a switch-off, which writes this same
+            # tenant row. An unlocked check can race a disable.
+            require_capability_locked(locked.makerspace, MACHINES_TOBUY)
             threshold = locked.low_threshold_grams
             if threshold is None or threshold <= 0 or not locked.is_active or locked.remaining_grams > threshold:
                 return None
-            name = f"Filament restock: {locked.material} {locked.color}".strip()
+            name = f"{_RESTOCK.get(locked.unit, 'Material')} restock: {locked.material} {locked.color}".strip()
             name_key = zlib.crc32(name.encode("utf-8"))
             if name_key >= 2 ** 31:
                 name_key -= 2 ** 32
@@ -66,8 +70,8 @@ def maybe_flag_low_stock(actor, pool):
                 status=ToBuyItem.Status.REQUESTED,
             )
             audit.record(created_by, "procurement.low_stock_flagged", makerspace=locked.makerspace, target=item, meta={"pool_id": locked.pk, "remaining": str(locked.remaining_grams), "threshold": str(threshold), "to_buy_item_id": item.pk})
-            from apps.procurement.notifications import notify_stock
-            notify_stock(item, "low_stock")
+            from .notifications_p2_stock import notify
+            notify(item, "low_stock")
             return item
     except Exception:
         logger.exception("Failed to flag low-stock machine consumable pool %s", getattr(pool, "pk", None))

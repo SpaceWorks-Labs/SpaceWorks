@@ -1,0 +1,40 @@
+{{- if eq .Values.scheduler "external" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "spaceworks.name" . }}-scheduler
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 55
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            {{- include "spaceworks.podSecurity" . | nindent 12 }}
+          containers:
+            - name: scheduler
+              image: {{ include "spaceworks.backendImage" . | quote }}
+              args: [--role, cron, python, manage.py, run_scheduled_tasks, --due-only]
+              envFrom:
+                - secretRef:
+                    name: {{ .Values.runtimeSecret | quote }}
+              env:
+                {{- include "spaceworks.env" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                {{- include "spaceworks.mounts" . | nindent 16 }}
+          volumes:
+            {{- include "spaceworks.volumes" . | nindent 12 }}
+{{- end }}

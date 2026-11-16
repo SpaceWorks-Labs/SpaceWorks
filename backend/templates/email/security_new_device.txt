@@ -1,0 +1,13 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate trimmed with display_name=user.display_name|default:user.username %}Hello {{ display_name }},{% endblocktranslate %}
+
+{% translate "Your Space Works account was just signed in to from a device it has not used before." %}
+
+{% if alert.ua_label %}{% blocktranslate trimmed with ua_label=alert.ua_label %}Device: {{ ua_label }}{% endblocktranslate %}{% endif %}{% if alert.network_label %}
+{% blocktranslate trimmed with network_label=alert.network_label %}Network: {{ network_label }}{% endblocktranslate %}{% endif %}
+{% blocktranslate trimmed with sent_at=alert.sent_at|date:'j M Y, H:i e' %}When: {{ sent_at }}{% endblocktranslate %}
+
+{% translate "If this was you, there is nothing to do." %}
+
+{% blocktranslate trimmed with expires_days=expires_days %}Wasn't you? Open this link to sign out everywhere, turn off your current password and get a reset code by email (it works once, for {{ expires_days }} days):{% endblocktranslate %}
+{{ link }}
+{% endautoescape %}

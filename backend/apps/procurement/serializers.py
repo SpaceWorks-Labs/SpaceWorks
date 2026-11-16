@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.machines.models import MachineType
@@ -97,6 +98,8 @@ class ToBuyItemSerializer(serializers.ModelSerializer):
             "resulting_machine",
             "source_pool",
             "source_product",
+            "source_consumable",
+            "vendor",
             "receipts",
             "created_by",
             "created_by_username",
@@ -118,6 +121,8 @@ class ToBuyItemSerializer(serializers.ModelSerializer):
             "resulting_machine",
             "source_pool",
             "source_product",
+            "source_consumable",
+            "vendor",
             "receipts",
             "created_by",
             "created_by_username",
@@ -128,7 +133,7 @@ class ToBuyItemSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Name is required.")
+            raise serializers.ValidationError(gettext("Name is required."))
         return value
 
     def validate_vendor_name(self, value):
@@ -136,12 +141,12 @@ class ToBuyItemSerializer(serializers.ModelSerializer):
 
     def validate_estimated_unit_cost(self, value):
         if value is not None and value < 0:
-            raise serializers.ValidationError("Estimated unit cost cannot be negative.")
+            raise serializers.ValidationError(gettext("Estimated unit cost cannot be negative."))
         return value
 
     def validate_actual_unit_cost(self, value):
         if value is not None and value < 0:
-            raise serializers.ValidationError("Actual unit cost cannot be negative.")
+            raise serializers.ValidationError(gettext("Actual unit cost cannot be negative."))
         return value
 
 
@@ -170,10 +175,10 @@ class MoveToInventoryRequestSerializer(serializers.Serializer):
         mode = attrs.get("mode")
         if mode == "topup" and not attrs.get("product_id"):
             raise serializers.ValidationError(
-                {"product_id": "This field is required for topup."}
+                {"product_id": gettext("This field is required for topup.")}
             )
         if mode == "create" and not (attrs.get("name") or "").strip():
-            raise serializers.ValidationError({"name": "This field is required for create."})
+            raise serializers.ValidationError({"name": gettext("This field is required for create.")})
         return attrs
 
 

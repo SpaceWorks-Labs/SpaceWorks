@@ -1,5 +1,8 @@
 """Locked, audited waiver publishing and acceptance."""
 
+from django.utils.translation import gettext
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -13,11 +16,11 @@ from apps.makerspaces.staff_authority import lock_and_validate_staff_authority
 def publish_waiver(actor, makerspace, body, version):
     body, version = (body or "").strip(), (version or "").strip()
     if not body or not version:
-        raise ValidationError({"detail": "Waiver body and version are required."})
+        raise ValidationError({"detail": gettext("Waiver body and version are required.")})
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         if MakerspaceWaiver.objects.filter(makerspace=makerspace, version=version).exists():
-            raise ValidationError({"version": "This version already exists."})
+            raise ValidationError({"version": gettext("This version already exists.")})
         now = timezone.now()
         MakerspaceWaiver.objects.select_for_update().filter(makerspace=makerspace, is_active=True).update(
             is_active=False, superseded_at=now
@@ -41,10 +44,11 @@ def deactivate_waiver(actor, makerspace):
 
 
 def accept_waiver(actor_membership):
+    require_member_account(actor_membership.user)
     with transaction.atomic():
         membership = MakerspaceMembership.objects.select_for_update().select_related("makerspace", "user").get(pk=actor_membership.pk)
         if membership.status != "active":
-            raise ValidationError({"detail": "An active membership is required."})
+            raise ValidationError({"detail": gettext("An active membership is required.")})
         waiver = MakerspaceWaiver.objects.select_for_update().filter(makerspace=membership.makerspace, is_active=True).first()
         if waiver is None:
             return membership, None
@@ -79,10 +83,11 @@ def witness_waiver_acceptance(actor, membership_id):
         membership = MakerspaceMembership.objects.select_for_update().get(
             pk=membership_id
         )
+        require_member_account(membership.user)
         if membership.makerspace_id != makerspace.id:
             raise PermissionDenied()
         if membership.status != "active":
-            raise ValidationError({"detail": "An active membership is required."})
+            raise ValidationError({"detail": gettext("An active membership is required.")})
 
         waiver = (
             MakerspaceWaiver.objects.select_for_update()
@@ -90,7 +95,7 @@ def witness_waiver_acceptance(actor, membership_id):
             .first()
         )
         if waiver is None:
-            raise ValidationError({"detail": "This makerspace has no active waiver."})
+            raise ValidationError({"detail": gettext("This makerspace has no active waiver.")})
 
         membership.witnessed_waiver = waiver
         membership.witnessed_waiver_version = waiver.version

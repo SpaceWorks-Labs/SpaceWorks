@@ -1,0 +1,2831 @@
+{
+  "manifest_version": 1,
+  "lane": "RB3-B",
+  "module_key": "request_workflow",
+  "integration_status": "IMPLEMENTED_PENDING_G_MIGRATIONS_WIRING_AND_RUNTIME_VALIDATION_DO_NOT_ENABLE",
+  "prerequisite": "G1 JSON present and reconciled.",
+  "models": [
+    {
+      "label": "payments.FinanceAttachment",
+      "file": "backend/apps/payments/event_payouts/attachment_models.py",
+      "scope": "makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event_id_snapshot": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event_title_snapshot": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=200)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "purpose": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=32, choices=[(v, v) for v in ('reimbursement_receipt', 'reimbursement_payee_document')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "binding_kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=8, choices=[('claim', 'claim'), ('payee', 'payee')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "binding_uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "question_id": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='initiated', choices=[(v, v) for v in ('initiated', 'uploaded', 'validating', 'ready', 'attached', 'failed', 'expired', 'deleting', 'deleted')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "generation": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "expected_bytes": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actual_bytes": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "declared_mime": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=100)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "canonical_mime": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=100, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "sha256": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "original_filename": {
+          "type": "TextField",
+          "declaration": "models.TextField()",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "staging_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=500, unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "private_object_locator",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "staging_version_id": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=200, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "private_object_locator",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "object_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=500, unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "private_object_locator",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "final_version_id": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=200, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "private_object_locator",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "scan_status": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=8, default='pending', choices=[(v, v) for v in ('pending', 'clean', 'infected', 'skipped', 'failed')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "scanner_policy": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "scanner_version": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "error_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "attached_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "retention_policy_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "retention_days_snapshot": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "terminal_financial_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "closure_reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "closure_operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "expires_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "legal_hold_until": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "legal_hold_reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "expired_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "deletion_receipt": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Explicit literal typed JSON references below; G1 closed snapshot validation implemented. G installs shared registry mappings.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "lease_token": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT_OR_CLEAR"
+        },
+        "lease_until": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT_OR_CLEAR"
+        },
+        "attempts": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT_OR_CLEAR"
+        },
+        "makerspace": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.PROTECT, related_name='finance_attachments')",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.SET_NULL, null=True, related_name='finance_attachments')",
+          "target": "'events.Event'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "owner_member": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='finance_attachments')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, null=True, related_name='attachments')",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "indexes",
+          "declaration": "[models.Index(fields=('state', 'expires_at'), name='finance_attachment_expiry')]"
+        },
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=models.Q(purpose='reimbursement_receipt', binding_kind='claim') | models.Q(purpose='reimbursement_payee_document', binding_kind='payee'), name='finance_attachment_purpose'), models.CheckConstraint(condition=models.Q(expected_bytes__gt=0, expected_bytes__lte=10485760), name='finance_attachment_size')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.PayoutEligibility",
+      "file": "backend/apps/payments/event_payouts/eligibility_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "evidence_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "evidence": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Explicit literal typed JSON references below; G1 closed snapshot validation implemented. G installs shared registry mappings.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "status": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=24, choices=[(v, v) for v in ('eligible', 'held', 'needs_acknowledgement')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "acknowledged_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='eligibility_history')",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "acknowledged_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('obligation', 'evidence_revision'), name='payout_eligibility_revision')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.PayoutHold",
+      "file": "backend/apps/payments/event_payouts/eligibility_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "eligibility_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, choices=[(v, v) for v in ('eligibility', 'retention')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "action": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=8, choices=[('hold', 'hold'), ('release', 'release')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "releases": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('self', on_delete=models.CASCADE, null=True, related_name='released_by_entry')",
+          "target": "'self'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "obligation.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "evidence_refs": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=list)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Explicit literal typed JSON references below; G1 closed snapshot validation implemented. G installs shared registry mappings.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "hold_until": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='hold_history')",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=models.Q(action='hold', releases__isnull=True) | models.Q(action='release', releases__isnull=False), name='payout_hold_release_shape')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.PayoutExportBatch",
+      "file": "backend/apps/payments/event_payouts/export_models.py",
+      "scope": "makerspace_id",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "command_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "selection_filter": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "schema_status": "Explicit literal typed JSON references below; G1 closed snapshot validation implemented. G installs shared registry mappings.",
+          "portable_disposition": "OMIT"
+        },
+        "selection_hash": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=8, default='ready', choices=[('ready', 'ready'), ('expired', 'expired')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "expires_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "mask_policy_version": {
+          "type": "PositiveSmallIntegerField",
+          "declaration": "models.PositiveSmallIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "downloaded_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "download_count": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "makerspace": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.PROTECT, related_name='payout_export_batches')",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT"
+        },
+        "created_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "coordination",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.PayoutExportBatchItem",
+      "file": "backend/apps/payments/event_payouts/export_models.py",
+      "scope": "batch.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "obligation_version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "payee_version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "remaining_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "batch": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(PayoutExportBatch, on_delete=models.CASCADE, related_name='items')",
+          "target": "PayoutExportBatch",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='export_items')",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT"
+        },
+        "payee_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayeeRevision', on_delete=models.CASCADE, related_name='export_items')",
+          "target": "'payments.EventPayeeRevision'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('batch', 'obligation'), name='payout_export_item_unique')]"
+        }
+      ],
+      "lifetime": "coordination",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.EventPayoutObligation",
+      "file": "backend/apps/payments/event_payouts/obligation_models.py",
+      "scope": "makerspace_id",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event_id_snapshot": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event_title_snapshot": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=200)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "source_kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=24, default='event_reimbursement', choices=[('event_reimbursement', 'event_reimbursement')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "source_uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "source_decision_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "domain_coordination_state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=8, default='attached', choices=[(v, v) for v in ('attached', 'detached')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "approved_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "eligibility_status": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=24, default='needs_acknowledgement', choices=[(v, v) for v in ('eligible', 'held', 'needs_acknowledgement')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "eligibility_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "eligibility_evidence": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Explicit literal typed JSON references below; G1 closed snapshot validation implemented. G installs shared registry mappings.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "hold_reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='open', choices=[(v, v) for v in ('open', 'settled', 'cancelled')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "terminal_financial_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "makerspace": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.PROTECT, related_name='event_payout_obligations')",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "owner_member": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='event_payout_obligations')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.SET_NULL, null=True, related_name='payout_obligations')",
+          "target": "'events.Event'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "current_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligationRevision', on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "'payments.EventPayoutObligationRevision'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('source_kind', 'source_uuid'), name='payout_unique_source'), models.CheckConstraint(condition=models.Q(version__gte=1, eligibility_revision__gte=1), name='payout_obligation_versions'), models.CheckConstraint(condition=~models.Q(state='cancelled') | models.Q(approved_minor=0), name='payout_cancelled_zero')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.EventPayoutObligationRevision",
+      "file": "backend/apps/payments/event_payouts/obligation_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "sequence": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "previous_revision": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('self', on_delete=models.CASCADE, null=True, related_name='next_revision')",
+          "target": "'self'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, choices=[(v, v) for v in ('decision', 'cancellation')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "approved_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "decision_uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "decision_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "cancellation_note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": true,
+          "classification": "scoped_pii",
+          "encryption_scope": "obligation.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "command_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "decision_summary_schema_version": {
+          "type": "PositiveSmallIntegerField",
+          "declaration": "models.PositiveSmallIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "decision_summary": {
+          "type": "TextField",
+          "declaration": "models.TextField()",
+          "pii": true,
+          "encryption_required": true,
+          "classification": "scoped_pii",
+          "encryption_scope": "obligation.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(EventPayoutObligation, on_delete=models.CASCADE, related_name='revisions')",
+          "target": "EventPayoutObligation",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('obligation', 'sequence'), name='payout_revision_sequence_unique'), models.UniqueConstraint(fields=('decision_uuid', 'decision_revision'), condition=models.Q(kind='decision'), name='payout_decision_origin_unique'), models.CheckConstraint(condition=models.Q(kind='decision', decision_uuid__isnull=False, decision_revision__isnull=False) | models.Q(kind='cancellation', approved_minor=0, decision_uuid__isnull=True, decision_revision__isnull=True), name='payout_revision_kind_shape'), models.CheckConstraint(condition=models.Q(sequence=1, previous_revision__isnull=True) | models.Q(sequence__gt=1, previous_revision__isnull=False), name='payout_revision_chain_shape')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.EventPayeeRevision",
+      "file": "backend/apps/payments/event_payouts/payee_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "country": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=2)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "template_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=24)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "template_version": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "method": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=16)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "details": {
+          "type": "TextField",
+          "declaration": "models.TextField()",
+          "pii": true,
+          "encryption_required": true,
+          "classification": "scoped_pii",
+          "encryption_scope": "obligation.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='current', choices=[(v, v) for v in ('current', 'superseded', 'purged')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "submitted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "verified_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "paid_closed_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "terminal_financial_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "closure_reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "purge_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "purged_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "disclosure_version": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='payee_revisions')",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "owner": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "verified_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('obligation',), condition=models.Q(state='current'), name='payout_payee_one_current'), models.CheckConstraint(condition=~models.Q(state='purged') | models.Q(details='', purged_at__isnull=False), name='payout_payee_purged_empty')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.EventPayeeReview",
+      "file": "backend/apps/payments/event_payouts/payee_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "sequence": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=20, choices=[(v, v) for v in ('verified', 'correction_requested')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "obligation.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='payee_reviews')",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "payee_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(EventPayeeRevision, on_delete=models.CASCADE, related_name='reviews')",
+          "target": "EventPayeeRevision",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('payee_revision', 'sequence'), name='payout_payee_review_sequence')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.EventPayoutEntry",
+      "file": "backend/apps/payments/event_payouts/payout_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "eligibility_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "amount_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "method": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=16, choices=[(v, v) for v in sorted(METHODS)])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reference": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "paid_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "recorded_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "command_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "chain_uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(default=uuid4)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "amends": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('self', on_delete=models.CASCADE, null=True, related_name='amended_by')",
+          "target": "'self'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "is_void": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='entries')",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "payee_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayeeRevision', on_delete=models.CASCADE, null=True, related_name='entries')",
+          "target": "'payments.EventPayeeRevision'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "recorded_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='recorded_event_payouts')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=models.Q(is_void=False, amount_minor__gt=0) | models.Q(is_void=True, amount_minor=0, amends__isnull=False), name='payout_entry_void_shape'), models.CheckConstraint(condition=models.Q(amends__isnull=True) | ~models.Q(reason_code=''), name='payout_amend_reason')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.ReceiptUse",
+      "file": "backend/apps/payments/event_payouts/receipt_models.py",
+      "scope": "makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "sha256": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "original_currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "declared_total_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "makerspace": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.PROTECT, related_name='receipt_uses')",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('makerspace', 'sha256'), name='receipt_use_unique_hash')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.ReceiptAllocationOverride",
+      "file": "backend/apps/payments/event_payouts/receipt_models.py",
+      "scope": "receipt_use.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "use_version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "allocation_snapshot": {
+          "type": "JSONField",
+          "declaration": "models.JSONField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Explicit literal typed JSON references below; G1 closed snapshot validation implemented. G installs shared registry mappings.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "total_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "receipt_use.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "receipt_use": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ReceiptUse, on_delete=models.CASCADE, related_name='overrides')",
+          "target": "ReceiptUse",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.ReceiptAllocation",
+      "file": "backend/apps/payments/event_payouts/receipt_models.py",
+      "scope": "receipt_use.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "use_version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "claim_uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "line_uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "amount_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "receipt_use": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ReceiptUse, on_delete=models.CASCADE, related_name='allocations')",
+          "target": "ReceiptUse",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "override": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ReceiptAllocationOverride, on_delete=models.CASCADE, null=True, related_name='allocations')",
+          "target": "ReceiptAllocationOverride",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('receipt_use', 'use_version', 'claim_uuid', 'line_uuid'), name='receipt_allocation_unique'), models.CheckConstraint(condition=models.Q(amount_minor__gt=0), name='receipt_allocation_positive')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.EventPayoutCommandReceipt",
+      "file": "backend/apps/payments/event_payouts/command_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name=\"ID\")",
+          "pii": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "makerspace": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.CASCADE"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='command_receipts')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "user_edge": "EXCLUDED_OMITTED_COORDINATION"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "command_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "response_reference": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "schema_status": "Explicit literal typed JSON references below; G1 closed snapshot validation implemented. G installs shared registry mappings."
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "ephemeral_command",
+      "database_guards": "G-owned additive migration and cross-event/scope guards required; see RB-R2-model-deltas.py"
+    },
+    {
+      "label": "payments.FinanceObjectCleanup",
+      "file": "backend/apps/payments/event_payouts/cleanup_models.py",
+      "scope": "deployment_coordination",
+      "fields": {
+        "id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(primary_key=True, default=uuid4, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "source_makerspace_id": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "asset_id": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "bucket": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=200)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "staging_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=500, unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "object_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=500, unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "next_attempt_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True, db_index=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "lease_token": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "lease_until": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "attempts": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "deleted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "last_error_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "permanent_fk_free_cleanup",
+      "database_guards": "G authors additive CreateModel and guard SQL supplied in RB3-B-model-deltas.py; not migrated here."
+    },
+    {
+      "label": "payments.FinanceRetentionPolicy",
+      "file": "backend/apps/payments/event_payouts/cleanup_models.py",
+      "scope": "makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "makerspace": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='finance_retention_policy')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.CASCADE"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "receipt_days": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField(default=2555)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "updated_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=models.Q(receipt_days__gte=1, receipt_days__lte=36500), name='finance_receipt_retention_range')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "G authors additive CreateModel and guard SQL supplied in RB3-B-model-deltas.py; not migrated here."
+    },
+    {
+      "label": "payments.FinanceSweepCursor",
+      "file": "backend/apps/payments/event_payouts/cleanup_models.py",
+      "scope": "deployment_coordination",
+      "fields": {
+        "key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=32, primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "last_id": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "deployment_coordination",
+      "database_guards": "G authors additive CreateModel and guard SQL supplied in RB3-B-model-deltas.py; not migrated here."
+    },
+    {
+      "label": "payments.FinanceRetentionPolicyRevision",
+      "file": "backend/apps/payments/event_payouts/cleanup_models.py",
+      "scope": "makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "makerspace": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='finance_policy_revisions')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.CASCADE"
+        },
+        "policy_version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "receipt_days": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "command_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('makerspace', 'policy_version'), name='finance_policy_revision_unique')]"
+        }
+      ],
+      "lifetime": "permanent_core",
+      "database_guards": "G authors additive CreateModel and guard SQL supplied in RB3-B-model-deltas.py; not migrated here."
+    }
+  ],
+  "routes": [
+    {
+      "suffix": "",
+      "name": "finance-event-payout-list",
+      "view": "v.FinancePayoutListView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": null,
+      "module": null
+    },
+    {
+      "suffix": "dashboard/",
+      "name": "finance-event-payout-dashboard",
+      "view": "v.PayoutDashboardView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/dashboard/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": "FinanceDashboard",
+      "module": null
+    },
+    {
+      "suffix": "exports/",
+      "name": "finance-event-payout-export",
+      "view": "v.ExportPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/exports/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "MaskedPayoutExportCommand",
+      "module": null
+    },
+    {
+      "suffix": "exports/<uuid:batch_id>/download/",
+      "name": "finance-event-payout-export-download",
+      "view": "v.DownloadExportView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/exports/{batch_id}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "MaskedPayoutBatchDetail",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/",
+      "name": "finance-event-payout-detail",
+      "view": "v.FinancePayoutDetailView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": null,
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/record/",
+      "name": "finance-event-payout-record",
+      "view": "v.RecordPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/record/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE AND RECORD_REIMBURSEMENT_PAYOUT",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayoutRecordCommand",
+      "module": null
+    },
+    {
+      "suffix": "entries/<uuid:entry_id>/amend/",
+      "name": "finance-event-payout-amend",
+      "view": "v.AmendPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/entries/{entry_id}/amend/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE AND RECORD_REIMBURSEMENT_PAYOUT",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayoutAmendCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/cancel/",
+      "name": "finance-event-payout-cancel",
+      "view": "v.CancelPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/cancel/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "CancelUnpaidObligationCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/verify/",
+      "name": "finance-event-payee-verify",
+      "view": "v.VerifyPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/payee/verify/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayeeVerifyCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/request-correction/",
+      "name": "finance-event-payee-request-correction",
+      "view": "v.CorrectPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/payee/request-correction/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayeeCorrectionCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/reveal/",
+      "name": "finance-event-payee-reveal",
+      "view": "v.RevealPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/payee/reveal/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayeeRevealCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/hold/",
+      "name": "finance-event-payout-hold",
+      "view": "v.HoldPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/hold/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayoutHoldCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/release-hold/",
+      "name": "finance-event-payout-release-hold",
+      "view": "v.ReleaseHoldView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/release-hold/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayoutHoldReleaseCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/acknowledge-eligibility/",
+      "name": "finance-event-payout-acknowledge-eligibility",
+      "view": "v.AcknowledgeEligibilityView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/acknowledge-eligibility/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "EligibilityAcknowledgementCommand",
+      "module": null
+    },
+    {
+      "suffix": "attachments/<int:asset_id>/download/",
+      "name": "finance-event-attachment-download",
+      "view": "FinanceAttachmentDownloadView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/attachments/{asset_id}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "VIEW_FINANCE",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": "FinanceAttachmentReadQuery",
+      "module": null
+    },
+    {
+      "suffix": "",
+      "name": "member-event-payout-list",
+      "view": "v.MemberPayoutListView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py",
+      "path": "/api/v1/member/event-payouts/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "owner",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": null,
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/",
+      "name": "member-event-payout-detail",
+      "view": "v.MemberPayoutDetailView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py",
+      "path": "/api/v1/member/event-payouts/{obligation_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "owner",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": null,
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/",
+      "name": "member-event-payout-payee",
+      "view": "v.MemberPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py",
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT",
+        "DELETE"
+      ],
+      "authority": "owner",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": "OwnerPayeeCommand / OwnerPayeeDeleteCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/reveal/",
+      "name": "member-event-payee-reveal",
+      "view": "v.MemberPayeeRevealView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py",
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee/reveal/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "owner",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": true,
+      "serializer": "PayeeRevealCommand",
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee-files/",
+      "name": "member-event-payee-file-create",
+      "view": "f.PayeeFileCreateView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py",
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee-files/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "owner",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": null,
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee-files/<int:asset_id>/",
+      "name": "member-event-payee-file-detail",
+      "view": "f.PayeeFileDetailView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py",
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee-files/{asset_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "DELETE"
+      ],
+      "authority": "owner",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": null,
+      "module": null
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee-files/<int:asset_id>/complete/",
+      "name": "member-event-payee-file-complete",
+      "view": "f.PayeeFileCompleteView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py",
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee-files/{asset_id}/complete/",
+      "methods": [
+        "POST"
+      ],
+      "authority": "owner",
+      "session_only": true,
+      "live_host": true,
+      "recent_reauth": false,
+      "serializer": null,
+      "module": null
+    }
+  ],
+  "audits": [
+    "finance.attachment.attached",
+    "finance.attachment.bound",
+    "finance.attachment.cleanup_complete",
+    "finance.attachment.cleanup_retry",
+    "finance.attachment.closed",
+    "finance.attachment.closure_preserved",
+    "finance.attachment.deleted",
+    "finance.attachment.discarded",
+    "finance.attachment.duplicate",
+    "finance.attachment.expired",
+    "finance.attachment.held",
+    "finance.attachment.hold_released",
+    "finance.attachment.initiated",
+    "finance.attachment.opened",
+    "finance.attachment.ready",
+    "finance.attachment.reopened",
+    "finance.attachment.upload_completed",
+    "finance.attachment.validation_failed",
+    "finance.attachment.validation_started",
+    "finance.event_payout.amended",
+    "finance.event_payout.annual_review_due",
+    "finance.event_payout.cancelled",
+    "finance.event_payout.decision_recorded",
+    "finance.event_payout.detached",
+    "finance.event_payout.eligibility_changed",
+    "finance.event_payout.export_created",
+    "finance.event_payout.export_downloaded",
+    "finance.event_payout.held",
+    "finance.event_payout.hold_released",
+    "finance.event_payout.payee_closed",
+    "finance.event_payout.payee_correction",
+    "finance.event_payout.payee_purged",
+    "finance.event_payout.payee_reopened",
+    "finance.event_payout.payee_revealed",
+    "finance.event_payout.payee_submitted",
+    "finance.event_payout.payee_verified",
+    "finance.event_payout.recorded",
+    "finance.event_payout.settlement_projected",
+    "finance.retention_policy.changed"
+  ],
+  "notices": [
+    "event_payout.approved",
+    "event_payout.decision_corrected",
+    "event_payout.cancelled",
+    "event_payout.payment_recorded",
+    "event_payout.payment_corrected",
+    "event_payout.payee_submitted",
+    "event_payout.payee_verified",
+    "event_payout.payee_correction",
+    "event_payout.held",
+    "event_payout.hold_released",
+    "event_payout.details_reminder"
+  ],
+  "reminder_sources": [
+    {
+      "key": "finance.event_payout_details",
+      "module": "request_workflow",
+      "provider": "apps.payments.event_payouts.reminders.PAYOUT_DETAILS_SOURCE"
+    }
+  ],
+  "runtime_registration": {
+    "notice_source": "apps.payments.event_payouts.notices.NOTICE_SOURCE",
+    "notice_kind": "finance.event_payout",
+    "finance_include": "path(\"api/v1/admin/makerspaces/<int:makerspace_id>/event-payouts/\", include(\"apps.payments.event_payouts.urls_finance\")),",
+    "member_include": "path(\"api/v1/member/event-payouts/\", include(\"apps.payments.event_payouts.urls_member\")),",
+    "preflight": "preflight.install(provider); provider.read(obligation=...) returns Facts(evidence=G1 eligibility, participation_eligible, attendance_eligible, project_eligible, event_active, owner_active, retained_only=False). Nonlocking canonical retained-data read only. Unavailable Events reader returns preserved Facts with retained_only=True; explicit finance acknowledgement is then required.",
+    "dashboard": "dashboard.install(pool_reader); pool_reader(makerspace_id=...) supplies domain-owned money metrics",
+    "scanner": "scan_policy.install(shared_policy_reader): query-free existing shared scanner configuration -> ScannerPolicy(backend, host, port); absent or unhealthy fails 503, explicit backend none records skipped. No second finance scan switch."
+  },
+  "retention_registration": "apps.payments.event_payouts.retention_registration.providers() returns callable retained adapters; G registers in always-present core ready and shared registries.",
+  "source_boundaries": {
+    "interactive": "transactions.command",
+    "workers": "worker_boundary.locked_asset / locked_obligation",
+    "validation": "attachment_processing.process holds source boundary across external I/O, releases DB transaction/row locks before I/O",
+    "cleanup": "cleanup.delete_one: deployment recovery NORMAL only, FK-free coordination independent of tenant/source",
+    "fanout": "tasks.page persistent keyset cursor advances even on failed/frozen/held subjects",
+    "policy": "policy_workflow.revise source/fences/host/authority; policy revisions immutable",
+    "crypto": "transactions.prepared_scope takes source lock-only boundary, prepares shared tenant keys outside atomic, then wraps account/global/tenant fences and host/authority/obligation locks.",
+    "direct_retention_task": "tasks.run_due_retention_task queued after hold release; same retained source/fences and recovery NORMAL checks."
+  },
+  "object_fields": [
+    {
+      "model": "payments.FinanceAttachment",
+      "fields": [
+        "staging_key",
+        "staging_version_id",
+        "object_key",
+        "final_version_id"
+      ]
+    },
+    {
+      "model": "payments.FinanceObjectCleanup",
+      "fields": [
+        "staging_key",
+        "object_key"
+      ],
+      "bucket": "bucket field snapshot",
+      "policy": "permanent coordination locators, all-version deletion/reconciliation only; never archive content"
+    }
+  ],
+  "portable_status": "Concrete typed integer/UUID/eligibility/allocation/hold remappers; full/redacted custodial transforms; attached import requires proven included domain closure; source uploads/receipts/leases/outboxes do not replay. G installs custodial converters, ordinary FK/PK maps, object journals and target encryption.",
+  "tests": "RB3-B-rerun-files.txt: 62 model-free core tests pass. PostgreSQL/decoder/storage runtime tests written but not executable on this host. No frontend tests touched.",
+  "implemented_modules": [
+    "backend/apps/payments/event_payouts/__init__.py",
+    "backend/apps/payments/event_payouts/annual_review.py",
+    "backend/apps/payments/event_payouts/attachment_content.py",
+    "backend/apps/payments/event_payouts/attachment_models.py",
+    "backend/apps/payments/event_payouts/attachment_policy.py",
+    "backend/apps/payments/event_payouts/attachment_processing.py",
+    "backend/apps/payments/event_payouts/attachment_storage.py",
+    "backend/apps/payments/event_payouts/attachment_uploads.py",
+    "backend/apps/payments/event_payouts/attachment_workflow.py",
+    "backend/apps/payments/event_payouts/authority.py",
+    "backend/apps/payments/event_payouts/cleanup.py",
+    "backend/apps/payments/event_payouts/cleanup_models.py",
+    "backend/apps/payments/event_payouts/command_models.py",
+    "backend/apps/payments/event_payouts/coordination.py",
+    "backend/apps/payments/event_payouts/csv_values.py",
+    "backend/apps/payments/event_payouts/dashboard.py",
+    "backend/apps/payments/event_payouts/decision_bindings.py",
+    "backend/apps/payments/event_payouts/decision_snapshots.py",
+    "backend/apps/payments/event_payouts/decision_workflow.py",
+    "backend/apps/payments/event_payouts/downloads.py",
+    "backend/apps/payments/event_payouts/eligibility_models.py",
+    "backend/apps/payments/event_payouts/eligibility_workflow.py",
+    "backend/apps/payments/event_payouts/errors.py",
+    "backend/apps/payments/event_payouts/export_models.py",
+    "backend/apps/payments/event_payouts/exports.py",
+    "backend/apps/payments/event_payouts/file_commands.py",
+    "backend/apps/payments/event_payouts/http.py",
+    "backend/apps/payments/event_payouts/ledger_math.py",
+    "backend/apps/payments/event_payouts/model_base.py",
+    "backend/apps/payments/event_payouts/models.py",
+    "backend/apps/payments/event_payouts/notices.py",
+    "backend/apps/payments/event_payouts/object_capture.py",
+    "backend/apps/payments/event_payouts/obligation_models.py",
+    "backend/apps/payments/event_payouts/obligation_workflow.py",
+    "backend/apps/payments/event_payouts/payee_models.py",
+    "backend/apps/payments/event_payouts/payee_workflow.py",
+    "backend/apps/payments/event_payouts/payout_models.py",
+    "backend/apps/payments/event_payouts/payout_workflow.py",
+    "backend/apps/payments/event_payouts/policy_workflow.py",
+    "backend/apps/payments/event_payouts/portable.py",
+    "backend/apps/payments/event_payouts/preflight.py",
+    "backend/apps/payments/event_payouts/purge.py",
+    "backend/apps/payments/event_payouts/queries.py",
+    "backend/apps/payments/event_payouts/receipt_models.py",
+    "backend/apps/payments/event_payouts/reminders.py",
+    "backend/apps/payments/event_payouts/retention.py",
+    "backend/apps/payments/event_payouts/retention_policy.py",
+    "backend/apps/payments/event_payouts/retention_registration.py",
+    "backend/apps/payments/event_payouts/scan_policy.py",
+    "backend/apps/payments/event_payouts/serializers.py",
+    "backend/apps/payments/event_payouts/serializers_files.py",
+    "backend/apps/payments/event_payouts/serializers_finance.py",
+    "backend/apps/payments/event_payouts/serializers_responses.py",
+    "backend/apps/payments/event_payouts/serializers_snapshot.py",
+    "backend/apps/payments/event_payouts/tasks.py",
+    "backend/apps/payments/event_payouts/templates.py",
+    "backend/apps/payments/event_payouts/transactions.py",
+    "backend/apps/payments/event_payouts/urls_finance.py",
+    "backend/apps/payments/event_payouts/urls_member.py",
+    "backend/apps/payments/event_payouts/validation.py",
+    "backend/apps/payments/event_payouts/views_files.py",
+    "backend/apps/payments/event_payouts/views_finance.py",
+    "backend/apps/payments/event_payouts/views_member.py",
+    "backend/apps/payments/event_payouts/wire.py",
+    "backend/apps/payments/event_payouts/worker_boundary.py"
+  ],
+  "remaining": "G migrations/shared registry/provider/mount/scheduler wiring and actual PostgreSQL/storage/browser integration acceptance; exact ownership handoff in RB3-B-report.txt.",
+  "typed_json_references": {
+    "payments.EventPayoutCommandReceipt.response_reference": {
+      "shape": "id UUID, version, state; optional entry_id/payee_revision_id/cancellation_revision_id/hold_id/sequence/terminal_financial_at/eligibility_revision/asset_id/generation/status_url",
+      "disposition": "DROP entire ephemeral row on import; never payee values or upload URLs"
+    },
+    "payments.EventPayoutObligationRevision.decision_summary": {
+      "version": 1,
+      "validator": "decision_snapshots.validate_summary",
+      "remapper": "portable.remap_summary",
+      "identity_fields": {
+        "decision.actor_id": "accounts.User",
+        "eligibility.registration_id": "events.EventRegistration",
+        "eligibility.checkin_event_id": "events.EventCheckInEvent",
+        "eligibility.correction_watermark": "events.EventCheckInEvent watermark, zero sentinel preserved",
+        "lines[].receipt.attachment_id": "payments.FinanceAttachment",
+        "lines[].receipt.receipt_use_id": "payments.ReceiptUse"
+      },
+      "inert_uuid_provenance": [
+        "source.claim_uuid",
+        "source.decision_uuid",
+        "award.uuid",
+        "lines[].line_uuid",
+        "lines[].receipt.override_uuid",
+        "lines[].receipt.override_allocation[].claim_uuid",
+        "lines[].receipt.override_allocation[].line_uuid",
+        "eligibility.attestation_uuid",
+        "eligibility.project_snapshot_ref"
+      ],
+      "fidelity": "full re-encrypt; redacted uses literal [redacted] in existing closed-schema text fields, retains arithmetic and provenance",
+      "uuid_mapping": "portable.remap_summary requires explicit map_uuid in addition to map_id; source/decision/award/line/override/attestation/project-reference UUID mappings must be stable and shared with corresponding scalar typed fields. If a purged domain row does not travel, G explicitly chooses inert-provenance preservation."
+    },
+    "payments.EventPayoutObligation.eligibility_evidence": {
+      "shape": "G1 eligibility object at decision; Facts.as_dict(): evidence + five eligibility boolean flags + retained_only boolean after canonical publication/acknowledgement/purge.",
+      "references": "same typed eligibility references as decision summary; no answers/contacts/bank values"
+    },
+    "payments.PayoutEligibility.evidence": {
+      "shape": "same as obligation.eligibility_evidence"
+    },
+    "payments.FinanceAttachment.deletion_receipt": {
+      "shape": "cleanup_id UUID, deleted_at canonical datetime, all_versions boolean",
+      "references": {
+        "cleanup_id": "Source-local inert cleanup receipt UUID; preserve as historical provenance, do not replay; target creates its own locator."
+      }
+    },
+    "payments.PayoutHold.evidence_refs": {
+      "shape": "unique list of positive IDs, max 100; must belong to this obligation",
+      "target": "payments.PayoutEligibility",
+      "remapper": "portable.remap_hold_refs"
+    },
+    "payments.ReceiptAllocationOverride.allocation_snapshot": {
+      "shape": "closed list of claim_uuid, line_uuid, original_amount_minor",
+      "remapper": "portable.remap_allocations; same UUID maps as summary/ReceiptAllocation typed scalar fields"
+    }
+  },
+  "coordination_provider": "apps.event_reimbursements.cancellation_coordination.RetainedCancellationProvider installed by G through core coordination.install",
+  "typed_uuid_fields": {
+    "adapter": "portable.remap_core_references (non-FK only; ordinary FK/PK maps remain G-owned)",
+    "payments.EventPayoutObligation.source_uuid": "event_reimbursements.ReimbursementClaim.uuid",
+    "payments.EventPayoutObligationRevision.decision_uuid": "event_reimbursements.ClaimDecision.uuid, nullable on cancellation",
+    "payments.FinanceAttachment.binding_uuid": "claim -> ReimbursementClaim.uuid; payee -> EventPayeeRevision.id",
+    "payments.ReceiptAllocation.claim_uuid": "ReimbursementClaim.uuid",
+    "payments.ReceiptAllocation.line_uuid": "ClaimLine.line_uuid"
+  }
+}

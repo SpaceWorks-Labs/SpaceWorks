@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "owner": "F: deploy/static/cloudflare/free/**",
+  "backend_profile": "free",
+  "schedule": "*/10 * * * *",
+  "upstream": "fixed exact HTTPS api_origin; no request-selected upstream",
+  "secret": {
+    "source": "same generated FREE_TICK_SECRET as protected backend config",
+    "header": "X-Cron-Secret",
+    "custody": "Worker server-side secret only; no VITE variable, frontend bundle, URL/query/body or logs"
+  },
+  "scheduled": {
+    "method": "POST",
+    "path": "/api/v1/internal/free/tick",
+    "body": "{}",
+    "max_attempts": 3,
+    "timeout_seconds_per_attempt": 180,
+    "backoff_seconds": [
+      10,
+      30
+    ],
+    "max_response_bytes": 65536,
+    "retry_statuses": [
+      429,
+      500,
+      502,
+      503,
+      504
+    ],
+    "auth_failures": "stop; never log response body",
+    "redirects": "deny; do not forward secret to a redirect target",
+    "work": "network request only; all computation/checkpoints run inside bounded backend tick"
+  },
+  "browser_fetch": {
+    "deny": [
+      "/control",
+      "/mfa/control",
+      "/api/v1/internal"
+    ],
+    "must_never_attach_tick_secret": true,
+    "api_proxy": "same-origin /api; preserve exact Host/origin/CSRF contract and stream bodies",
+    "direct_storage": "presigned uploads/downloads avoid Worker/web body limits"
+  },
+  "publication_gate": "Use actual deployed Worker + backend receipt; validate free CPU/subrequest/request allowances and cold starts; no SLA/anti-sleep promise.",
+  "source": "https://developers.cloudflare.com/workers/platform/limits/"
+}

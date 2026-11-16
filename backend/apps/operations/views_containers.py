@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import OuterRef, Subquery
 from django.db import transaction
 from django.core.exceptions import ValidationError as ModelValidationError
@@ -57,6 +58,11 @@ class ContainerListCreateView(generics.ListCreateAPIView):
         require_action(self.request.user, rbac.Action.VIEW_INVENTORY, makerspace_id)
         return _with_active_box_qr(rbac.scope_by_action(self.request.user, rbac.Action.VIEW_INVENTORY, Box.objects.filter(makerspace_id=makerspace_id))).order_by("label")
 
+    def create(self, request, *args, **kwargs):
+        # The module gate answers before payload validation: an off module never reveals field errors.
+        require_module(self.kwargs["makerspace_id"], "containers")
+        return super().create(request, *args, **kwargs)
+
     @transaction.atomic
     def perform_create(self, serializer):
         makerspace_id = self.kwargs["makerspace_id"]
@@ -66,7 +72,7 @@ class ContainerListCreateView(generics.ListCreateAPIView):
         if serializer.validated_data.get("kit_components"):
             require_feature(space, "loans.kit_checklist")
         if parent and parent.makerspace_id != makerspace_id:
-            raise ValidationError({"parent": "Parent belongs to a different makerspace."})
+            raise ValidationError({"parent": gettext("Parent belongs to a different makerspace.")})
         box = serializer.save(makerspace_id=makerspace_id)
         QrCode.objects.get_or_create(
             makerspace_id=makerspace_id,
@@ -101,7 +107,7 @@ class ContainerDetailView(generics.RetrieveUpdateAPIView):
         require_module(serializer.instance.makerspace, "containers")
         parent = serializer.validated_data.get("parent")
         if parent and parent.makerspace_id != serializer.instance.makerspace_id:
-            raise ValidationError({"parent": "Parent belongs to a different makerspace."})
+            raise ValidationError({"parent": gettext("Parent belongs to a different makerspace.")})
         box = serializer.save()
         audit.record(self.request.user, "container.moved", makerspace=box.makerspace, target=box)
 

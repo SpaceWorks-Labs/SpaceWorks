@@ -30,6 +30,8 @@ class AdminMembershipAdmissionView(APIView):
     @extend_schema(description="Requires manage_makerspace. Paid admissions require charge tracking, not an online gateway.", tags=["Admin memberships"], request=AdmissionSettingsSerializer, responses={200: AdmissionSettingsSerializer, **ERRORS})
     def patch(self, request, makerspace_id):
         space = self._space(request, makerspace_id)
+        from apps.makerspaces.member_unit_scope import require_space_wide
+        require_space_wide(request.user, space.pk)  # parity O-B1: a unit-scoped role cannot change space-wide settings
         serializer = AdmissionSettingsSerializer(data=request.data, partial=True, context={"makerspace": space})
         serializer.is_valid(raise_exception=True)
         row = update_settings(request.user, space, serializer.validated_data)

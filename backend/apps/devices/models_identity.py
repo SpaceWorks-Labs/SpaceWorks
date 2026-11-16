@@ -6,6 +6,7 @@ append-only ``DeviceEvent``. Every status/key change goes through the named serv
 ``services_enrollment`` / ``services_identity`` -- there is no serializer or admin write.
 """
 
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -19,11 +20,12 @@ from apps.makerspaces.models import Makerspace
 class Device(models.Model):
     class Kind(models.TextChoices):
         PRINTER = "printer", "Printer"
-        LABEL_PRINTER = "label_printer", "Label printer"
+        LABEL_PRINTER = "label_printer", gettext_noop("Label printer")
         GENERIC = "generic", "Generic"
+        ADAPTER = "adapter", gettext_noop("Device adapter")
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending enrollment"
+        PENDING = "pending", gettext_noop("Pending enrollment")
         ACTIVE = "active", "Active"
         REVOKED = "revoked", "Revoked"
 

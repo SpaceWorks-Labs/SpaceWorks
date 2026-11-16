@@ -45,9 +45,8 @@ class RequestReviewAdminMixin:
         ]
 
     def _review_object(self, request, request_id):
-        # `self.get_queryset(request)` and NOT `HardwareRequest.objects`: the superadmin
-        # queryset excludes hard-hidden makerspaces, and reaching around it here would
-        # make this URL the one place that ignores the control-plane hidden-tenant rule.
+        # `self.get_queryset(request)` and NOT `HardwareRequest.objects`, so this URL
+        # honours the same admin scoping as the changelist.
         queryset = self.get_queryset(request).prefetch_related("items__product")
         obj = queryset.filter(pk=request_id).first()
         if obj is None:

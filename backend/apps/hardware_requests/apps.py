@@ -8,3 +8,10 @@ class HardwareRequestsConfig(AppConfig):
 
     def ready(self):
         from . import checks  # noqa: F401
+        from .notifications_p2_requests import register
+        from .notifications_p2_reminders import register as register_reminders
+        from .notifications_p2_reports import register as register_reports
+        register()
+        register_reminders()
+        register_reports()
+        from . import guest_signals  # noqa: F401  (decision 223 (f): sponsor notice + incident on a new loss/damage row)

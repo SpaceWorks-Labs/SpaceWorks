@@ -10,13 +10,14 @@ stay, their surfaces stop being served, and reinstalling restores them. That is
 what makes uninstall safe enough to not need a destructive-confirmation prompt.
 """
 
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 
 from apps.audit import services as audit
 from apps.makerspaces.capabilities import prune_features, validate_capabilities
+from apps.makerspaces.capability_audit import switch_context
 from apps.makerspaces.models import Makerspace
-from apps.makerspaces.module_profiles import MINIMAL, profile_modules
+from apps.makerspaces.module_aliases import RETIRED_MODULE_ALIASES, canonical_module_key, canonical_module_keys
+from apps.makerspaces.module_profiles import MINIMAL, profile_features, profile_modules
 from apps.makerspaces.request_access import effective_policy
 from apps.makerspaces.module_registry import (
     BY_KEY,
@@ -26,6 +27,7 @@ from apps.makerspaces.module_registry import (
     module_available,
     with_dependencies,
 )
+from config.locale_resolution import display
 
 
 class ModuleInstallError(Exception):
@@ -34,6 +36,7 @@ class ModuleInstallError(Exception):
 
 def replace_modules(makerspace, modules, actor=None):
     """Apply an explicitly reviewed complete set through the same uninstall guards."""
+    modules = canonical_module_keys(modules)
     if set(modules) - BY_KEY.keys() or any(not module_available(key) for key in modules):
         raise ModuleInstallError("Unknown or unavailable module.")
     with transaction.atomic():
@@ -44,13 +47,13 @@ def replace_modules(makerspace, modules, actor=None):
 
 def module_status(makerspace):
     """Every registered module with its state for this makerspace."""
-    enabled = set(makerspace.enabled_modules or [])
+    enabled = set(canonical_module_keys(makerspace.enabled_modules))
     core = core_module_keys()
     return [
         {
             "key": definition.key,
-            "label": definition.label,
-            "description": definition.description,
+            "label": display(definition.label),
+            "description": display(definition.description),
             "installed": definition.key in enabled or definition.key in core,
             "core": definition.key in core,
             # False when the owning app is tombstoned. Reported separately from
@@ -64,7 +67,11 @@ def module_status(makerspace):
 
 
 def install_module(makerspace, key, actor=None):
-    """Enable `key` and anything it requires. Returns the keys newly added."""
+    """Enable `key` and anything it requires. Returns the keys newly added.
+
+    A retired key installs the module it was folded into (`printing` -> `machine_service`).
+    """
+    key = canonical_module_key(key)
     if key not in BY_KEY:
         raise ModuleInstallError(f"Unknown module {key!r}.")
     # Refused rather than silently accepted: installing a module this deployment does
@@ -77,19 +84,50 @@ def install_module(makerspace, key, actor=None):
             f"{', '.join(unavailable)} is not shipped by this deployment "
             "(TOMBSTONED_APPS). Enabling it would have no effect."
         )
+    from apps.managed_hosting.enforcement import disallowed_modules
+    blocked = disallowed_modules(makerspace, with_dependencies({key}))  # #187A; [] with plans off
+    if blocked:
+        raise ModuleInstallError(
+            f"{', '.join(blocked)} is not included in this space's hosting plan. "
+            "Ask the platform operator to change the plan."
+        )
     with transaction.atomic():
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         before = set(locked.enabled_modules or [])
         added = sorted(with_dependencies({key}) - before)
         if not added:
             return []
-        _apply(locked, before | set(added), actor)
+        _apply(locked, before | set(added), actor, add_features=_tracking_defaults(added))
     makerspace.refresh_from_db(fields=["enabled_modules"])
     return added
 
 
+def _tracking_defaults(modules):
+    """#184 / G9: a module installed now comes with its default-on `charges.<domain>` key.
+
+    The key may have been pruned while its module was off (any capability save drops a
+    feature whose parent is missing), and money owed is tracked by default (#84). Only the
+    charge-tracking family is re-added: every other switch keeps the operator's choice.
+    """
+    from apps.makerspaces.capabilities import FEATURES
+
+    return sorted(key for key, definition in FEATURES.items()
+                  if key.startswith("charges.") and definition.default_enabled
+                  and definition.parent_module in set(modules))
+
+
 def uninstall_module(makerspace, key, actor=None):
-    """Disable `key`, keeping its data. Refuses core and depended-on modules."""
+    """Disable `key`, keeping its data. Refuses core and depended-on modules.
+
+    A retired key is refused rather than mapped: switching off `printing` used to leave the
+    rest of machine service running, so reading it as "uninstall machine_service" would
+    switch off far more than the caller asked for.
+    """
+    if key in RETIRED_MODULE_ALIASES:
+        raise ModuleInstallError(
+            f"{key} is no longer a separate module; it is part of {RETIRED_MODULE_ALIASES[key]}. "
+            f"Uninstall {RETIRED_MODULE_ALIASES[key]} to switch it off."
+        )
     if key not in BY_KEY:
         raise ModuleInstallError(f"Unknown module {key!r}.")
     if key in core_module_keys():
@@ -106,7 +144,10 @@ def uninstall_module(makerspace, key, actor=None):
             raise ModuleInstallError(
                 f"{key} is required by {', '.join(blockers)}. Uninstall those first."
             )
-        _apply(locked, before - {key}, actor)
+        # A stored retired alias of `key` (e.g. `printing` for `machine_service`) reads as `key`,
+        # so leaving it behind would canonicalize the module straight back on (decision 340b).
+        aliases = {alias for alias, live in RETIRED_MODULE_ALIASES.items() if live == key}
+        _apply(locked, before - {key} - aliases, actor)
     makerspace.refresh_from_db(fields=["enabled_modules"])
     return [key]
 
@@ -132,18 +173,12 @@ def apply_profile(makerspace, profile, actor=None):
             if any(before_publication.values()):
                 audit.record(actor, "makerspace.publication_changed", makerspace=locked, target=locked,
                              meta={"before": before_publication, "after": {"site": False, "catalogue": False}})
-        _apply(locked, keys | unknown, actor)
-    makerspace.refresh_from_db(fields=["enabled_modules", "public_inventory_enabled", "public_site_enabled"])
+        _apply(locked, keys | unknown, actor, add_features=profile_features(profile))
+    makerspace.refresh_from_db(fields=["enabled_modules", "enabled_features", "public_inventory_enabled", "public_site_enabled"])
     return sorted(keys | unknown)
 
 
-def _apply(locked, modules, actor):
-    from apps.backup.module_gate import assert_uninstall_allowed
-
-    try:
-        assert_uninstall_allowed(locked, set(locked.enabled_modules or []), set(modules))
-    except DjangoValidationError as exc:
-        raise ModuleInstallError(exc.messages[0]) from exc
+def _apply(locked, modules, actor, add_features=()):
     before = sorted(set(locked.enabled_modules or []))
     before_features = sorted(set(locked.enabled_features or []))
     # Installing `membership` FORCES account-less requests off inside `Makerspace.save()`
@@ -155,9 +190,10 @@ def _apply(locked, modules, actor):
     # Drop features whose modules are going away BEFORE validating, or the validation
     # refuses the change outright -- see `prune_features` for why this is a removal
     # rather than an error or a silent keep.
-    kept_features, dropped_features = prune_features(locked.enabled_features or [], modules)
+    kept_features, dropped_features = prune_features(
+        sorted({*(locked.enabled_features or []), *add_features}), modules)
     canonical_modules, canonical_features = validate_capabilities(
-        sorted(modules), kept_features
+        sorted(modules), kept_features, dormant_defaults=kept_features
     )
     locked.enabled_modules = canonical_modules
     locked.enabled_features = canonical_features
@@ -176,6 +212,8 @@ def _apply(locked, modules, actor):
             # away is the kind of change an operator will otherwise discover only
             # when something stops charging.
             "features_dropped_with_modules": dropped_features,
+            # Who acted at which level (module audit 0.12.0); see `capability_audit`.
+            **switch_context(actor, "modules"),
         }
         if request_access_changed:
             meta["request_access"] = {

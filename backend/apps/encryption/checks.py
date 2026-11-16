@@ -6,8 +6,7 @@ the key-broker / wrapping configuration so that enabling encryption with missing
 or malformed key material fails ``manage.py check`` and process startup instead
 of silently succeeding and failing at the first PII operation.
 
-Disabled mode is completely key-independent: the check is a no-op and never
-parses a key or imports boto3.
+Mandatory finance fields require a wrapping broker even with optional PII off.
 """
 
 from django.conf import settings
@@ -16,7 +15,8 @@ from django.core.checks import Error, register
 
 @register()
 def check_pii_wrapping_configuration(app_configs, **kwargs):
-    if not settings.PII_ENCRYPTION_ENABLED:
+    from .mandatory_fields import mandatory_fields
+    if not settings.PII_ENCRYPTION_ENABLED and not mandatory_fields():
         return []
 
     broker = settings.PII_KEY_BROKER
@@ -29,7 +29,7 @@ def check_pii_wrapping_configuration(app_configs, **kwargs):
         except Exception as exc:  # generic message only; no key material
             errors.append(
                 Error(
-                    "PII_ENCRYPTION_ENABLED is true but PII_MASTER_KEY is missing "
+                    "Scoped PII encryption requires PII_MASTER_KEY, which is missing "
                     "or invalid for the local key broker.",
                     hint=str(exc),
                     id="encryption.E001",
@@ -42,7 +42,7 @@ def check_pii_wrapping_configuration(app_configs, **kwargs):
             errors.append(
                 Error(
                     "PII_KEY_BROKER=aws_kms requires boto3 "
-                    "(install backend/requirements-kms.txt).",
+                    "from backend/requirements.txt.",
                     id="encryption.E002",
                 )
             )
@@ -61,6 +61,8 @@ def check_pii_wrapping_configuration(app_configs, **kwargs):
                 id="encryption.E004",
             )
         )
+    if not settings.PII_ENCRYPTION_ENABLED:
+        return errors
     from apps.encryption.blind_index import search_key
     try:
         key = search_key()

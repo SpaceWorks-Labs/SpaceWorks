@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
@@ -82,24 +83,24 @@ class SubdomainRequestListCreateView(generics.ListCreateAPIView):
         require_action(request.user, rbac.Action.MANAGE_MAKERSPACE, makerspace_id)
 
         if domain_verification.is_self_host():
-            raise ValidationError("Subdomains are only available on managed hosting.")
+            raise ValidationError(gettext("Subdomains are only available on managed hosting."))
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         normalized = serializer.validated_data["requested_label"].strip().lower()
         if "." in normalized or not provisioning.LABEL_RE.fullmatch(normalized):
-            raise ValidationError("Enter a valid single subdomain label.")
+            raise ValidationError(gettext("Enter a valid single subdomain label."))
         if normalized in provisioning.RESERVED_LABELS:
-            raise ValidationError("This subdomain label is reserved.")
+            raise ValidationError(gettext("This subdomain label is reserved."))
 
         platform_suffix = str(settings.PLATFORM_DOMAIN_SUFFIX or "").strip().lower()
         current_domain = (makerspace.frontend_domain or "").lower()
         if current_domain and current_domain.endswith(platform_suffix):
-            raise ValidationError("This space already has a subdomain.")
+            raise ValidationError(gettext("This space already has a subdomain."))
 
         target = f"{normalized}{platform_suffix}"
         if Makerspace.objects.filter(frontend_domain__iexact=target).exists():
-            raise ValidationError("That subdomain is already taken.")
+            raise ValidationError(gettext("That subdomain is already taken."))
 
         try:
             with transaction.atomic():
@@ -110,7 +111,7 @@ class SubdomainRequestListCreateView(generics.ListCreateAPIView):
                 )
         except IntegrityError as exc:
             raise ValidationError(
-                "You already have a pending subdomain request."
+                gettext("You already have a pending subdomain request.")
             ) from exc
 
         audit.record(

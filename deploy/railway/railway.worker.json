@@ -1,0 +1,9 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "deploy": {
+    "startCommand": "--role worker python -m scripts.run_cloud_role worker",
+    "numReplicas": 1,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  }
+}

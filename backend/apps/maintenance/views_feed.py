@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 
 from django.http import HttpResponse
@@ -34,7 +35,7 @@ class FeedIssuedSerializer(serializers.Serializer):
 class EmptySerializer(serializers.Serializer):
     def validate(self, attrs):
         if self.initial_data:
-            raise serializers.ValidationError("No fields are accepted.")
+            raise serializers.ValidationError(gettext("No fields are accepted."))
         return attrs
 
 

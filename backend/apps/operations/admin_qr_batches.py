@@ -7,10 +7,12 @@ from unfold.admin import ModelAdmin, TabularInline
 
 from apps.accounts import rbac
 from apps.audit import services as audit
+from apps.makerspaces.guards import SurfaceOff
 from apps.operations import services
 from apps.operations.models import QrPrintBatch, QrPrintBatchItem
 from apps.operations.qr_zip import build_batch_zip
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class QrPrintBatchItemInline(TabularInline):
@@ -30,8 +32,9 @@ class QrPrintBatchItemInline(TabularInline):
 @admin.register(QrPrintBatch)
 class QrPrintBatchAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     actions = ["mark_printed_selected", "download_zip_selected"]
-    list_display = ("id", "makerspace", "title", "status", "created_at", "printed_at")
+    list_display = ("title", "makerspace", "status", "created_at", "printed_at")
     list_filter = ("status", "makerspace")
+    search_fields = ("title", "makerspace__name")
     inlines = (QrPrintBatchItemInline,)
     # Status transitions belong to mark_batch_printed, never the admin form.
     readonly_fields = ("status", "printed_at")
@@ -61,13 +64,13 @@ class QrPrintBatchAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         audit.record(request.user, "qr_print_batch.items_saved", makerspace=form.instance.makerspace,
                      target=form.instance, meta={"item_count": form.instance.items.count()})
 
-    @admin.action(description="Mark selected QR print batches as printed")
+    @admin.action(description=gettext_lazy("Mark selected QR print batches as printed"))
     def mark_printed_selected(self, request, queryset):
         success_count = 0
         for batch in queryset:
             try:
                 services.mark_batch_printed(request.user, batch)
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
                 self.message_user(request, f"{batch.pk}: {exc}", level=messages.ERROR)
             else:
                 success_count += 1
@@ -75,7 +78,7 @@ class QrPrintBatchAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         if success_count:
             self.message_user(request, f"Marked {success_count} QR print batch(es) as printed.", level=messages.SUCCESS)
 
-    @admin.action(description="Download QR ZIP (select exactly one batch)")
+    @admin.action(description=gettext_lazy("Download QR ZIP (select exactly one batch)"))
     def download_zip_selected(self, request, queryset):
         if queryset.count() != 1:
             self.message_user(request, "Select exactly one batch to download.", level=messages.ERROR)

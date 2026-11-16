@@ -1,10 +1,11 @@
+from django.utils.translation import gettext
 import hmac
 import logging
 
 from cryptography.fernet import InvalidToken
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
@@ -13,16 +14,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
-from apps.accounts.models import User
 from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
-from apps.makerspaces.domain_verification import is_self_host
-from apps.makerspaces.models import (
-    Makerspace,
-    MakerspaceMembership,
-    MakerspaceRole,
-)
-from apps.makerspaces.platform import staff_payment_settings_url
+from apps.makerspaces.domain_verification import hosts_other_spaces
+from apps.payments_rail.views_connect_support import _PostExchangeRejected, _lock_callback_authority, _redirect
 from apps.makerspaces.servability import is_servable
 from apps.payments.connect import (
     account_has_pending_payments,
@@ -51,52 +46,6 @@ from apps.payments.stripe_client import (
 
 logger = logging.getLogger(__name__)
 
-class _PostExchangeRejected(Exception):
-    pass
-
-
-def _redirect(makerspace=None, outcome="failed"):
-    response = HttpResponseRedirect(
-        staff_payment_settings_url(makerspace, outcome=outcome)
-    )
-    response["Referrer-Policy"] = "no-referrer"
-    return response
-
-
-def _lock_callback_authority(makerspace_id, actor_id):
-    makerspace = Makerspace.objects.select_for_update().get(pk=makerspace_id)
-    actor = User.objects.select_for_update().get(pk=actor_id)
-
-    membership_snapshot = MakerspaceMembership.objects.filter(
-        makerspace_id=makerspace_id,
-        user_id=actor_id,
-    ).values_list("assigned_role_id", flat=True).first()
-    if membership_snapshot:
-        MakerspaceRole.objects.select_for_update().get(pk=membership_snapshot)
-    membership = (
-        MakerspaceMembership.objects.select_for_update(of=("self",))
-        .select_related("assigned_role")
-        .filter(makerspace_id=makerspace_id, user_id=actor_id)
-        .first()
-    )
-    if membership and membership.assigned_role_id != membership_snapshot:
-        return makerspace, actor, False
-
-    authorized = bool(
-        is_servable(makerspace)
-        and active_user(actor)
-        and (
-            (
-                (actor.is_superuser or actor.role == User.Role.SUPERADMIN)
-                and makerspace.superadmin_access_enabled
-            )
-            or rbac.Action.MANAGE_MAKERSPACE
-            in rbac.actions_for_membership(membership)
-        )
-    )
-    return makerspace, actor, authorized
-
-
 class StripeConnectCallbackView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -114,7 +63,7 @@ class StripeConnectCallbackView(APIView):
         responses={302: OpenApiResponse(description="Redirect to trusted staff settings.")},
     )
     def get(self, request):
-        if is_self_host():
+        if not hosts_other_spaces():
             raise Http404
         raw_state = request.query_params.get("state", "")
         digest = state_digest(raw_state)
@@ -261,6 +210,9 @@ class StripeConnectCallbackView(APIView):
 class StripeConnectWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(
         tags=["Payments"],
@@ -272,11 +224,12 @@ class StripeConnectWebhookView(APIView):
         responses=WEBHOOK_RESPONSES,
     )
     def post(self, request):
-        if is_self_host():
-            return Response(
-                {"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND
-            )
         platform = PlatformStripeConnectSettings.load()
+        # Audit 0.12.0: the #234 switch must not strand money Connect took; only a dormant platform 404s.
+        if not hosts_other_spaces() and not platform.is_configured:
+            return Response(
+                {"detail": gettext("Not found.")}, status=status.HTTP_404_NOT_FOUND
+            )
         try:
             event = construct_event(
                 request.body,
@@ -286,14 +239,14 @@ class StripeConnectWebhookView(APIView):
         except (ImproperlyConfigured, InvalidToken):
             logger.warning("stripe_connect_webhook_configuration_unavailable")
             return Response(
-                {"detail": "Invalid Stripe webhook signature."},
+                {"detail": gettext("Invalid Stripe webhook signature.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except (StripeWebhookSignatureError, PaymentsUnavailable, ValueError):
             logger.warning("stripe_connect_webhook_rejected")
             return Response(
-                {"detail": "Invalid Stripe webhook signature."},
+                {"detail": gettext("Invalid Stripe webhook signature.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         apply_connect_webhook_event(event)
-        return Response({"detail": "Verified."})
+        return Response({"detail": gettext("Verified.")})

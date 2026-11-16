@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
@@ -12,6 +13,7 @@ from apps.makerspaces.archive_request_notifications import (
 )
 from apps.makerspaces.models import Makerspace, MakerspaceArchiveRequest
 from apps.makerspaces.servability import is_servable
+from .lifecycle_authority import require_platform_superadmin
 
 COOLDOWN = timedelta(hours=1)
 DIRECT_ARCHIVE_NOTE = "Approved automatically because a superadmin archived the makerspace directly."
@@ -36,9 +38,9 @@ class PendingArchiveRequestExists(ArchiveRequestConflict):
 def create(makerspace, actor, reason):
     reason = (reason or "").strip()
     if not reason:
-        raise ValidationError({"reason": "Explain why this makerspace should be archived."})
+        raise ValidationError({"reason": gettext("Explain why this makerspace should be archived.")})
     if len(reason) > 2000:
-        raise ValidationError({"reason": "Ensure this field has no more than 2000 characters."})
+        raise ValidationError({"reason": gettext("Ensure this field has no more than 2000 characters.")})
 
     try:
         with transaction.atomic():
@@ -46,15 +48,9 @@ def create(makerspace, actor, reason):
             _require_archive_authority(actor, locked)
             if not is_servable(locked):
                 raise ArchiveRequestConflict(
-                    "An unavailable makerspace cannot request archival.",
+                    gettext("An unavailable makerspace cannot request archival."),
                     "makerspace_already_archived",
                 )
-            if not locked.superadmin_access_enabled:
-                raise ArchiveRequestConflict(
-                    "Enable superadmin access before requesting archival.",
-                    "superadmin_access_disabled",
-                )
-
             requests = list(
                 MakerspaceArchiveRequest.objects.select_for_update()
                 .filter(makerspace=locked)
@@ -66,7 +62,7 @@ def create(makerspace, actor, reason):
                 # Without a per-space cooldown, managers can withdraw and immediately
                 # recreate requests to fan governance mail out to every superadmin.
                 raise ArchiveRequestConflict(
-                    "Wait one hour after the previous archive request before creating another.",
+                    gettext("Wait one hour after the previous archive request before creating another."),
                     "archive_request_cooldown",
                 )
 
@@ -123,6 +119,7 @@ def withdraw(archive_request, actor):
 
 
 def approve(archive_request, actor, resolution_note=""):
+    require_platform_superadmin(actor)
     note = _optional_note(resolution_note)
     with transaction.atomic():
         locked_space = Makerspace.objects.select_for_update().get(
@@ -153,12 +150,13 @@ def approve(archive_request, actor, resolution_note=""):
 
 
 def decline(archive_request, actor, resolution_note):
+    require_platform_superadmin(actor)
     note = (resolution_note or "").strip()
     if not note:
-        raise ValidationError({"resolution_note": "Explain why the request was declined."})
+        raise ValidationError({"resolution_note": gettext("Explain why the request was declined.")})
     if len(note) > 2000:
         raise ValidationError(
-            {"resolution_note": "Ensure this field has no more than 2000 characters."}
+            {"resolution_note": gettext("Ensure this field has no more than 2000 characters.")}
         )
     with transaction.atomic():
         locked_space = Makerspace.objects.select_for_update().get(
@@ -185,6 +183,7 @@ def decline(archive_request, actor, resolution_note):
 
 
 def direct_archive(makerspace, actor):
+    require_platform_superadmin(actor)
     with transaction.atomic():
         locked_space = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         pending = (
@@ -226,7 +225,7 @@ def _lock_request(request_id, makerspace_id):
         )
     except MakerspaceArchiveRequest.DoesNotExist as exc:
         raise ArchiveRequestConflict(
-            "Archive request does not belong to this makerspace.",
+            gettext("Archive request does not belong to this makerspace."),
             "archive_request_not_found",
         ) from exc
 
@@ -234,7 +233,7 @@ def _lock_request(request_id, makerspace_id):
 def _require_pending(archive_request):
     if archive_request.status != MakerspaceArchiveRequest.Status.PENDING:
         raise ArchiveRequestConflict(
-            "Only a pending archive request can make this transition.",
+            gettext("Only a pending archive request can make this transition."),
             "archive_request_not_pending",
         )
 
@@ -249,7 +248,7 @@ def _require_archive_authority(actor, makerspace):
     the view's identical check; both must agree, or one of them is decorative.
     """
     if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk):
-        raise PermissionDenied("Managing archive requests requires MANAGE_MAKERSPACE.")
+        raise PermissionDenied(gettext("Managing archive requests requires MANAGE_MAKERSPACE."))
 
 
 def _resolve(archive_request, *, status, actor, note, resolved_at):
@@ -272,6 +271,6 @@ def _optional_note(value):
     note = (value or "").strip()
     if len(note) > 2000:
         raise ValidationError(
-            {"resolution_note": "Ensure this field has no more than 2000 characters."}
+            {"resolution_note": gettext("Ensure this field has no more than 2000 characters.")}
         )
     return note

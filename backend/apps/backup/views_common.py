@@ -8,4 +8,3 @@ AUTH_ERRORS = {
 
 VALIDATION_ERROR = OpenApiResponse(description="The request is invalid for the current lifecycle state.")
 NOT_FOUND = OpenApiResponse(description="The requested resource does not exist in the actor's scope.")
-MODULE_OFF = OpenApiResponse(description="The backup module is not installed for this makerspace.")

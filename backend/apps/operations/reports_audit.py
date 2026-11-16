@@ -8,6 +8,7 @@ cannot flatten audit rows without their tenant.
 
 import json
 
+from apps.audit.area_scope import scope_audit_rows
 from apps.audit.models import AuditLog
 from apps.audit.presentation import project
 from apps.operations.report_types import ReportResult
@@ -18,11 +19,14 @@ FIELDS = ("created_at", "actor", "action", "action_label", "target_type", "targe
 
 def build_audit_trail(
     makerspace_id, *, limit=None, date_range=None, action=None, target_type=None,
-    target_id=None, actor=None,
+    target_id=None, actor=None, viewer=None,
 ):
     if not makerspace_id:
         raise ValueError("The audit-trail report is tenant-only.")
     rows = AuditLog.objects.filter(makerspace_id=makerspace_id).select_related("actor")
+    if viewer is not None:
+        # #219e: the file holds the same rows the reader's audit list does.
+        rows = scope_audit_rows(viewer, rows)
     if date_range:
         start, end = date_range
         if start:

@@ -1,0 +1,70 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/webhook.envelope.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "api_version": {
+      "maximum": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "binding_id": {
+      "format": "uuid",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "data": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "maxLength": 32,
+          "type": "string"
+        },
+        "command": {
+          "maxLength": 32,
+          "type": "string"
+        }
+      },
+      "required": [
+        "capability"
+      ],
+      "type": "object"
+    },
+    "device_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "command.queued",
+        "job.queued",
+        "config.changed",
+        "ping"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "api_version",
+    "device_id",
+    "created_at"
+  ],
+  "type": "object"
+}

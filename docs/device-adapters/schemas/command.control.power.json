@@ -1,0 +1,14 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/command.control.power.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "on": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "on"
+  ],
+  "type": "object"
+}

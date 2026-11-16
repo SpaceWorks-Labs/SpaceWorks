@@ -73,6 +73,13 @@ def debit_consumptions(service_request, actor, consumptions, *, outcome):
                 created_by=actor,
                 outcome=outcome,
             )
+        if row.product_id:
+            from apps.inventory.models import InventoryProduct
+            from .consumable_costs import record_cost
+            priced_product = InventoryProduct.objects.select_for_update().get(pk=row.product_id)
+            record_cost(makerspace=service_request.makerspace, source_kind="non_pool_consumption",
+                        source_id=snapshot.pk, quantity=quantity, measurement_unit=snapshot.measurement,
+                        price_source=priced_product, actor=actor)
         created.append(snapshot)
 
     audit.record(

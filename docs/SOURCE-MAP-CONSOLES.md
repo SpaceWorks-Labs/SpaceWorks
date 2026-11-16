@@ -73,3 +73,11 @@ the counting editor; `QueuesDisplay.tsx` owns request action and history present
 `Inventory.tsx`, `Queues.tsx` and `StocktakePanel.tsx` are explicit public export
 barrels over `InventoryWorkspace.tsx`, `RequestQueues.tsx` and
 `StocktakeSessionPanel.tsx`, preserving imports while keeping each file below the ceiling.
+
+## Booking campaign controls (BK-D)
+
+`BookingBroadcastsPanel.tsx` provides draft composition, bounded window/state filters,
+message preview and queue/cancel/history inside `BookingDrawer.tsx` for reservation
+managers when the resource advertises `broadcasts_enabled`. `bookingBroadcastsApi.ts`
+owns tenant/resource/page query keys, mutation invalidation and in-flight polling.
+Draft form values stay in React state; campaign history stays in TanStack Query.

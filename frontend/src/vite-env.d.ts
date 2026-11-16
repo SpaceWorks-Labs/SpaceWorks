@@ -10,3 +10,11 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** The repository VERSION, injected at build time by vite.config.ts (`define`). */
+declare const __SPACEWORKS_VERSION__: string;
+
+// Lingui catalogues are imported as .po files and compiled by @lingui/vite-plugin.
+declare module "*.po" {
+  export const messages: import("@lingui/core").Messages;
+}

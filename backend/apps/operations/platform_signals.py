@@ -1,7 +1,10 @@
 """Safe deployment summaries: no provider errors, secrets or tenant snapshots."""
+from apps.operations.cloud_jobs import bounded
+
 
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_noop
 
 from apps.operations.management.commands.run_scheduled_tasks import SCHEDULED_TASKS
 from apps.operations.models_scheduling import PeriodicTaskRun
@@ -27,7 +30,39 @@ def scheduler_snapshot(now=None):
     return results
 
 
+BACKUP_STATUS_LABELS = {
+    "never": gettext_noop("Never run"),
+    "pending": gettext_noop("Waiting to start"),
+    "running": gettext_noop("Running"),
+    "promoting": gettext_noop("Finishing"),
+    "available": gettext_noop("Succeeded"),
+    "complete": gettext_noop("Succeeded"),
+    "failed": gettext_noop("Failed"),
+    "expired": gettext_noop("Expired by retention"),
+    "deployment_backup_requires_host_supervisor": gettext_noop("Run by whoever runs your server"),
+}
+
+
+def backup_status_label(status):
+    """Translated display label for a backup status; an unknown value is sentence-cased."""
+    from config.locale_resolution import display
+
+    label = BACKUP_STATUS_LABELS.get(status)
+    return display(label) if label else str(status).replace("_", " ").capitalize()
+
+
 def backup_snapshot():
+    snapshot = _backup_snapshot()
+    snapshot["status_label"] = backup_status_label(snapshot["status"])
+    return snapshot
+
+
+def _backup_snapshot():
+    from django.conf import settings
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        return {"automatic_enabled": False, "last_success_at": None,
+                "status": "deployment_backup_requires_host_supervisor", "started_at": None,
+                "finished_at": None, "has_error": False, "cadence_minutes": 1440}
     from apps.backup.models import PlatformBackupSettings
     from apps.backup.models_runs import BackupRun
 
@@ -54,14 +89,14 @@ def offsite_snapshot(visible_ids):
         Q(scope_snapshot="deployment", makerspace_id_snapshot__isnull=True)
         | Q(scope_snapshot="makerspace", makerspace_id_snapshot__in=visible_ids),
     )
-    for destination in BackupDestination.objects.filter(enabled=True, retired_at=None):
+    for destination in bounded.page(BackupDestination.objects.filter(enabled=True, retired_at=None), "offsite-signals"):
         copies = uploads.filter(destination=destination)
         latest = copies.order_by("-created_at").first()
         failing = copies.exclude(state="deleted").filter(
             Q(state="abandoned") | ~Q(last_error_code=""),
         ).exists()
         # Probe results are deployment-global audit events. Do not use the
-        # destination's last_error_code: a hidden tenant's upload can set it.
+        # destination's last_error_code: any tenant's upload can set it.
         probe = AuditLog.objects.filter(
             action="backup.destination_probed", target_type="backup.backupdestination",
             target_id=str(destination.pk), makerspace__isnull=True,

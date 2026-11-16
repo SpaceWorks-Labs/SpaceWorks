@@ -1,0 +1,13 @@
+/* The one-off "stamp" on a valid card check (SPEC §7). Applied only with interface effects on
+   and motion allowed; the media query is a second guard. No translate, a short scale-in. */
+@media (prefers-reduced-motion: no-preference) {
+  .sw-verify-stamp {
+    animation: sw-verify-stamp 420ms cubic-bezier(0.32, 0.72, 0, 1) 1 both;
+  }
+}
+
+@keyframes sw-verify-stamp {
+  0% { opacity: 0; transform: scale(1.35) rotate(-8deg); }
+  70% { opacity: 1; transform: scale(0.96) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}

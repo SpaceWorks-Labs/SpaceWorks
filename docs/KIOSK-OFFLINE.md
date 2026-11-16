@@ -1,4 +1,4 @@
-# Kiosk offline continuity — phase 9d
+# Kiosk offline continuity
 
 The Station channel remains session-bound bearer authority, never a device identity.
 An offline shell cannot unlock or look up people, requests or QR codes. Only a human
@@ -58,7 +58,7 @@ and issue-then-return item identity mapping remain deferred (9c review decision)
 
 Vite bundles `src/sw.ts` and injects SHA-256 revisions of final index/JS/CSS/fonts/images/
 WASM. The repository build plugin implements injectManifest without a new dependency:
-`vite-plugin-pwa` was unavailable locally and registry access was sandbox-blocked.
+`vite-plugin-pwa` is not used.
 The build verifier proves actual lazy kiosk chunks and scanner WASM are in `sw.js`.
 The public static worker is removed. Kiosk navigation is network-first with a cached
 build index fallback; non-kiosk navigation retains network behavior. Only manifest
@@ -72,4 +72,4 @@ Unit tests use real WebCrypto plus a bounded transaction/structuredClone IDB tes
 double. `node scripts/verify-pwa-browser.mjs` verifies real Chromium IDB key cloning,
 encrypted capture, JPEG metadata stripping, the generated offline shell and simulated
 replay. Real-stack workflows/revocation, Background Sync and update lifecycle QA remain
-required at the coordinator/9e gate; the isolated smoke test does not replace them.
+required before release; the isolated smoke test does not replace them.

@@ -14,6 +14,11 @@ def validate_registry(*, MODULES, BY_KEY, GROUPS, GROUPS_BY_KEY, GROUP_KEYS, gro
         for definition in MODULES:
             (duplicates if definition.key in seen else seen).add(definition.key)
         raise ImproperlyConfiguredRegistry(f"Duplicate module keys: {sorted(duplicates)}.")
+    reimbursement = BY_KEY.get("event_reimbursements")
+    if reimbursement and (reimbursement.default_enabled or reimbursement.is_core
+                          or reimbursement.requires_modules != ("events",)
+                          or reimbursement.app_label != "event_reimbursements"):
+        raise ImproperlyConfiguredRegistry("Event reimbursements must be optional and require Events alone.")
     for definition in MODULES:
         unknown = [key for key in definition.requires_modules if key not in BY_KEY]
         if unknown:

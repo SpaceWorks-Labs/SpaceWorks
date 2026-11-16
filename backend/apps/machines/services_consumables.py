@@ -1,4 +1,5 @@
 """Audited, row-locked mutations for machine consumables."""
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.db import IntegrityError, transaction
@@ -24,16 +25,16 @@ def _audit(machine, actor, action, meta):
 
 def _active(machine):
     if not machine.is_active:
-        raise ValidationError("Machine is retired.")
+        raise ValidationError(gettext("Machine is retired."))
 
 
 def _decimal(value, field):
     try:
         value = Decimal(value)
     except (InvalidOperation, TypeError, ValueError):
-        raise ValidationError({field: "Enter a valid quantity."}) from None
+        raise ValidationError({field: gettext("Enter a valid quantity.")}) from None
     if not value.is_finite():
-        raise ValidationError({field: "Enter a finite quantity."})
+        raise ValidationError({field: gettext("Enter a finite quantity.")})
     return value
 
 
@@ -56,34 +57,34 @@ def link_consumable(
     )
     _active(machine)
     if measurement not in MachineConsumable.Measurement.values:
-        raise ValidationError({"measurement": "Invalid measurement."})
+        raise ValidationError({"measurement": gettext("Invalid measurement.")})
 
     label = label.strip()
     if measurement == MachineConsumable.Measurement.COUNT:
         if product is None:
-            raise ValidationError({"product_id": "A product is required for count mode."})
+            raise ValidationError({"product_id": gettext("A product is required for count mode.")})
         product = InventoryProduct.objects.select_for_update().filter(pk=product.pk).first()
         if product is None or product.makerspace_id != machine.makerspace_id:
-            raise ValidationError({"product_id": "Product must belong to this makerspace."})
+            raise ValidationError({"product_id": gettext("Product must belong to this makerspace.")})
         if product.is_archived:
-            raise ValidationError({"product_id": "Archived products cannot be linked."})
+            raise ValidationError({"product_id": gettext("Archived products cannot be linked.")})
         if product.tracking_mode != TrackingMode.QUANTITY:
-            raise ValidationError({"product_id": "Only quantity-tracked products can be linked."})
+            raise ValidationError({"product_id": gettext("Only quantity-tracked products can be linked.")})
         label = ""
         remaining = Decimal("0")
     else:
         if product is not None:
-            raise ValidationError({"product_id": "Gram consumables are not inventory products."})
+            raise ValidationError({"product_id": gettext("Gram consumables are not inventory products.")})
         if not label:
-            raise ValidationError({"label": "A label is required for grams mode."})
+            raise ValidationError({"label": gettext("A label is required for grams mode.")})
         remaining = _decimal(remaining, "remaining")
         if remaining < 0:
-            raise ValidationError({"remaining": "Remaining grams cannot be negative."})
+            raise ValidationError({"remaining": gettext("Remaining grams cannot be negative.")})
 
     if low_threshold is not None:
         low_threshold = _decimal(low_threshold, "low_threshold")
     if low_threshold is not None and low_threshold < 0:
-        raise ValidationError({"low_threshold": "Low threshold cannot be negative."})
+        raise ValidationError({"low_threshold": gettext("Low threshold cannot be negative.")})
     try:
         row = MachineConsumable.objects.create(
             machine=machine,
@@ -96,7 +97,7 @@ def link_consumable(
             created_by=actor,
         )
     except IntegrityError:
-        raise ValidationError({"product_id": "This product is already linked."}) from None
+        raise ValidationError({"product_id": gettext("This product is already linked.")}) from None
     _audit(
         machine,
         actor,
@@ -122,7 +123,12 @@ def unlink_consumable(machine, actor, consumable):
         pk=consumable.pk, machine=machine
     ).first()
     if row is None:
-        raise ValidationError("Consumable is not linked to this machine.")
+        raise ValidationError(gettext("Consumable is not linked to this machine."))
+    from apps.separability.registry import runtime_active
+    if runtime_active("procurement"):
+        from apps.procurement.services_refill import has_unresolved_item
+        if has_unresolved_item(row):
+            raise ValidationError(gettext("A restock for this consumable is still open; resolve it first."))
     meta = {
         "consumable_id": row.pk,
         "measurement": row.measurement,
@@ -148,14 +154,14 @@ def log_consumption(machine, actor, consumable, quantity):
         .first()
     )
     if row is None:
-        raise ValidationError("Consumable is not linked to this machine.")
+        raise ValidationError(gettext("Consumable is not linked to this machine."))
     quantity = _decimal(quantity, "quantity")
     if quantity <= 0:
-        raise ValidationError({"quantity": "Quantity must be greater than zero."})
+        raise ValidationError({"quantity": gettext("Quantity must be greater than zero.")})
 
     if row.measurement == MachineConsumable.Measurement.COUNT:
         if quantity != quantity.to_integral_value():
-            raise ValidationError({"quantity": "Count consumption must be a whole number."})
+            raise ValidationError({"quantity": gettext("Count consumption must be a whole number.")})
         row.product = availability.consume_available(
             row.product,
             int(quantity),
@@ -164,9 +170,13 @@ def log_consumption(machine, actor, consumable, quantity):
         )
     else:
         if row.remaining < quantity:
-            raise ValidationError({"quantity": f"Only {row.remaining} grams remain."})
+            raise ValidationError({"quantity": gettext('Only {remaining} grams remain.').format(remaining=row.remaining)})
         row.remaining -= quantity
         row.save(update_fields=["remaining"])
+        from apps.separability.registry import runtime_active
+        if runtime_active("procurement"):
+            from apps.procurement.auto_drafts import schedule_consumable
+            schedule_consumable(row.pk)
 
     meta = {"measurement": row.measurement, "quantity": str(quantity)}
     if row.product_id:

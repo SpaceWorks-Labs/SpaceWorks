@@ -27,9 +27,13 @@ def apply_user_closure(rows, closure):
                 is_staff=False,
                 role="requester",
                 telegram_user_id="",
-                external_checkin_user_id="",
+                deletion_email_ciphertext="",
+                deletion_username="",
                 is_tenant_dump_stub=False,
             )
+            # One account per person: a full row is a person (staff roles are their
+            # staff-track rows), so it keeps its password hash like any member; the
+            # dump stays sealed to the one-shot recipients (#128 C-18).
         rewritten.append(MappingProxyType(values))
     result["accounts.User"] = tuple(rewritten)
     result["makerspaces.MembershipRequest"] = tuple(
@@ -59,6 +63,9 @@ def apply_user_closure(rows, closure):
         for row in result.get("makerspaces.MemberProject", ())
         if row["profile_id"] not in dropped_profiles
     )
+    for label in ("makerspaces.ProfileTimelineEntry", "makerspaces.PublicHandle"):
+        result[label] = tuple(row for row in result.get(label, ())
+                              if row["profile_id"] not in dropped_profiles)
     return result
 
 
@@ -104,20 +111,34 @@ def user_ref_from_closure(closure, pk):
 
 def _stub_values(ref):
     return {
+        "account_kind": "member",
+        "staff_makerspace_id": None,
+        "retired_at": None,
+        # A merged shell becomes a plain stub: the alias is deployment-local.
+        "merged_into_id": None,
+        "merged_at": None,
+        "credential_generation": 0,
         "username": f"__tenant_stub__{ref}",
         "password": f"!tenant-dump-stub-v{STUB_SCHEMA_VERSION}:{ref}",
         "first_name": "",
         "last_name": "",
         "display_name": "",
+        "preferred_locale": None,
         "email": "",
         "phone": "",
         "phone_e164": "",
         "email_verified_at": None,
         "phone_verified_at": None,
         "self_registered_at": None,
+        "deletion_requested_at": None,
+        "deletion_purge_after": None,
+        "purge_started_at": None,
+        "account_restored_at": None,
+        "account_purged_at": None,
+        "deletion_email_ciphertext": "",
+        "deletion_username": "",
         "last_login": None,
         "date_joined": STUB_TIMESTAMP,
-        "external_checkin_user_id": "",
         "telegram_user_id": "",
         "is_superuser": False,
         "is_staff": False,

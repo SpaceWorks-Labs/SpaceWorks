@@ -1,4 +1,6 @@
 """Scheduled coordination for audit batch sealing and anchoring."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 
@@ -7,6 +9,7 @@ from django.db import connection
 
 from apps.audit.anchors import configured_sink
 from apps.audit.models import AuditMacKey
+from apps.backup.managed.audit_guard import guarded_anchor_sink
 
 
 logger = logging.getLogger(__name__)
@@ -32,9 +35,9 @@ def run_audit_attestation():
         logger.info("audit_attestation_skipped_non_writable_primary")
         return {"sealed": 0, "failed": 0, "skipped": "non_writable_primary"}
     try:
-        sink = configured_sink()
+        sink = guarded_anchor_sink(configured_sink())
     except Exception:  # noqa: BLE001 - scheduled retry handles provider recovery
-        logger.exception("audit_attestation_sink_unavailable")
+        logger.warning("audit_attestation_sink_unavailable")
         return {"sealed": 0, "failed": 1}
     from apps.audit.batches import (
         activate_scope,
@@ -44,13 +47,10 @@ def run_audit_attestation():
         synchronize_anchors,
     )
 
-    scope_ids = list(
-        AuditMacKey.objects.order_by("makerspace_id").values_list(
-            "makerspace_id", flat=True
-        )
-    )
+    scope_ids = AuditMacKey.objects.order_by("makerspace_id")
     result = {"sealed": 0, "failed": 0}
-    for makerspace_id in scope_ids:
+    for scope_key in bounded.page(scope_ids, "audit-scopes"):
+        makerspace_id = scope_key.makerspace_id
         try:
             # Lane D publication takes this same per-scope lock while proving that
             # no immutable anchor exists. Keep activation, synchronization, sealing,
@@ -65,7 +65,7 @@ def run_audit_attestation():
                     result["sealed"] += 1
         except Exception:  # noqa: BLE001 - one failed scope must not stop others
             result["failed"] += 1
-            logger.exception(
+            logger.warning(
                 "audit_attestation_scope_failed",
                 extra={"makerspace_id": makerspace_id},
             )

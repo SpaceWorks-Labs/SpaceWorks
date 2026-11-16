@@ -29,7 +29,7 @@ _KIND_ORDER = {
 }
 
 
-def build_request_timeline(hardware_request, *, limit=DEFAULT_LIMIT):
+def build_request_timeline(hardware_request, *, limit=DEFAULT_LIMIT, actor=None):
     items = list(hardware_request.items.select_related("product").prefetch_related("asset_links__asset"))
     events = [
         _event(
@@ -69,7 +69,7 @@ def build_request_timeline(hardware_request, *, limit=DEFAULT_LIMIT):
     events.extend(_asset_link_events(items))
     events.extend(_accountability_events(hardware_request.pk))
     events.extend(_problem_report_events(hardware_request))
-    events.extend(audit_events(hardware_request, _event))
+    events.extend(audit_events(hardware_request, _event, actor))
     attach_evidence_retention(events)
     return _response("request_id", hardware_request.pk, events, limit)
 

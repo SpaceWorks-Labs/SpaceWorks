@@ -27,9 +27,9 @@ from apps.makerspaces.station_serializers import (
 
 
 ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Feature disabled or invalid request."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid request."),
     403: OpenApiResponse(ErrorSerializer, description="Makerspace access or step-up denied."),
-    404: OpenApiResponse(ErrorSerializer, description="Station not found."),
+    404: OpenApiResponse(ErrorSerializer, description="Station not found, or the feature is turned off."),
     409: OpenApiResponse(ErrorSerializer, description="Rotate the PIN instead of revealing."),
     429: OpenApiResponse(ErrorSerializer, description="Request rate limit exceeded."),
     503: OpenApiResponse(ErrorSerializer, description="Credential secrets are unavailable."),

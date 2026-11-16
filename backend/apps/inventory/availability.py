@@ -25,8 +25,20 @@ from apps.inventory.availability_requests import (
     scrap_from_needs_fix,
 )
 from apps.inventory.availability_types import InsufficientStock
+from apps.inventory.availability_reservations import (
+    hold_for_waitlist, release_request_reservation, release_waitlist_hold,
+)
 from apps.inventory.availability_loan_limits import (
-    enforce_borrow_limits, enforce_request_borrow_limits,
+    borrower_allowance, enforce_borrow_limits, enforce_request_borrow_limits,
     enforce_product_borrow_limits, enforce_submission_borrow_limits,
     outstanding_request_items,
+)
+from apps.inventory.availability_window import window_availability  # noqa: F401 -- decision 221b
+from apps.inventory.availability_projections import (  # noqa: F401 -- read-only projections for events
+    outstanding_units, request_stock_warnings, stock_warnings,
+)
+from apps.inventory.availability_shop import (  # noqa: E402,F401 -- release 2 L22: shop stock
+    OutOfStock, adjust as adjust_shop_stock, hold_for_checkout as hold_shop_checkout,
+    release_hold as release_shop_hold, restock as restock_shop, return_to_stock as return_shop_stock,
+    sell as sell_shop_stock, sellable as shop_sellable, stock_units as shop_stock_units,
 )

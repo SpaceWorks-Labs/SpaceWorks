@@ -21,9 +21,12 @@ PUBLIC_TOKEN_TARGETS = {
     # that disposition later must still resolve the exact event row, never trust slug.
     "public-event-register": ("events.Event", "public_token"),
     "public-event-feedback": ("events.Event", "public_token"),
+    # Refused for claims today; mapped so a later disposition change resolves the exact row.
+    "member-machine-service-owner": ("machines.MachineServiceRequest", "public_token"),
 }
 BODY_OBJECT_TARGETS = {
     "public-machine-service-request-submit": ("machines.Machine", "machine_id"),
+    "member-machine-service-cancel": ("machines.MachineServiceRequest", "pk"),
 }
 
 

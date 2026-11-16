@@ -152,6 +152,7 @@ class EvidenceAbandonedUploadReceipt(models.Model):
     source_makerspace_id_snapshot = models.PositiveBigIntegerField()
     evidence_id_snapshot = models.PositiveBigIntegerField()
     object_key = models.CharField(max_length=512, unique=True)
+    storage_identity = models.CharField(max_length=64, blank=True, default="")
     next_reconcile_at = models.DateTimeField(db_index=True)
     last_reconciled_at = models.DateTimeField(null=True, blank=True)
     last_error = models.CharField(max_length=500, blank=True)

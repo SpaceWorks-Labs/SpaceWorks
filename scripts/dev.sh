@@ -3,6 +3,9 @@
 #   up [args]       Compose up -d; retire live and remove successful one-shots.
 #   down [args]     Compose down; volumes persist unless you pass -v.
 #   test [args]     Pytest in disposable Postgres/Redis/MinIO; default args: -q.
+#                   --area <name> (repeatable), --area-affected <ref> select areas.
+#   affected [backend|frontend]  Only the tests for what changed (AFFECTED_BASE).
+#   hooks           Enable the repo's git hooks (.githooks/pre-push).
 #   e2e [args]      Seed the running dev stack; Playwright against a production preview.
 #   <other> [args]  Forward verbatim to Compose: logs, exec, run, ps, restart, etc.
 # Restart affects long-running services only; up recreates the four one-shots.
@@ -43,6 +46,97 @@ up() {
   compose rm -f "${one_shots[@]}"
 }
 
+# The test runner bind-mounts the source, so the image only has to carry what the
+# Dockerfile installs: system packages, Python dependencies, fonts and Postgres clients.
+# Rebuild only when those inputs change (or with SPACEWORKS_TEST_REBUILD=1). An
+# unchanged image skips the ~27 MB context upload and the source-layer rebuild (CJK font
+# download, compilemessages, collectstatic) that every source edit used to trigger.
+ensure_test_image() {
+  local inputs=(Dockerfile requirements.txt scripts/bundle_cjk_fonts.py scripts/verify_printable_runtime.py)
+  local hash current
+  hash="$(cd "$ROOT/backend" && cat "${inputs[@]}" | sha256sum | cut -c1-16)"
+  current="$(docker image inspect -f '{{index .Config.Labels "spaceworks.test-deps"}}' \
+    spaceworks-backend 2>/dev/null || true)"
+  if [[ "$current" == "$hash" && "${SPACEWORKS_TEST_REBUILD:-0}" != 1 ]]; then
+    echo "Test image is current (dependencies $hash); not rebuilding." >&2
+    return
+  fi
+  docker build --label "spaceworks.test-deps=$hash" --tag spaceworks-backend "$HOST_ROOT/backend"
+}
+
+# Tests for what changed since a base (AFFECTED_BASE; default: the upstream, else HEAD~1):
+# scripts/affected_tests.py picks the pytest files and the frontend sources for
+# `vitest related`. Small changes use this; the full suite stays the release gate.
+affected() {
+  local scope="${1:-all}" sel=()
+  if [[ "$scope" == all || "$scope" == backend ]]; then
+    mapfile -t sel < <(python "$HOST_ROOT/scripts/affected_tests.py" backend)
+    if [[ "${sel[0]:-}" == ALL ]]; then
+      echo "Shared backend code changed; running the full backend suite." >&2
+      test_suite -q
+    elif ((${#sel[@]})); then
+      echo "Affected backend tests: ${#sel[@]} file(s)." >&2
+      # Hundreds of paths overflow the Windows command-line limit; pytest reads @file arguments.
+      printf '%s\n' "${sel[@]}" > "$ROOT/backend/.affected-tests.txt"
+      test_suite -q @.affected-tests.txt
+    else
+      echo "No affected backend tests." >&2
+    fi
+  fi
+  if [[ "$scope" == all || "$scope" == frontend ]]; then
+    mapfile -t sel < <(python "$HOST_ROOT/scripts/affected_tests.py" frontend)
+    if ((${#sel[@]})); then
+      # Batches keep each command line under the Windows limit.
+      local i
+      for ((i = 0; i < ${#sel[@]}; i += 200)); do
+        (cd "$ROOT/frontend" && npx vitest related --run "${sel[@]:i:200}") || return
+      done
+    else
+      echo "No affected frontend sources." >&2
+    fi
+  fi
+}
+
+test_areas() {
+  local selectors=() args=() expression marker="" has_area=0
+  while (($#)); do
+    case "$1" in
+      --area|--area-affected)
+        if (($# < 2)) || [[ "$2" == -* || -z "$2" ]]; then
+          echo "$1 needs a value; list areas: python backend/tests/areas.py --list" >&2
+          return 2
+        fi
+        selectors+=("$1" "$2"); has_area=1; shift 2 ;;
+      --area=*|--area-affected=*) selectors+=("$1"); has_area=1; shift ;;
+      *) args+=("$1"); shift ;;
+    esac
+  done
+  if ((has_area == 0)); then test_suite "${args[@]}"; return; fi
+  if [[ -n "${TEST_ENTRYPOINT:-}" ]]; then
+    echo "Area selection requires pytest (unset TEST_ENTRYPOINT)." >&2; return 2
+  fi
+  expression="$(python "$HOST_ROOT/backend/tests/areas.py" "${selectors[@]}")" || return
+  if [[ "$expression" == NONE ]]; then echo "No changed areas."; return; fi
+  if [[ "$expression" == ALL ]]; then test_suite "${args[@]}"; return; fi
+  # All pytest marker aliases share one value; the last explicit filter wins.
+  set -- "${args[@]}"; args=()
+  while (($#)); do
+    case "$1" in
+      -m|--markexpr)
+        if (($# < 2)) || [[ "$2" == -* ]]; then
+          echo "$1 needs an expression" >&2; return 2
+        fi
+        marker="$2"; shift 2 ;;
+      -m=*|--markexpr=*) marker="${1#*=}"; shift ;;
+      -m?*) marker="${1#-m}"; shift ;;
+      *) args+=("$1"); shift ;;
+    esac
+  done
+  [[ -z "$marker" ]] || expression="($expression) and ($marker)"
+  echo "Selected test areas: $expression" >&2
+  test_suite "${args[@]}" -m "$expression"
+}
+
 test_suite() {
   RUN="spaceworks-test-$$-$(date +%s)"
   cleanup() {
@@ -56,17 +150,15 @@ test_suite() {
   trap cleanup EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
-  if ! docker image inspect spaceworks-backend >/dev/null 2>&1; then
-    echo "Missing spaceworks-backend image; build it with: dev.sh up --build" >&2
-    return 1
-  fi
+  # Source is bind-mounted below; dependencies and fonts come from the image.
+  ensure_test_image
   docker network create "$RUN" >/dev/null
   docker run -d --name "$RUN-db" --network "$RUN" --network-alias db \
     --label "spaceworks.test=$RUN" --tmpfs /var/lib/postgresql/data \
     -e POSTGRES_USER=makerspace -e POSTGRES_PASSWORD=makerspace \
     -e POSTGRES_DB=makerspace_manager postgres:16 >/dev/null
   docker run -d --network "$RUN" --network-alias redis \
-    --label "spaceworks.test=$RUN" redis:7-alpine >/dev/null
+    --label "spaceworks.test=$RUN" redis:7.4.11-alpine >/dev/null
   docker run -d --network "$RUN" --network-alias minio \
     --label "spaceworks.test=$RUN" -e MINIO_ROOT_USER=minioadmin \
     -e MINIO_ROOT_PASSWORD=minioadmin pgsty/silo:RELEASE.2026-09-16T00-00-00Z server /data >/dev/null
@@ -77,19 +169,20 @@ test_suite() {
   done
   docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" \
     --entrypoint /bin/sh pgsty/silo:RELEASE.2026-09-16T00-00-00Z -c '
-      until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done;
-      mc mb --ignore-existing local/evidence;
-      mc version enable local/evidence;
-      mc anonymous set none local/evidence;
-      mc mb --ignore-existing local/public-images;
-      mc version enable local/public-images;
-      mc anonymous set download local/public-images;
+      # The whole setup retries as one unit: on a busy runner Docker DNS can drop a lookup in the middle of it.
+      setup() {
+        mc alias set local http://minio:9000 minioadmin minioadmin &&
+        mc mb --ignore-existing local/evidence && mc version enable local/evidence &&
+        mc anonymous set none local/evidence &&
+        mc mb --ignore-existing local/public-images && mc version enable local/public-images &&
+        mc anonymous set download local/public-images
+      }
+      n=0; until setup; do n=$((n + 1)); [ "$n" -ge 30 ] && exit 1; sleep 2; done;
     '
-  local keys api_key audit_key
-  keys="$(docker run --rm --label "spaceworks.test=$RUN" --entrypoint python spaceworks-backend -c \
-    'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode()); print(Fernet.generate_key().decode())')"
-  api_key="${keys%%$'\n'*}"
-  audit_key="${keys##*$'\n'}"
+  local key_output keys
+  key_output="$(docker run --rm --label "spaceworks.test=$RUN" --entrypoint python spaceworks-backend -c \
+    'from cryptography.fernet import Fernet; print(*(Fernet.generate_key().decode() for _ in range(3)), sep="\n")')"
+  mapfile -t keys <<< "$key_output"
   local TEST_ENV=(
     -e DATABASE_URL=postgres://makerspace:makerspace@db:5432/makerspace_manager
     -e SECRET_KEY=test-only -e DEBUG=True -e TRUSTED_PROXY_COUNT=0 -e PYTHONDONTWRITEBYTECODE=1
@@ -99,15 +192,21 @@ test_suite() {
     -e AWS_ACCESS_KEY_ID=minioadmin -e AWS_SECRET_ACCESS_KEY=minioadmin
     -e AWS_STORAGE_BUCKET_NAME=evidence -e PUBLIC_IMAGE_BUCKET=public-images
     -e STORAGE_PRESIGN_METHOD=post -e EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-    -e "API_CLIENT_ENC_KEY=$api_key" -e "AUDIT_MAC_MASTER_KEY=$audit_key"
+    -e "API_CLIENT_ENC_KEY=${keys[0]}" -e "AUDIT_MAC_MASTER_KEY=${keys[1]}"
+    -e "PII_MASTER_KEY=${PII_MASTER_KEY:-${keys[2]}}"
   )
   # tests/tombstone only runs under an exported TOMBSTONED_APPS profile, so pass it through.
   [[ -z "${TOMBSTONED_APPS:-}" ]] || TEST_ENV+=(-e "TOMBSTONED_APPS=$TOMBSTONED_APPS")
-  (($#)) || set -- -q
-  docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" --entrypoint pytest \
+  # A nonempty probe role forces RLS for the X-8 regression.
+  [[ -z "${TENANT_RLS_PROBE_ROLE:-}" ]] || TEST_ENV+=(-e "TENANT_RLS_PROBE_ROLE=$TENANT_RLS_PROBE_ROLE")
+  # TEST_ENTRYPOINT swaps pytest for another program in the same throwaway infrastructure
+  # (the mutation runner, scripts/mutation/mutate.py); its arguments are passed through verbatim.
+  local entry=pytest lead=(-p no:cacheprovider)
+  if [[ -n "${TEST_ENTRYPOINT:-}" ]]; then entry="$TEST_ENTRYPOINT"; lead=(); else (($#)) || set -- -q; fi
+  docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" --entrypoint "$entry" \
     -v "$HOST_ROOT:/workspace" -w /workspace/backend \
     -v "$HOST_ROOT/scripts:/run/spaceworks-privileged-scripts" \
-    "${TEST_ENV[@]}" spaceworks-backend -p no:cacheprovider "$@"
+    "${TEST_ENV[@]}" spaceworks-backend "${lead[@]}" "$@"
 }
 
 e2e() {
@@ -133,6 +232,9 @@ e2e() {
 e2e_preview() {
   local port="${E2E_PREVIEW_PORT:-5173}" api="${E2E_API_URL:-http://localhost:8000}" preview_pid deadline
   cd "$ROOT/frontend"
+  # Playwright is a pinned devDependency; fetch the Chromium build that exact version expects (no-op once present).
+  [[ -x ./node_modules/.bin/playwright || -x ./node_modules/.bin/playwright.cmd ]] || npm ci
+  npx playwright install chromium
   VITE_API_URL="http://localhost:$port/api" npm run build
   VITE_DEV_PROXY_TARGET="$api" node ./node_modules/vite/bin/vite.js preview     --host localhost --port "$port" --strictPort &
   preview_pid=$!
@@ -148,7 +250,9 @@ e2e_preview() {
 case "${1:-}" in
   up) shift; up "$@" ;;
   down) shift; compose down "$@" ;;
-  test) shift; test_suite "$@" ;;
+  test) shift; test_areas "$@" ;;
+  affected) shift; affected "$@" ;;
+  hooks) git config core.hooksPath .githooks && echo "Git hooks enabled (.githooks/pre-push)." ;;
   e2e) shift; e2e "$@" ;;
   *) compose "$@" ;;
 esac

@@ -12,6 +12,7 @@ class ActiveLoansReportRowSerializer(TypedReportBaseSerializer):
     requester = serializers.CharField()
     status = serializers.CharField()
     issued_at = serializers.DateTimeField(allow_null=True)
+    count = serializers.IntegerField(min_value=1, max_value=1, help_text="One loan per detail row; sum to count issued loans in this result.")
 
 
 class ReturnsReportRowSerializer(TypedReportBaseSerializer):
@@ -19,6 +20,7 @@ class ReturnsReportRowSerializer(TypedReportBaseSerializer):
     requester = serializers.CharField()
     status = serializers.CharField()
     closed_at = serializers.DateTimeField(allow_null=True)
+    count = serializers.IntegerField(min_value=1, max_value=1, help_text="One loan per detail row; sum to count closed loans in this result.")
 
 
 class DamagedMissingReportRowSerializer(TypedReportBaseSerializer):
@@ -28,17 +30,27 @@ class DamagedMissingReportRowSerializer(TypedReportBaseSerializer):
 
 
 class DamagedLostReportRowSerializer(TypedReportBaseSerializer):
+    product_id = serializers.IntegerField()
     product_name = serializers.CharField()
     damaged_quantity = serializers.IntegerField()
     lost_quantity = serializers.IntegerField()
+    total_quantity = serializers.IntegerField()
+    damage_rate_percent = serializers.FloatField(allow_null=True)
+    loss_rate_percent = serializers.FloatField(allow_null=True)
 
 
 class QrScansReportRowSerializer(TypedReportBaseSerializer):
+    period = serializers.DateField()
     context = serializers.CharField()
+    target_type = serializers.CharField()
+    target_id = serializers.IntegerField(allow_null=True, help_text="Member-card identifiers are suppressed.")
+    hour_of_week = serializers.IntegerField(min_value=0, max_value=167)
     count = serializers.IntegerField()
 
 
 class MostLentReportRowSerializer(TypedReportBaseSerializer):
+    period = serializers.DateField(allow_null=True, help_text="Null for legacy loans without an issue timestamp.")
+    product_id = serializers.IntegerField(allow_null=True, help_text="Null identifies the Other series.")
     product_name = serializers.CharField()
     times_lent = serializers.IntegerField()
     total_quantity_lent = serializers.IntegerField()

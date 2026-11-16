@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -9,24 +10,29 @@ from apps.machines.service_errors import ServiceConsumptionInvalid, ServiceInval
 from apps.machines.printer_capabilities import is_printer_type, validate_service_payload
 
 
+_S = MachineServiceRequest.Status
+_CANCELLED = _S.CANCELLED
+# The job lifecycle (#141): every edge is taken here and nowhere else.
 _ALLOWED = {
-    MachineServiceRequest.Status.PENDING: {MachineServiceRequest.Status.ACCEPTED, MachineServiceRequest.Status.REJECTED},
-    MachineServiceRequest.Status.ACCEPTED: {MachineServiceRequest.Status.IN_PROGRESS},
-    MachineServiceRequest.Status.IN_PROGRESS: {MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.FAILED},
-    MachineServiceRequest.Status.COMPLETED: {MachineServiceRequest.Status.COLLECTED},
+    _S.PENDING: {_S.ACCEPTED, _S.REJECTED, _CANCELLED, _S.CHANGES_REQUESTED, _S.QUOTED},
+    _S.CHANGES_REQUESTED: {_S.PENDING, _S.REJECTED, _CANCELLED},
+    _S.QUOTED: {_S.ACCEPTED, _S.QUOTED, _S.CHANGES_REQUESTED, _S.REJECTED, _CANCELLED},
+    _S.ACCEPTED: {_S.IN_PROGRESS, _CANCELLED, _S.CHANGES_REQUESTED},
+    _S.IN_PROGRESS: {_S.COMPLETED, _S.FAILED, _CANCELLED},
+    _S.COMPLETED: {_S.COLLECTED, _S.UNCOLLECTED},
 }
 
 
 def _locked_submission_target(target):
     if isinstance(target, ServiceQueue):
-        queue = ServiceQueue.objects.select_for_update().select_related("makerspace", "machine_type").get(pk=target.pk)
+        queue = ServiceQueue.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace", "machine_type").get(pk=target.pk)
         if queue.machine_type.makerspace_id not in (None, queue.makerspace_id):
             raise ServiceMachineUnavailable("Service queue machine type is outside its makerspace.")
         return queue
     if isinstance(target, ServiceBucket):
         bucket = ServiceBucket.objects.select_related("machine__makerspace").get(pk=target.pk)
-        return Machine.objects.select_for_update().select_related("makerspace").get(pk=bucket.machine_id)
-    return Machine.objects.select_for_update().select_related("makerspace").get(pk=target.pk)
+        return Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=bucket.machine_id)
+    return Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=target.pk)
 
 
 def _locked_submission_machine(target):
@@ -34,13 +40,18 @@ def _locked_submission_machine(target):
     return _locked_submission_target(target)
 
 
+def _submission_makerspace_id(target):
+    if isinstance(target, ServiceQueue):
+        return ServiceQueue.objects.only("makerspace_id").get(pk=target.pk).makerspace_id
+    machine_id = target.machine_id if isinstance(target, ServiceBucket) else target.pk
+    return Machine.objects.only("makerspace_id").get(pk=machine_id).makerspace_id
+
+
 def _assert_submission_write_allowed(target):
     from apps.encryption.write_fence import assert_mapped_write_allowed
-    if isinstance(target, ServiceQueue):
-        makerspace_id = ServiceQueue.objects.only("makerspace_id").get(pk=target.pk).makerspace_id
-    else:
-        machine_id = target.machine_id if isinstance(target, ServiceBucket) else target.pk
-        makerspace_id = Machine.objects.only("makerspace_id").get(pk=machine_id).makerspace_id
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+    makerspace_id = _submission_makerspace_id(target)
+    assert_write_allowed(makerspace_id)
     assert_mapped_write_allowed(makerspace_id)
 
 
@@ -51,21 +62,81 @@ def _assert_request_write_allowed(service_request):
 
 
 def _locked_request(service_request):
-    return MachineServiceRequest.objects.select_for_update(of=("self",)).select_related("bucket__machine__makerspace", "queue__makerspace", "queue__machine_type", "requester", "assigned_machine", "run_consumable_pool").get(pk=service_request.pk)
+    return MachineServiceRequest.objects.select_for_update(no_key=True, of=("self",)).select_related("bucket__machine__makerspace", "queue__makerspace", "queue__machine_type", "requester", "assigned_machine", "run_consumable_pool").get(pk=service_request.pk)
 
 
 def _lock_assigned_machine(service_request):
     if not service_request.assigned_machine_id:
         raise ServiceMachineUnavailable("No machine is assigned to this service request.")
-    return Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
+    return Machine.objects.select_for_update(no_key=True).get(pk=service_request.assigned_machine_id)
 
 
-def _release_queue_machine(service_request):
+def _lock_scope(service_request):
+    """Lock the request's waiting-line scope: the pooled queue row, else the bucket's machine.
+
+    Lock order is request -> scope -> machine(s) -> pool everywhere (C1). The head
+    re-evaluation for the once-only ``next`` notice always runs under this lock.
+    """
+    if service_request.queue_id:
+        return ServiceQueue.objects.select_for_update(no_key=True).get(pk=service_request.queue_id)
+    return Machine.objects.select_for_update(no_key=True).get(pk=service_request.bucket.machine_id)
+
+
+def _release_hold(service_request, actor, *, reason, consumed=None):
+    """Settle a consumable hold for cancel/reject: ZERO consumption unless ``consumed``.
+
+    Reuses the kernel's reconciliation: the original reserve adjustment stays and a
+    compensating ``reconcile`` adjustment returns the unused part. A cancelled RUNNING
+    job may confirm material used so far (decision 61a, ``0 <= consumed <= hold``); that
+    amount stays taken from stock and becomes the consumed quantity. Never debits
+    consumptions or creates a payment. Returns release metadata for the audit row, or
+    None when nothing is held (the ledger refuses zero-delta adjustments).
+    """
+    from decimal import Decimal
+    from rest_framework.exceptions import ValidationError
+    from apps.machines import service_consumable_pools as pools
+    from apps.machines.service_metering import _quantity
+    grams = service_request.reserved_grams or Decimal("0")
+    quantity = service_request.reserved_quantity
+    consumed = _quantity(consumed or 0, "consumed_quantity")
+    held = service_request.run_consumable_pool_id and (grams > 0 or (quantity and quantity > 0))
+    hold = (quantity if quantity is not None else grams) if held else Decimal("0")
+    if consumed > hold:
+        raise ValidationError({"consumed_quantity": gettext("Material used cannot exceed the material held for this job.")})
+    if not held:
+        return None
+    from apps.machines.models import MachineConsumablePool
+    pool = MachineConsumablePool.objects.get(pk=service_request.run_consumable_pool_id)
+    meta = {"pool_id": pool.pk, "released_grams": str(grams),
+            "released_quantity": None if quantity is None else str(quantity),
+            "consumed_quantity": str(consumed),
+            "metering_unit": service_request.metering_unit}
+    if quantity is not None:
+        pools.reconcile_request(service_request, actor, actual_grams=consumed, actual_quantity=consumed, reason=reason)
+    elif pool.unit == "grams":
+        pools.reconcile_request(service_request, actor, actual_grams=consumed, reason=reason)
+    else:
+        # Pre-metering gram hold on a non-gram pool: the legacy branch refunds the unused grams.
+        pools._legacy_reconcile_request(service_request, actor, actual_grams=consumed, reason=reason)
+    service_request.refresh_from_db()
+    return meta
+
+
+def _release_queue_machine(service_request, actor=None):
     if service_request.assigned_machine_id:
-        machine = Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
-        if machine.status == Machine.Status.RUNNING:
-            machine.status = Machine.Status.IDLE
-            machine.save(update_fields=["status", "updated_at"])
+        machine = Machine.objects.select_for_update(no_key=True).get(pk=service_request.assigned_machine_id)
+        # A batch run (#142 OQ-9) holds the machine until its LAST job ends.
+        still_running = MachineServiceRequest.objects.filter(
+            assigned_machine_id=machine.pk, status=MachineServiceRequest.Status.IN_PROGRESS,
+        ).exclude(pk=service_request.pk).exists()
+        if service_request.batch_id and not still_running:
+            from .models import MachineJobBatch
+            from django.utils import timezone
+            MachineJobBatch.objects.filter(pk=service_request.batch_id, ended_at__isnull=True).update(
+                ended_at=timezone.now())
+        if machine.status == Machine.Status.RUNNING and not still_running:
+            from .status_tracking import change_status
+            change_status(machine, Machine.Status.IDLE, source="service_release", actor=actor)
 
 
 def _require_available(machine):
@@ -80,9 +151,10 @@ def _require_module(makerspace, *, locked=False):
     if locked:
         from apps.makerspaces.models import Makerspace
 
-        makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=getattr(makerspace, "pk", makerspace))
     if not module_enabled(makerspace, "machine_service"):
-        raise ValidationError("Machine service is disabled for this makerspace.")
+        from apps.makerspaces.guards import module_off
+        raise module_off("machine_service", "Machine service is turned off for this makerspace.")
 
 
 def _require_edge(service_request, next_status):
@@ -145,5 +217,6 @@ def _audit_transition(actor, service_request, event, extra=None):
 
 
 def _notify_after_commit(service_request, event):
-    request_id = service_request.pk
-    transaction.on_commit(lambda: notify_service_status(MachineServiceRequest.objects.select_related("bucket__machine__makerspace", "queue__makerspace").get(pk=request_id), event))
+    # The outbox must commit atomically with the status transition. Only enqueue
+    # and provider I/O wait until commit; retaining this name preserves imports.
+    notify_service_status(service_request, event)

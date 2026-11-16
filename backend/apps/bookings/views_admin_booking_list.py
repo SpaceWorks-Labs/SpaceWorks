@@ -33,15 +33,18 @@ class SpaceBookingListView(StaffBookingCreateMixin, APIView):
         },
     )
     def get(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "manage_reservations")
         filters = BookingListFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
-        queryset = rbac.scope_by_action(
-            request.user,
-            rbac.Action.MANAGE_BOOKINGS,
-            Booking.objects.filter(space=space),
-            field='space__makerspace_id',
-        )
+        from apps.machines.event_use import with_event  # decision 342: no query per row for the event link
+        from .services_restore import annotate_restore_history
+        from django.db.models import Prefetch
+        from .models_departure import BookingDepartureEvent
+        # Per-row lookups in BookingAdminSerializer (departures, open issue, partner-organization link) are
+        # batched here; tests/levels/test_perf_scaling_queries.py fails if the page cost grows with its rows.
+        queryset = annotate_restore_history(with_event(Booking.objects.filter(space=space).select_related(
+            "space__makerspace", "organization_link").prefetch_related(
+            Prefetch("departure_events", queryset=BookingDepartureEvent.objects.select_related("actor")), "issues")))
         data = filters.validated_data
         if data.get('booking_id'):
             queryset = queryset.filter(pk=data['booking_id'])
@@ -60,6 +63,8 @@ class SpaceBookingListView(StaffBookingCreateMixin, APIView):
             Payment.SubjectType.BOOKING,
             [booking.pk for booking in page],
         )
+        from .event_labels import event_labels
+        context['event_labels'] = event_labels(request.user, space.makerspace, [booking.pk for booking in page])
         return Response(
             {
                 'count': paginator.page.paginator.count,

@@ -3,6 +3,7 @@
 import hmac
 import uuid
 
+from .cloud_scope import rotation_scope
 from django.db import transaction
 from django.utils import timezone
 
@@ -142,6 +143,7 @@ def prepare_rotation(
         return rotation, True
 
 
+@rotation_scope
 def publish_rotation(rotation, sink):
     """Publish and persist PUBLISHED while serialized against abort for this scope."""
     from apps.audit.batches import _scope_lock
@@ -165,6 +167,7 @@ def publish_rotation(rotation, sink):
         return anchored
 
 
+@rotation_scope
 def finalize_rotation(rotation, sink, *, actor):
     """Activate only after publish; audit completion in the retirement transaction."""
     from apps.audit.batches import _scope_lock
@@ -219,6 +222,7 @@ def finalize_rotation(rotation, sink, *, actor):
     return rotation.new_key
 
 
+@rotation_scope
 def abort_rotation(rotation, sink, *, actor, record_failure=False):
     """Abort an unanchored PREPARED rotation and reopen batch sealing atomically."""
     from apps.audit.batches import _scope_lock

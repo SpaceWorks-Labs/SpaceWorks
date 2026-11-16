@@ -23,9 +23,7 @@ def visible_replays(user):
         scope = rbac.makerspaces_for_action(user, action)
         predicates.append(Q(operation_kind=kind) if scope is rbac.ALL else
                           Q(operation_kind=kind, makerspace_id__in=scope))
-    return rbac.hide_from_superadmin(
-        user, ReplayCommand.objects.filter(reduce(or_, predicates)), "makerspace_id",
-    )
+    return ReplayCommand.objects.filter(reduce(or_, predicates))
 
 
 def subject_context(command):

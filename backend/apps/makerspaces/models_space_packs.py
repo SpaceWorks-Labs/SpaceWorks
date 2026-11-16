@@ -1,4 +1,5 @@
 """Deployment-global configuration profiles. Actor attribution lives in audit."""
+from django.utils.translation import gettext
 from django.db import models
 
 from .space_pack_format import open_pack
@@ -12,8 +13,10 @@ def validate_space_pack(value):
 
     try:
         validate_configuration(open_pack(value))
-    except (PackError, ValidationError, SerializerValidationError) as exc:
-        raise ValidationError("Invalid configuration space pack.") from exc
+    except PackError as exc:
+        raise ValidationError(str(exc.detail["detail"])) from exc
+    except (ValidationError, SerializerValidationError) as exc:
+        raise ValidationError(gettext("Invalid configuration space pack.")) from exc
 
 
 class SpacePackProfile(models.Model):

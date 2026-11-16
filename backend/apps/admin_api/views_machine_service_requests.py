@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
@@ -73,11 +74,12 @@ class MachineServiceRequestListCreateView(APIView):
             subject_id__in=[row.pk for row in rows],
         )
         payment_map = {payment.subject_id: payment for payment in payments}
+        from apps.machines.service_queue_eta import queue_snapshot_for
         return Response(
             MachineServiceRequestSerializer(
                 rows,
                 many=True,
-                context={"payments_by_subject_id": payment_map},
+                context={"payments_by_subject_id": payment_map, "queue_snapshot": queue_snapshot_for(rows)},
             ).data
         )
 
@@ -94,6 +96,7 @@ class MachineServiceRequestListCreateView(APIView):
         data = serializer.validated_data
         member = get_object_or_404(
             MakerspaceMembership.objects.select_related("user").filter(
+                person_q("user__"),
                 makerspace=makerspace,
                 status="active",
                 user_id=data["requester_id"],
@@ -125,6 +128,7 @@ class MachineServiceRequestListCreateView(APIView):
             description=data.get("description", ""),
             source_link=data.get("source_link", ""),
             capability_payload=data.get("capability_payload"),
+            certification_override_reason=data.get("certification_override_reason", ""),
         )
         return _response(row, status.HTTP_201_CREATED)
 

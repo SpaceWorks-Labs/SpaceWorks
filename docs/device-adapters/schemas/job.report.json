@@ -1,0 +1,131 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/job.report.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actual_grams": {
+      "maximum": 1000000000,
+      "minimum": 0,
+      "type": "number"
+    },
+    "actual_minutes": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "actual_quantity": {
+      "maximum": 1000000000,
+      "minimum": 0,
+      "type": "number"
+    },
+    "consumptions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "machine_consumable_id": {
+            "maximum": 2147483648,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "quantity": {
+            "maximum": 1000000000,
+            "minimum": 0.01,
+            "type": "number"
+          }
+        },
+        "required": [
+          "machine_consumable_id",
+          "quantity"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "error_code": {
+      "format": "code",
+      "maxLength": 48,
+      "type": "string"
+    },
+    "failure_reason": {
+      "maxLength": 500,
+      "type": "string"
+    },
+    "operation_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "completed",
+        "failed"
+      ],
+      "type": "string"
+    },
+    "percent_complete": {
+      "maximum": 100,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "profile_consumptions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "attributes": {
+            "additionalProperties": false,
+            "properties": {
+              "colour": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "material": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "size": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "thickness": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "key": {
+            "format": "code",
+            "maxLength": 50,
+            "type": "string"
+          },
+          "quantity": {
+            "maximum": 1000000000,
+            "minimum": 0.001,
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "quantity"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "type": "array"
+    }
+  },
+  "required": [
+    "operation_id",
+    "outcome",
+    "actual_minutes",
+    "consumptions"
+  ],
+  "type": "object"
+}

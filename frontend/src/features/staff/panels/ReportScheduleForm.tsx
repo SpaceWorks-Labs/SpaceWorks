@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Field } from "../../../components/ui";
@@ -10,6 +11,7 @@ import {
   type ReportSchedule,
   type ReportScheduleInput,
 } from "./reportSchedulesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type ScheduleFormValues = {
   report_key: string;
@@ -123,7 +125,7 @@ export function ReportScheduleForm({
   return (
     <form
       className="grid gap-2 sm:grid-cols-3"
-      aria-label={editing ? "Edit report schedule" : "New report schedule"}
+      aria-label={editing ? t`Edit report schedule` : t`New report schedule`}
       onSubmit={(event) => {
         event.preventDefault();
         const next = validateScheduleForm(form);
@@ -131,9 +133,9 @@ export function ReportScheduleForm({
         if (!next) onSubmit(formToInput(form));
       }}
     >
-      <Field label="Report">
+      <Field label={t`Report`}>
         <select
-          className="desk-input"
+          className="desk-input max-w-full"
           value={form.report_key}
           onChange={(event) => {
             const key = event.target.value;
@@ -152,61 +154,61 @@ export function ReportScheduleForm({
             setProblem(null);
           }}
         >
-          {!reports.length ? <option value="">No exportable reports</option> : null}
+          {!reports.length ? <option value="">{t`No exportable reports`}</option> : null}
           {reports.map((report) => <option key={report.key} value={report.key}>{report.title}</option>)}
         </select>
       </Field>
-      <Field label="Grain">
-        <select className="desk-input" value={form.grain} onChange={(event) => set("grain", event.target.value)}>
+      <Field label={t`Grain`}>
+        <select className="desk-input max-w-full" value={form.grain} onChange={(event) => set("grain", event.target.value)}>
           {(grains.length ? grains : ["day"]).map((grain) => <option key={grain} value={grain}>{grain}</option>)}
         </select>
       </Field>
-      <Field label="Format">
-        <select className="desk-input" value={form.format} onChange={(event) => set("format", event.target.value as ReportSchedule["format"])}>
+      <Field label={t`Format`}>
+        <select className="desk-input max-w-full" value={form.format} onChange={(event) => set("format", event.target.value as ReportSchedule["format"])}>
           {formats.map((format) => <option key={format} value={format}>{format.toUpperCase()}</option>)}
         </select>
       </Field>
-      <Field label="Cadence">
-        <select className="desk-input" value={form.cadence} onChange={(event) => set("cadence", event.target.value as ReportSchedule["cadence"])}>
+      <Field label={t`Cadence`}>
+        <select className="desk-input max-w-full" value={form.cadence} onChange={(event) => set("cadence", event.target.value as ReportSchedule["cadence"])}>
           {CADENCES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </Field>
-      <Field label="Chat destination" hint={destinations.length ? undefined : "No chat destinations configured; email only."}>
-        <select className="desk-input" value={form.destination} onChange={(event) => set("destination", event.target.value)}>
-          <option value="">Email only</option>
+      <Field label={t`Chat destination`} hint={destinations.length ? undefined : t`No chat destinations configured; email only.`}>
+        <select className="desk-input max-w-full" value={form.destination} onChange={(event) => set("destination", event.target.value)}>
+          <option value="">{t`Email only`}</option>
           {destinations.map((destination) => (
             <option key={destination.id} value={destination.id}>{destination.label} ({destination.channel})</option>
           ))}
         </select>
       </Field>
-      <Field label="Window (days)" hint="How far back each run looks; blank keeps the report's default range.">
+      <Field label={t`Window (days)`} hint={t`How far back each run looks; blank keeps the report's default range.`}>
         <input className="desk-input" inputMode="numeric" value={form.window_days} onChange={(event) => set("window_days", event.target.value)} />
       </Field>
-      <Field label="Recipient emails" hint={`External recipients only, up to ${MAX_RECIPIENT_EMAILS}. Use roles or actions for staff.`} className="sm:col-span-3">
+      <Field label={t`Recipient emails`} hint={t`External recipients only, up to ${MAX_RECIPIENT_EMAILS}. Use roles or actions for staff.`} className="sm:col-span-3">
         <textarea className="desk-input min-h-16" value={form.recipients} onChange={(event) => set("recipients", event.target.value)} />
       </Field>
-      <Field label="Recipient role slugs" hint="Comma-separated role slugs from this makerspace's role settings. Resolved each run.">
+      <Field label={t`Recipient role slugs`} hint={t`Comma-separated role slugs from this makerspace's role settings. Resolved each run.`}>
         <input className="desk-input" value={form.role_slugs ?? ""} onChange={(event) => set("role_slugs", event.target.value)} />
       </Field>
-      <Field label="Recipient actions" hint="Comma-separated action keys, such as view_finance. Recipients must also be able to open this report.">
+      <Field label={t`Recipient actions`} hint={t`Comma-separated action keys, such as view_finance. Recipients must also be able to open this report.`}>
         <input className="desk-input" value={form.actions ?? ""} onChange={(event) => set("actions", event.target.value)} />
       </Field>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.non_empty ?? false} onChange={(event) => set("non_empty", event.target.checked)} />Send only when non-empty</label>
-      <Field label="Threshold metric" hint="Sum this column across the matching rows.">
-        <select className="desk-input" value={form.metric ?? ""} onChange={(event) => set("metric", event.target.value)}>
-          <option value="">No threshold</option>{(selected?.condition_metrics ?? []).map((metric) => <option key={metric}>{metric}</option>)}
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={form.non_empty ?? false} onChange={(event) => set("non_empty", event.target.checked)} />{t`Send only when non-empty`}</label>
+      <Field label={t`Threshold metric`} hint={t`Sum this column across the matching rows.`}>
+        <select className="desk-input max-w-full" value={form.metric ?? ""} onChange={(event) => set("metric", event.target.value)}>
+          <option value="">{t`No threshold`}</option>{(selected?.condition_metrics ?? []).map((metric) => <option key={metric}>{metric}</option>)}
         </select>
       </Field>
-      <Field label="Comparison"><select className="desk-input" value={form.comparison ?? "gt"} onChange={(event) => set("comparison", event.target.value)}>
+      <Field label={t`Comparison`}><select className="desk-input max-w-full" value={form.comparison ?? "gt"} onChange={(event) => set("comparison", event.target.value)}>
         {[["gt", ">"], ["gte", ">="], ["lt", "<"], ["lte", "<="], ["eq", "="]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select></Field>
-      <Field label="Threshold"><input className="desk-input" inputMode="decimal" value={form.threshold ?? "0"} onChange={(event) => set("threshold", event.target.value)} /></Field>
-      <Field label="Threshold currency" hint="Choose one currency for a money report with several currencies."><input className="desk-input" maxLength={3} value={form.currency ?? ""} onChange={(event) => set("currency", event.target.value.toLowerCase())} /></Field>
-      <div className="flex items-center gap-2 sm:col-span-3">
+      <Field label={t`Threshold`}><input className="desk-input" inputMode="decimal" value={form.threshold ?? "0"} onChange={(event) => set("threshold", event.target.value)} /></Field>
+      <Field label={t`Threshold currency`} hint={t`Choose one currency for a money report with several currencies.`}><input className="desk-input" maxLength={3} value={form.currency ?? ""} onChange={(event) => set("currency", event.target.value.toLowerCase())} /></Field>
+      <div className="flex flex-wrap items-center gap-2 sm:col-span-3">
         <button className="desk-button-primary" type="submit" disabled={pending || !reports.length}>
-          {pending ? "Saving…" : editing ? "Save schedule" : "Create schedule"}
+          {pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : editing ? t`Save schedule` : t`Create schedule`}
         </button>
-        {onCancel ? <button className="desk-button" type="button" onClick={onCancel}>Cancel</button> : null}
+        {onCancel ? <button className="desk-button" type="button" onClick={onCancel}>{t`Cancel`}</button> : null}
       </div>
       {problem ? <p className="text-sm text-danger sm:col-span-3" role="alert">{problem}</p> : null}
     </form>

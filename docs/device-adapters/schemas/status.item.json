@@ -1,0 +1,173 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/status.item.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "area_clear": {
+      "type": "boolean"
+    },
+    "binding_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "busy": {
+      "type": "boolean"
+    },
+    "clear_token": {
+      "maxLength": 64,
+      "type": "string"
+    },
+    "diagnostics": {
+      "additionalProperties": false,
+      "properties": {
+        "firmware": {
+          "maxLength": 40,
+          "type": "string"
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "failing"
+          ],
+          "type": "string"
+        },
+        "last_error": {
+          "format": "code",
+          "maxLength": 48,
+          "type": "string"
+        },
+        "uptime_seconds": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "error_code": {
+      "format": "code",
+      "maxLength": 48,
+      "type": "string"
+    },
+    "error_codes": {
+      "items": {
+        "enum": [
+          "thermal_runaway",
+          "filament_runout",
+          "door_open",
+          "emergency_stop",
+          "filter_alert",
+          "comms_lost",
+          "hardware_fault",
+          "unknown"
+        ],
+        "type": "string"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "error_detail": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "eta_seconds": {
+      "maximum": 31536000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "interlocks": {
+      "additionalProperties": false,
+      "properties": {
+        "enclosure_closed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "estop_ok": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "filter_ok": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "observed_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "power": {
+      "enum": [
+        "on",
+        "off",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "progress_percent": {
+      "maximum": 100,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "session_ref": {
+      "maxLength": 64,
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "idle",
+        "preparing",
+        "running",
+        "paused",
+        "finished",
+        "failed",
+        "error",
+        "offline",
+        "maintenance"
+      ],
+      "type": "string"
+    },
+    "telemetry": {
+      "additionalProperties": false,
+      "properties": {
+        "metrics": {
+          "additionalProperties": {
+            "maximum": 100000,
+            "minimum": -100000,
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "temperatures": {
+          "additionalProperties": {
+            "maximum": 100000,
+            "minimum": -100000,
+            "type": "number"
+          },
+          "type": "object"
+        }
+      },
+      "required": [],
+      "type": "object"
+    }
+  },
+  "required": [
+    "binding_id",
+    "observed_at",
+    "state"
+  ],
+  "type": "object"
+}

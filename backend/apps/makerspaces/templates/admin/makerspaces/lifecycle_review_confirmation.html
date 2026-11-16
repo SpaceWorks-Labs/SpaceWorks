@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="confirm_review" value="1">
+  {% for space in spaces %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ space.pk }}">{% endfor %}
+  {% for row in requests %}
+    <section>
+      <h2>{% blocktranslate trimmed with id=row.id %}Request {{ id }}{% endblocktranslate %}</h2>
+      <p>{{ row.requested_at }} - {{ row.username }}</p>
+      {{ row.reason|linebreaksbr }}
+      {% if row.impact %}
+        <p>{% translate "Unsettled-charge counts are advisory and may change before archival. Archiving does not block on unsettled charges." %}</p>
+        <dl>
+          <dt>{% translate "Owned pending" %}</dt><dd>{{ row.impact.owned_pending }}</dd>
+          <dt>{% translate "Routed pending" %}</dt><dd>{{ row.impact.routed_pending }}</dd>
+          <dt>{% translate "Total pending" %}</dt><dd>{{ row.impact.total_pending }}</dd>
+        </dl>
+      {% endif %}
+    </section>
+  {% empty %}<p>{% translate "No pending archive requests." %}</p>{% endfor %}
+  {% if not approve %}<label for="resolution_note">{% translate "Reason for declining" %}</label>
+    <textarea id="resolution_note" name="resolution_note" maxlength="2000" required></textarea>{% endif %}
+  <div class="submit-row"><input type="submit" value="Confirm" class="default"><a href=".">{% translate "Cancel" %}</a></div>
+</form>
+{% endblock %}

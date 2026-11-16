@@ -1,6 +1,7 @@
 import uuid
 from types import SimpleNamespace
 
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -18,8 +19,7 @@ from apps.machines.public_service_serializers import (
 )
 from apps.makerspaces.guards import require_module_for_servable
 from apps.makerspaces.lookup import get_public_makerspace
-from apps.makerspaces.platform import module_enabled
-from apps.presence.guard import require_active_account, require_active_member_presence
+from apps.machines.public_intake_access import require_public_machine_requester
 
 
 SERVICE_SUBMIT_ERRORS = {
@@ -32,23 +32,6 @@ SERVICE_SUBMIT_ERRORS = {
 }
 
 
-def require_public_machine_requester(user, makerspace):
-    """Same identity contract as the public BORROW request, for the same reason.
-
-    A machine-service or print request is a PROPOSAL that staff act on -- the requester is
-    asking for a job to be run, not operating the machine themselves -- so it must not
-    hard-require a MakerspaceMembership row. Doing so made the surface dead for every
-    ordinary account on the default `recommended` profile, which ships `machine_service`
-    with `membership` off.
-
-    Mirrors `apps/hardware_requests/public_views.py`: membership, waiver and presence when
-    the community module is installed; an active account when it is not, because waiver
-    acceptance lives on MakerspaceMembership and cannot be recorded at all without it.
-    """
-    if module_enabled(makerspace, "membership"):
-        return require_active_member_presence(user, makerspace)
-    return require_active_account(user, makerspace)
-
 class PublicMachineServiceSubmitView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [MemberPrincipalRateThrottle]
@@ -60,6 +43,7 @@ class PublicMachineServiceSubmitView(APIView):
         request=PublicMachineServiceSubmitSerializer,
         responses={201: PublicMachineServiceSubmitResponseSerializer, **SERVICE_SUBMIT_ERRORS},
     )
+    @transaction.atomic
     def post(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, "machine_service")
@@ -79,6 +63,13 @@ class PublicMachineServiceSubmitView(APIView):
             Machine.objects.filter(makerspace=makerspace, is_active=True),
             pk=data["machine_id"],
         )
+        # One intake for every type (#140): the same switch, per-type setting and limit.
+        from apps.machines.job_intake import require_member_job_gate
+        from apps.machines.job_rules import require_open_job_limit
+        from apps.makerspaces.models import Makerspace
+        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
+        require_member_job_gate(makerspace, request.user, machine.machine_type)
+        require_open_job_limit(makerspace, request.user, machine.machine_type)
         service_request = service_workflow.submit(
             machine,
             request.user,

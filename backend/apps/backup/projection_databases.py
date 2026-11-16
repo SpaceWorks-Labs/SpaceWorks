@@ -8,13 +8,12 @@ import uuid
 from django.conf import settings
 from django.db import connections
 
-from apps.backup.archive_payload import _postgres_environment
 from apps.backup.postgres_client import (
     PostgresClientUnavailable,
     client_binary,
     server_major,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 logger = logging.getLogger(__name__)
 
@@ -28,38 +27,11 @@ def _client(tool, major=None):
 
 
 def _run(command):
-    """Run a PostgreSQL client command, logging the real failure before raising.
-
-    The raised message stays generic because it reaches operators through the
-    backup UI; the tool's own stderr goes to the log so a failure is diagnosable
-    instead of anonymous.
-    """
+    from .cloud_database_tools import fixed_command
     try:
-        subprocess.run(
-            command,
-            env=_postgres_environment(),
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
-    except subprocess.CalledProcessError as exc:
-        logger.error(
-            "backup.projection_database_command_failed command=%s rc=%s stderr=%s",
-            command[0],
-            exc.returncode,
-            (exc.stderr or b"").decode("utf-8", "replace")[-4000:],
-        )
-        raise BackupBuildError(
-            "The readable-main verification database operation failed."
-        ) from exc
-    except OSError as exc:
-        logger.error(
-            "backup.projection_database_command_unavailable",
-            extra={"command": command[0], "error": str(exc)},
-        )
-        raise BackupBuildError(
-            "The readable-main verification database operation failed."
-        ) from exc
+        return fixed_command(command)
+    except Exception:
+        raise BackupBuildError("The readable-main database operation failed; verify TLS, privileges and client major.") from None
 
 
 @contextmanager

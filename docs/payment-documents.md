@@ -22,7 +22,7 @@ a replacement; a refund only receives a credit note once it succeeds.
 These are informal gross-only payment acknowledgements. The nullable `tax_breakdown`
 is reserved, constrained to NULL and unused. An issuer identifier is presentation
 metadata, not a tax rate or a claim of jurisdiction-specific legal compliance. Tax
-handling (owner decision O3) remains outside this lane.
+handling is not part of this feature.
 
 The payer's own account email receives a link to the authenticated member page after
 commit, through the existing mail dispatcher and email module gate. No caller chooses
@@ -69,5 +69,5 @@ Document/refund/settlement/reversal and issued-by references remap normally. No 
 storage keys or source download grants travel. The money fingerprint includes appended
 documents and numbering settings (even before the first receipt), so issuing/correcting
 a receipt or changing numbering after capture requires a
-fresh capture before publication. The coordinator must recompute the integration
-catalog digest and regenerate the OpenAPI snapshot/client after merging lanes.
+fresh capture before publication. Maintainers must recompute the catalog digest
+and regenerate the OpenAPI snapshot and client after changing receipts.

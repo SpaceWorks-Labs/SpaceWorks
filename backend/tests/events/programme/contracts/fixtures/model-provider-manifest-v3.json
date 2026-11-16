@@ -1,0 +1,577 @@
+{
+  "contract_version": 3,
+  "status": "planned_model_contract_not_ORM_registration",
+  "models": [
+    {
+      "name": "HackathonConfig",
+      "lane": "A",
+      "field_constraint_contract": "event OneToOne; enabled; version; review_mode `auto/rolling/batch`; application open/close; team_mode `solo/individual_then_team/team_together`; finder_enabled; team_min/max; team_lock_at; review_count default 2; blind_review; review_rubric JSON version; RSVP days default 4; offer_capacity (null means Event.capacity; explicit integer may overbook offers); submission open/deadline/grace; late policy `reject/accept_flagged`; attendance_required default true for onsite, false online; upload_policy name/version; storage_budget_bytes nullable unlimited only self-host; gallery/results pointers; CoC version + private immutable text revision; optional MLH schema; first_results_published_at; retention_anchor_at. Event.capacity remains the sole hard RSVP ceiling, ticket capacity its additional constraint. Validate all windows, positive sizes, team_min≤max and server ceilings."
+    },
+    {
+      "name": "HackathonApplication",
+      "lane": "A",
+      "field_constraint_contract": "event, member, registration nullable OneToOne until submission; cohort nullable; state; version; encrypted answers/profile snapshot; form/schema version; CoC revision and accepted_at; optional sharing-consent purposes/version/timestamps; submitted_at; offered_at; RSVP_due_at; response_at; queue_position_at; decision_revision; immutable notified-decision reference. Unique(event,member), including terminal rows: reapply revises the same record under policy, never creates duplicate identity."
+    },
+    {
+      "name": "HackathonApplicationCohort",
+      "lane": "A",
+      "field_constraint_contract": "event, team OneToOne, state/version, sealed_roster_hash; only team-together mode. Every member owns their application/consent. Cohort commands release a decision atomically to the sealed roster."
+    },
+    {
+      "name": "ApplicationReviewAssignment",
+      "lane": "A",
+      "field_constraint_contract": "nullable application/cohort FKs with exactly-one CHECK, reviewer member, round; unique(subject,reviewer,round); assigned/submitted/recused; rubric revision, criterion scores 1–5, encrypted notes, submitted_at. Self/team/declared conflict exclusions. N distinct reviewers required before reviewed release unless an audited override is stored. `hackathons/review_workflow.py` owns review assignment/submit/recuse; admission_workflow alone releases decisions."
+    },
+    {
+      "name": "ApplicationReview",
+      "lane": "A",
+      "field_constraint_contract": "nullable application/cohort FKs with exactly-one CHECK, reviewer member, round; unique(subject,reviewer,round); assigned/submitted/recused; rubric revision, criterion scores 1–5, encrypted notes, submitted_at. Self/team/declared conflict exclusions. N distinct reviewers required before reviewed release unless an audited override is stored. `hackathons/review_workflow.py` owns review assignment/submit/recuse; admission_workflow alone releases decisions."
+    },
+    {
+      "name": "ApplicationDecisionBatch",
+      "lane": "A",
+      "field_constraint_contract": "event, actor, state `draft/committed/cancelled`, version; subject, proposed outcome `offer/waitlist/reject`, reason code, expected subject version, sent_revision. Only one active draft decision per subject. Sent decisions append immutable history; later changes require a new explicit correction."
+    },
+    {
+      "name": "ApplicationDecision",
+      "lane": "A",
+      "field_constraint_contract": "event, actor, state `draft/committed/cancelled`, version; subject, proposed outcome `offer/waitlist/reject`, reason code, expected subject version, sent_revision. Only one active draft decision per subject. Sent decisions append immutable history; later changes require a new explicit correction."
+    },
+    {
+      "name": "HackathonTeam",
+      "lane": "A",
+      "field_constraint_contract": "event, UUID public_id, name, leader FK member, state `forming/locked/disbanded`, version, structured zone/table, seeking_members, public finder text/skills, public_profile_refs; unique(event, normalized active name) with collision-safe suffix suggestions."
+    },
+    {
+      "name": "HackathonTeamMember",
+      "lane": "A",
+      "field_constraint_contract": "event, team, application/member, state `invited/requested/active/left/removed`, joined_at/left_at, creator. Partial unique(event,member) for active memberships; same-event/leader membership checks. Pending invites do not reserve team slots."
+    },
+    {
+      "name": "HackathonTeamInvite",
+      "lane": "A",
+      "field_constraint_contract": "team, digest token, optional verified-email digest, expiry/revoked/redeemed timestamps. No raw token in lists/outboxes/export. Share via fragment, rotate/revoke, never by public attendee contact list."
+    },
+    {
+      "name": "EventRoleAssignment",
+      "lane": "C",
+      "field_constraint_contract": "event, member, posting nullable, origin `self/invited/staff`, role `co_organizer/volunteer/mentor/judge/sponsor_rep`, sponsor nullable, state `draft/proposed/applied/approved/declined/withdrawn/revoked/completed`, approved_by/at, consent revision, encrypted application notes/answers, form_schema_version, answer_locked_at, date_review_required, display_on_page false, explicit selected presentation reference (§9A), skills tags, availability, version. Partial unique(event,member,role,sponsor) while active, including correct null-sponsor uniqueness. A self application uses draft→applied and owns its own EventAnswerDerivation subjects (§10A). Contribution history survives grant revocation."
+    },
+    {
+      "name": "EventGrantEntitlement",
+      "lane": "C",
+      "field_constraint_contract": "grant FK, source kind `manual/role/shift`, typed role_assignment/shift_signup FK alternatives with DB shape check, permissions, track restrictions, valid_from/until, created_by, revoked_at/by. Only one live entitlement per source; event/tenant must agree."
+    },
+    {
+      "name": "EventRolePosting",
+      "lane": "C",
+      "field_constraint_contract": "event (series defaults copied per occurrence), role volunteer/mentor, title/description/briefing, skills, visibility public/members/audience_organizations, approval_required, open/close, waiver/training requirements, allowed permission preset, version, status draft/open/closed. No age requirement."
+    },
+    {
+      "name": "EventShift",
+      "lane": "C",
+      "field_constraint_contract": "posting, event, starts/ends, zone/task, capacity (0 unlimited), signup deadline, waitlist_enabled, approval_required, minimum briefing/training references, permission window; validates event window and bounded grace."
+    },
+    {
+      "name": "EventShiftSignup",
+      "lane": "C",
+      "field_constraint_contract": "shift, assignment/member, state `applied/waitlisted/approved/withdrawn/declined`, queue_at, approved_at/by, version; unique(shift,member). Approval creates a time-bounded entitlement, not a permanent grant."
+    },
+    {
+      "name": "EventShiftAttendance",
+      "lane": "C",
+      "field_constraint_contract": "signup OneToOne, scheduled/checked_in/checked_out/no_show, timestamps and source/actor; minutes computed from check-in/out minus bounded breaks, no negative/overlapping counted intervals. Hours state pending/verified/adjusted, immutable verification/adjustment entries with actor/reason and previous version."
+    },
+    {
+      "name": "EventContributionHours",
+      "lane": "C",
+      "field_constraint_contract": "signup OneToOne, scheduled/checked_in/checked_out/no_show, timestamps and source/actor; minutes computed from check-in/out minus bounded breaks, no negative/overlapping counted intervals. Hours state pending/verified/adjusted, immutable verification/adjustment entries with actor/reason and previous version."
+    },
+    {
+      "name": "EventSponsor",
+      "lane": "C",
+      "field_constraint_contract": "event, optional global organization, public label/logo/page reference, active; unique sponsor↔track. Rep assignment belongs to sponsor and exact tracks. Global organization is referenced, never tenant-owned or created from a grant."
+    },
+    {
+      "name": "EventSponsorTrack",
+      "lane": "C",
+      "field_constraint_contract": "event, optional global organization, public label/logo/page reference, active; unique sponsor↔track. Rep assignment belongs to sponsor and exact tracks. Global organization is referenced, never tenant-owned or created from a grant."
+    },
+    {
+      "name": "MentorProfile",
+      "lane": "C",
+      "field_constraint_contract": "assignment OneToOne, skills, affiliation private, availability/shift references, max_active_teams"
+    },
+    {
+      "name": "MentorTeamAssignment",
+      "lane": "C",
+      "field_constraint_contract": "event,mentor_assignment,team,mode,version,active_from,ended_at,created_by"
+    },
+    {
+      "name": "EventHelpType",
+      "lane": "C",
+      "field_constraint_contract": "event,key,label,skill_tags,priority"
+    },
+    {
+      "name": "EventHelpRequest",
+      "lane": "C",
+      "field_constraint_contract": "event,team,type,raised_by,origin team/mentor/round,structured_zone,encrypted_summary,state,claimed_by,created_at,first_claimed_at,last_claimed_at,resolved_at,cancelled_at,version,exclusive_until"
+    },
+    {
+      "name": "OfficeHoursBooking",
+      "lane": "C",
+      "field_constraint_contract": "event,slot FK EventShift,team FK,booked_by,mentor_assignment FK,state booked/cancelled,version,operation_uuid,created_at,cancelled_at"
+    },
+    {
+      "name": "EventHelpComment",
+      "lane": "C",
+      "field_constraint_contract": "request,author,origin team/mentor,encrypted_body,created_at"
+    },
+    {
+      "name": "MentorRound",
+      "lane": "C",
+      "field_constraint_contract": "event,index,key,label,open/close,state draft/live/closed/skipped,form_schema_version,note_keys,rating_keys"
+    },
+    {
+      "name": "MentorRoundLock",
+      "lane": "C",
+      "field_constraint_contract": "team,round,mentor,lease_uuid,generation,expires_at,heartbeat_at"
+    },
+    {
+      "name": "MentorRoundCheckin",
+      "lane": "C",
+      "field_constraint_contract": "team,round,mentor,form_snapshot,encrypted_answers,started_at,submitted_at,overrides,away"
+    },
+    {
+      "name": "MentorConflict",
+      "lane": "C",
+      "field_constraint_contract": "event,mentor,team,kind declared/affiliation/mentored,active,reason"
+    },
+    {
+      "name": "HackathonTrack",
+      "lane": "D",
+      "field_constraint_contract": "event, public name/description, optional existing website-section reference, criteria/forms, capacity or eligibility rules; prize sponsor, rank/order, award_count, winner_selection_mode. Track IDs cannot be attached across events."
+    },
+    {
+      "name": "HackathonPrize",
+      "lane": "D",
+      "field_constraint_contract": "event, public name/description, optional existing website-section reference, criteria/forms, capacity or eligibility rules; prize sponsor, rank/order, award_count, winner_selection_mode. Track IDs cannot be attached across events."
+    },
+    {
+      "name": "HackathonSubmission",
+      "lane": "B",
+      "field_constraint_contract": "event, team OneToOne, state draft/submitted/locked/under_review/judged/disqualified/withdrawn, version; title/tagline/problem/description/challenges, tech tags, AI-use/reused-code declarations; current_snapshot FK; triage pending/eligible/ineligible/hidden, triage_reason reference; submitted/locked timestamps. Public metadata consent default false."
+    },
+    {
+      "name": "SubmissionSnapshot",
+      "lane": "B",
+      "field_constraint_contract": "submission, sequence unique per submission, submitted_by/at, sealed team-member IDs, frozen canonical project/forms/track-prize selections, AI/reuse declarations, content_sha256, late flag, amendment_of/reason; append-only DB guard. Typed snapshot–asset/link/track tables prove ownership; JSON contains stable IDs, never raw keys or presigns."
+    },
+    {
+      "name": "SubmissionLink",
+      "lane": "B",
+      "field_constraint_contract": "submission, kind repo/demo/video/slides/cad/pcb/firmware/other, URL, provider classification, public_requested false, version; snapshot pins a normalized immutable value."
+    },
+    {
+      "name": "SubmissionAsset",
+      "lane": "B",
+      "field_constraint_contract": "§8 fields; one owner team/submission, purpose field. Participant resumes instead use a typed member-owned `HackathonParticipantAsset` with the same upload engine and no gallery permission."
+    },
+    {
+      "name": "SubmissionIntegrityFlag",
+      "lane": "B",
+      "field_constraint_contract": "snapshot, rule_key, severity informational, evidence summary/reference, checked_at, state open/acknowledged/dismissed, reviewer/reason. No automatic disqualification."
+    },
+    {
+      "name": "JudgingRound",
+      "lane": "D",
+      "field_constraint_contract": "event,key,mode weighted_1_5/top3,state draft/open/closed/finalized,version,min_reviews default 3,criteria_revision,normalization none/zscore,opens/closes"
+    },
+    {
+      "name": "JudgingCriterion",
+      "lane": "D",
+      "field_constraint_contract": "round,key,label,weight Decimal,anchors[1..5]"
+    },
+    {
+      "name": "JudgeAssignment",
+      "lane": "D",
+      "field_constraint_contract": "round,judge_role_assignment,submission_snapshot,track/room/batch,state assigned/scored/skipped/recused,assigned_at,version"
+    },
+    {
+      "name": "JudgeRankingBallot",
+      "lane": "D",
+      "field_constraint_contract": "round,judge,batch,ordered_top3,submitted_at"
+    },
+    {
+      "name": "EventResultRevision",
+      "lane": "D",
+      "field_constraint_contract": "event,version,round snapshots,algorithm_version,aggregates,award assignments,created_by,finalized_at"
+    },
+    {
+      "name": "EventAward",
+      "lane": "D",
+      "field_constraint_contract": "prize,submission_snapshot,rank,public_requested"
+    },
+    {
+      "name": "GalleryPublication",
+      "lane": "D",
+      "field_constraint_contract": "event OneToOne,published_at,published_by,result_revision,version"
+    },
+    {
+      "name": "GalleryEntry",
+      "lane": "D",
+      "field_constraint_contract": "public_id,snapshot,selected_asset_refs,public metadata,hidden_at"
+    },
+    {
+      "name": "ParticipantSponsorResumeConsent",
+      "lane": "D",
+      "field_constraint_contract": "event,member,sponsor,participant_asset,asset_sha256,purpose=\"recruiting\",state granted/revoked,consent_revision,consented_at,revoked_at,expires_at,version"
+    },
+    {
+      "name": "EventRegistrationCredential",
+      "lane": "E",
+      "field_constraint_contract": "registration FK, generation, token_digest unique, token_ciphertext, key_version, created_at, expires_at, revoked_at, revoked_by, revocation_reason"
+    },
+    {
+      "name": "EventMemberPresentation",
+      "lane": "E",
+      "field_constraint_contract": "event,member,selected_profile FK nullable,selected_membership FK nullable,print_photo_consent=false,public_card_consent=false,public_card_scopes=[],consent_revision,consented_at,revoked_at,version"
+    },
+    {
+      "name": "MemberSavedAsset",
+      "lane": "P",
+      "field_constraint_contract": "user,public_id,object_key,staging_key,verification_key,sha256,size_bytes,canonical_mime,state,scan_status,version,created_at"
+    },
+    {
+      "name": "AccountPiiKey",
+      "lane": "P",
+      "field_constraint_contract": "user,version,wrapped_dek,broker_backend,broker_key_id,status"
+    },
+    {
+      "name": "SavedDetailUpdateIntent",
+      "lane": "P",
+      "field_constraint_contract": "user,operation_uuid,event_id,subject_kind,subject_id,base_versions,chosen_fields,encrypted_payload,key_version,key_epoch,state pending/applied/conflict/failed,created_at,expires_at"
+    },
+    {
+      "name": "EventAnswerDerivation",
+      "lane": "P",
+      "field_constraint_contract": "event,registration FK nullable,application FK nullable,role_assignment FK nullable,question_id,source_dob_envelope,event_date_revision,as_of_date,locked_at,version"
+    },
+    {
+      "name": "AccountSavedDetailsExportJob",
+      "lane": "P",
+      "field_constraint_contract": "user,job_uuid unique,state queued/building/ready/failed/expired,object_key,sha256,size_bytes,created_at,expires_at"
+    },
+    {
+      "name": "EventCommandReceipt",
+      "lane": "G",
+      "field_constraint_contract": "event,actor,operation_uuid,request_sha256,response_reference,created_at; unique(event,actor,operation_uuid); 30 days; no credentials"
+    },
+    {
+      "name": "PiiAccountWriteFence",
+      "lane": "P",
+      "field_constraint_contract": "account exclusive/shared fence; always-present account encryption registry"
+    },
+    {
+      "name": "SavedDetailCommandReceipt",
+      "lane": "P",
+      "field_constraint_contract": "owner-scoped digest/replay protocol; no Events FK; 30 days"
+    },
+    {
+      "name": "CertificateIssueBatch",
+      "lane": "E",
+      "field_constraint_contract": "persisted batch plus unique batch+subject+kind+award items, chunk size100"
+    },
+    {
+      "name": "EventCertificateLibraryTemplate",
+      "lane": "E",
+      "field_constraint_contract": "makerspace scope, immutable revisions, independently copied artwork"
+    },
+    {
+      "name": "EventAttendanceCertificate",
+      "lane": "E",
+      "field_constraint_contract": "extend existing table; explicit event/recipient_member, exactly one registration or role_assignment, kind/award/revision uniqueness; legacy publication false"
+    },
+    {
+      "name": "Event",
+      "lane": "G",
+      "field_constraint_contract": "add version,event_date_revision,event_accent_preset through single G update path"
+    },
+    {
+      "name": "MemberSavedDetail",
+      "lane": "P",
+      "field_constraint_contract": "user,field_key,value_envelope,value_type,version,updated_at,save_consent_version,consented_at; unique(user,field_key)"
+    },
+    {
+      "name": "HackathonParticipantAsset",
+      "lane": "B",
+      "field_constraint_contract": "event,member,purpose,public_id,staging_key,verification_key,object_key,actual_bytes,sha256,state,scan_status,generation,expires_at,expired_at,expired_size_bytes; independently owned event resume, not vault object"
+    },
+    {
+      "name": "TeamComment",
+      "lane": "A",
+      "field_constraint_contract": "team,author,encrypted_body,created_at; append-only; max2000 chars"
+    },
+    {
+      "name": "EventHelpAction",
+      "lane": "C",
+      "field_constraint_contract": "request,actor,action,encrypted_notes,reason reference; append-only"
+    },
+    {
+      "name": "MentorNomination",
+      "lane": "C",
+      "field_constraint_contract": "round,mentor,team,kind; unique(round,mentor,team,kind); not judging score"
+    },
+    {
+      "name": "JudgeScore",
+      "lane": "D",
+      "field_constraint_contract": "criterion values and encrypted notes with submitted_at/version; D supplies exact ORM fields/constraints in its final manifest"
+    },
+    {
+      "name": "BadgePrintResource",
+      "lane": "E",
+      "field_constraint_contract": "job,typed immutable photo/logo/QR resource snapshot,content hash,source revision; coordination, no user closure"
+    }
+  ],
+  "providers": [
+    {
+      "owner": "A",
+      "module": "events/hackathons/admission_workflow.py",
+      "interfaces": [
+        "require_team_eligible",
+        "transition_registration_locked"
+      ]
+    },
+    {
+      "owner": "A",
+      "module": "events/hackathons/team_workflow.py",
+      "interfaces": [
+        "lock_roster_locked"
+      ]
+    },
+    {
+      "owner": "A",
+      "module": "events/hackathons/admission_inputs.py",
+      "interfaces": [
+        "typed_admission_input"
+      ]
+    },
+    {
+      "owner": "A",
+      "module": "events/hackathons/admission_projection.py",
+      "interfaces": [
+        "owner_admission_projection"
+      ]
+    },
+    {
+      "owner": "A",
+      "module": "events/hackathons/api_context.py",
+      "interfaces": [
+        "token_context_projection"
+      ]
+    },
+    {
+      "owner": "B",
+      "module": "events/submissions/read_policy.py",
+      "interfaces": [
+        "authorize_read"
+      ]
+    },
+    {
+      "owner": "B",
+      "module": "events/submissions/assets.py",
+      "interfaces": [
+        "require_ready_for_snapshot"
+      ]
+    },
+    {
+      "owner": "C",
+      "module": "events/contributions/role_workflow.py",
+      "interfaces": [
+        "sync_entitlement_locked"
+      ]
+    },
+    {
+      "owner": "C",
+      "module": "events/mentoring/conflicts.py",
+      "interfaces": [
+        "is_conflicted"
+      ]
+    },
+    {
+      "owner": "D",
+      "module": "events/judging/sponsor_consent_workflow.py",
+      "interfaces": [
+        "grant",
+        "revoke",
+        "project_owner",
+        "require_effective_for_asset"
+      ]
+    },
+    {
+      "owner": "D",
+      "module": "events/programme_sections/",
+      "interfaces": [
+        "project_public"
+      ]
+    },
+    {
+      "owner": "E",
+      "module": "events/certificates/subjects.py",
+      "interfaces": [
+        "typed_subject_resolver"
+      ]
+    },
+    {
+      "owner": "E",
+      "module": "events/profile_photos/",
+      "interfaces": [
+        "selection_workflow",
+        "policy",
+        "projection",
+        "snapshot"
+      ]
+    },
+    {
+      "owner": "F",
+      "module": "forms_schema/profile_fields.py",
+      "interfaces": [
+        "model_free_profile_field_descriptors"
+      ]
+    },
+    {
+      "owner": "F",
+      "module": "forms_schema/",
+      "interfaces": [
+        "versioned_member_input_validation"
+      ]
+    },
+    {
+      "owner": "P",
+      "module": "accounts/saved_details/",
+      "interfaces": [
+        "prepare_saved_detail_intent",
+        "owner_prefill"
+      ]
+    },
+    {
+      "owner": "P",
+      "module": "events/answer_derivations/",
+      "interfaces": [
+        "three_subject_resolver",
+        "age_projection",
+        "date_invalidation"
+      ]
+    },
+    {
+      "owner": "G",
+      "module": "makerspaces/private_upload_transport.py",
+      "interfaces": [
+        "UploadTransport",
+        "bounded_not_after",
+        "stream_private"
+      ]
+    },
+    {
+      "owner": "G",
+      "module": "events/registration_form_adapter.py",
+      "interfaces": [
+        "normalize_registration_input",
+        "validate_registration_form"
+      ]
+    }
+  ],
+  "barrel": {
+    "models": "apps.events.models_programme",
+    "urls": "apps.events.urls_programme"
+  },
+  "consent": {
+    "owner": "D",
+    "model": "ParticipantSponsorResumeConsent",
+    "workflow": "apps.events.judging.sponsor_consent_workflow",
+    "consumers": [
+      "A",
+      "B",
+      "C",
+      "P"
+    ],
+    "forbidden_models": [
+      "ParticipantSponsorConsent"
+    ],
+    "forbidden_contribution_fields": [
+      "allow_resume"
+    ],
+    "replacement_inherits_consent": false
+  },
+  "lane_handoff_required": [
+    "literal_fields",
+    "typed_FKs",
+    "User_edges",
+    "encrypted_fields_and_scope",
+    "object_keys_bucket_owner",
+    "PRESERVE_RESET_DROP",
+    "uniqueness",
+    "source_fence_authority_modules",
+    "routes_by_method",
+    "retention_and_purge_dependencies"
+  ],
+  "migrations_owner": "G",
+  "domain_lanes_create_app_migrations": false,
+  "model_definition_status": "Checkpoint publishes required model identities and plan field/constraint specifications. Each lane supplies literal final ORM field/User/object disposition manifests for G migration authoring; no models are installed here.",
+  "canonical_storage_fields": {
+    "SubmissionAsset": {
+      "size": "actual_bytes",
+      "expiry": [
+        "state",
+        "expires_at",
+        "expired_at",
+        "expired_size_bytes"
+      ],
+      "object_fields": [
+        "object_key",
+        "staging_key",
+        "verification_key"
+      ]
+    },
+    "HackathonParticipantAsset": {
+      "size": "actual_bytes",
+      "expiry": [
+        "state",
+        "expires_at",
+        "expired_at",
+        "expired_size_bytes"
+      ],
+      "object_fields": [
+        "object_key",
+        "staging_key",
+        "verification_key"
+      ]
+    },
+    "MemberSavedAsset": {
+      "size": "size_bytes",
+      "owner": "account",
+      "object_fields": [
+        "object_key",
+        "staging_key",
+        "verification_key"
+      ]
+    }
+  },
+  "lane_named_model_families": [
+    {
+      "owner": "E",
+      "family": "rendered badge jobs",
+      "contract": "coordination; template/credential/photo generations; cleanup within24h; supply exact class/fields in E manifest"
+    },
+    {
+      "owner": "E",
+      "family": "certificate bulk item rows",
+      "contract": "unique batch+subject+kind+award; supply exact class/fields in E manifest"
+    },
+    {
+      "owner": "E",
+      "family": "certificate library immutable revisions",
+      "contract": "tenant-owned independent immutable artwork/revision copies; supply exact class/fields in E manifest"
+    }
+  ]
+}

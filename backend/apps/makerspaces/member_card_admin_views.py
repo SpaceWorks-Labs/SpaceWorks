@@ -2,21 +2,23 @@
 
 Gated by ACTIONS (`MANAGE_MEMBER_CARDS`, `SCAN_MEMBER_CARDS`), scoped through `rbac`.
 """
+from django.utils.translation import gettext
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.makerspaces import member_card_printing, member_card_services, member_card_templates
+from apps.makerspaces import member_card_services, member_card_templates
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.member_card_serializers import (
     MemberCardIssueSerializer,
@@ -28,14 +30,13 @@ from apps.makerspaces.member_card_serializers import (
     MemberCardSerializer,
     MemberCardTemplateSerializer,
 )
-from apps.makerspaces.member_card_views import snapshot_for
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MemberCard
 
 ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Invalid card input or membership module disabled."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid card input."),
     401: OpenApiResponse(ErrorSerializer, description="Authentication required."),
     403: OpenApiResponse(ErrorSerializer, description="Missing member-card action or inactive account."),
-    404: OpenApiResponse(ErrorSerializer, description="Not found in the permitted makerspace."),
+    404: OpenApiResponse(ErrorSerializer, description="Not found in the permitted makerspace, or the membership module is turned off."),
 }
 TAG = "Admin memberships"
 
@@ -122,7 +123,8 @@ class MemberCardRevokeView(APIView):
         card = _card_for(request.user, rbac.Action.MANAGE_MEMBER_CARDS, pk)
         serializer = MemberCardRevokeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        card = member_card_services.revoke_card(request.user, card, reason=serializer.validated_data.get("reason") or "revoked")
+        card = member_card_services.revoke_card(request.user, card, reason=serializer.validated_data.get("reason") or "revoked",
+                                                note=serializer.validated_data["note"])
         return Response(MemberCardSerializer(card).data)
 
 
@@ -135,24 +137,30 @@ def _pdf_response(pdf, filename):
 class MemberCardPrintView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=[TAG], summary="Print one card (CR80 PDF)", request=None,
+    @extend_schema(tags=[TAG], summary="Print one card (stock-size PDF, front and back)", request=None,
                    responses={(200, "application/pdf"): OpenApiTypes.BINARY, **ERRORS})
     def post(self, request, pk):
+        from apps.card_designs.cards import render
         card = _card_for(request.user, rbac.Action.MANAGE_MEMBER_CARDS, pk)
         if not card.is_active:
-            raise PermissionDenied("A revoked card cannot be printed.")
-        template = member_card_templates.normalize_template(dict(member_card_templates.template_for(card.makerspace), page="cr80"))
-        pdf = member_card_printing.render_cards_pdf(template, [snapshot_for(card)], title=f"Member card {card.card_number}")
+            raise PermissionDenied(gettext("A revoked card cannot be printed."))
+        pdf, _content_type, filename = render("member_card", card, fmt="pdf")
         member_card_services.record_print(request.user, [card])
-        return _pdf_response(pdf, f"member-card-{card.card_number:05d}.pdf")
+        return _pdf_response(pdf, filename)
+
+
+SYNC_SHEET_LIMIT = 10
 
 
 class MemberCardSheetView(APIView):
+    """One A4/Letter page renders in the request; larger sheets are a print job (#133)."""
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=[TAG], summary="Print a sheet of cards", request=MemberCardPrintSerializer,
-                   responses={(200, "application/pdf"): OpenApiTypes.BINARY, **ERRORS})
+    @extend_schema(tags=[TAG], summary="Print one sheet of up to 10 cards (larger runs: queue a print job)",
+                   request=MemberCardPrintSerializer, responses={(200, "application/pdf"): OpenApiTypes.BINARY, **ERRORS})
     def post(self, request, makerspace_id):
+        from apps.card_designs.cards import context_for, document_for
+        from apps.card_designs.sheets import render_sheets
         makerspace = _makerspace_for(request.user, rbac.Action.MANAGE_MEMBER_CARDS, makerspace_id)
         serializer = MemberCardPrintSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -160,17 +168,44 @@ class MemberCardSheetView(APIView):
         ids = serializer.validated_data.get("card_ids")
         if ids:
             cards = cards.filter(pk__in=ids)
-        cards = list(cards.order_by("card_number")[:200])
-        template = member_card_templates.template_for(makerspace)
-        if serializer.validated_data.get("preset") == "single":
-            template = member_card_templates.normalize_template(dict(template, page="cr80"))
-        pdf = member_card_printing.render_cards_pdf(template, [snapshot_for(card) for card in cards], title="Member cards")
+        if cards.count() > SYNC_SHEET_LIMIT:
+            raise ValidationError({"detail": gettext('More than {SYNC_SHEET_LIMIT} cards: queue a print job instead.').format(SYNC_SHEET_LIMIT=SYNC_SHEET_LIMIT)})
+        cards = list(cards.order_by("card_number"))
+        if not cards:
+            raise ValidationError({"detail": gettext("No active cards to print.")})
+        rendered = []
+        for card in cards:
+            document = document_for("member_card", card)
+            rendered.append((document, context_for("member_card", card, document)))
+        page = member_card_templates.template_for(makerspace).get("page", "a4")
+        if serializer.validated_data["preset"] == "single" or page == "cr80":
+            pdf = _card_size_pages(rendered)  # card-sized pages, for card printers
+        else:
+            pdf = render_sheets(rendered, paper=page, title="Member cards")
         member_card_services.record_print(request.user, cards)
         return _pdf_response(pdf, "member-cards.pdf")
 
 
+def _card_size_pages(rendered):
+    from io import BytesIO
+    from pypdf import PdfReader, PdfWriter
+    from apps.card_designs.rendering import render_pdf
+    writer = PdfWriter()
+    for document, context in rendered:
+        for pdf_page in PdfReader(BytesIO(render_pdf(document, context, title="Member card"))).pages:
+            writer.add_page(pdf_page)
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+class MemberCardResolveThrottle(ScopedRateThrottle):
+    scope = "member_card_resolve"
+
+
 class MemberCardResolveView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [MemberCardResolveThrottle]
 
     @extend_schema(tags=[TAG], summary="Resolve a scanned member card to minimal identity",
                    request=MemberCardResolveSerializer, responses={200: MemberCardResolveResultSerializer, **ERRORS})

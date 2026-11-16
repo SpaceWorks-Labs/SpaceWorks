@@ -1,0 +1,1039 @@
+{
+  "contract_version": 3,
+  "clock": "2026-10-18T11:00:00Z",
+  "setup": {
+    "event_id": 42,
+    "host_id": 9,
+    "member_id": 17,
+    "display_name": "Fixture Member",
+    "host_membership": false,
+    "existing_application": false,
+    "existing_registration": false,
+    "account_email": "",
+    "account_phone": "",
+    "registration_audience": "participating_organizations",
+    "ticket_types_enabled": true,
+    "invites_enabled": true,
+    "promo_codes_enabled": true,
+    "eligible": true,
+    "form": {
+      "schema_version": 2,
+      "form_id": "hackathon-application",
+      "revision": 3,
+      "questions": [
+        {
+          "id": "institution",
+          "type": "short_text",
+          "label": "School or organisation",
+          "required": true,
+          "profile_field_key": "institution",
+          "bounds": {
+            "max_length": 200
+          },
+          "disclosure": {
+            "organizer": true,
+            "reviewer": false,
+            "judge": false
+          }
+        },
+        {
+          "id": "emergency",
+          "type": "emergency_contact",
+          "label": "Emergency contact",
+          "required": false,
+          "profile_field_key": "emergency_contact",
+          "disclosure": {
+            "organizer": true,
+            "reviewer": false,
+            "judge": false
+          }
+        }
+      ],
+      "event_context": {
+        "event_id": 42,
+        "event_date_revision": 7,
+        "timezone_name": "Asia/Kolkata",
+        "as_of_date": "2026-12-01"
+      }
+    },
+    "coc": {
+      "revision": 5,
+      "body": "Fixture CoC."
+    }
+  },
+  "request": {
+    "operation_id": "33333333-3333-4333-8333-333333333333",
+    "expected_version": 0,
+    "form": {
+      "schema_version": 2,
+      "form_id": "hackathon-application",
+      "revision": 3
+    },
+    "answers": {
+      "institution": "Maker College",
+      "emergency": {
+        "name": "Fixture Contact",
+        "relationship": "Friend",
+        "phone": "+919876543210"
+      }
+    },
+    "derivations": {},
+    "save_choices": {
+      "institution": false,
+      "emergency_contact": false
+    },
+    "saved_detail_versions": {},
+    "ticket_type_id": 8,
+    "invite_code": "fixture-invite",
+    "promo_code": "MAKER10",
+    "email": "fixture.member@example.test",
+    "phone": "+919800000017",
+    "host_waiver_id": 13,
+    "host_waiver_version": "host-2026-10",
+    "host_waiver_accepted": true,
+    "coc": {
+      "revision": 5,
+      "accepted": true
+    },
+    "optional_consents": {
+      "mlh_data_sharing": false
+    },
+    "event_date_revision": 7
+  },
+  "headers": {
+    "Idempotency-Key": "33333333-3333-4333-8333-333333333333"
+  },
+  "status": 201,
+  "response": {
+    "id": 61,
+    "event_id": 42,
+    "version": 1,
+    "state": "submitted",
+    "registration_id": 71,
+    "rsvp_due_at": null,
+    "allowed_actions": [
+      "withdraw"
+    ],
+    "save_intent": null,
+    "answer_review": {
+      "event_date_revision": 7,
+      "as_of_date": "2026-12-01",
+      "locked": false,
+      "date_review_required": false
+    },
+    "answers": [
+      {
+        "id": "institution",
+        "type": "short_text",
+        "value": "Maker College"
+      },
+      {
+        "id": "emergency",
+        "type": "emergency_contact",
+        "value": {
+          "name": "Fixture Contact",
+          "relationship": "Friend",
+          "phone": "+919876543210"
+        }
+      }
+    ],
+    "omitted_question_ids": []
+  },
+  "registration": {
+    "id": 71,
+    "status": "pending_approval",
+    "custom_answers": {
+      "version": 2,
+      "form_id": "hackathon-application",
+      "form_revision": 3,
+      "answers": [
+        {
+          "id": "institution",
+          "label": "School or organisation",
+          "type": "short_text",
+          "value": "Maker College"
+        },
+        {
+          "id": "emergency",
+          "label": "Emergency contact",
+          "type": "emergency_contact",
+          "value": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        }
+      ]
+    },
+    "debt_created": false,
+    "ticket_qr_created": false
+  },
+  "canonical_snapshot": {
+    "version": 2,
+    "form_id": "hackathon-application",
+    "form_revision": 3,
+    "answers": [
+      {
+        "id": "institution",
+        "label": "School or organisation",
+        "type": "short_text",
+        "value": "Maker College"
+      },
+      {
+        "id": "emergency",
+        "label": "Emergency contact",
+        "type": "emergency_contact",
+        "value": {
+          "name": "Fixture Contact",
+          "relationship": "Friend",
+          "phone": "+919876543210"
+        }
+      }
+    ]
+  },
+  "owner_admission": {
+    "ticket_type_id": 8,
+    "contact": {
+      "name": "Fixture Member",
+      "email": "fixture.member@example.test",
+      "phone": "+919800000017"
+    },
+    "quote": {
+      "amount": "90.00",
+      "discount_amount": "10.00",
+      "currency": "INR"
+    },
+    "invite_applied": true,
+    "promo_applied": true,
+    "host_waiver_acceptance": {
+      "id": 13,
+      "version": "host-2026-10",
+      "accepted_at": "2026-10-18T11:00:00Z"
+    }
+  },
+  "admission_requirements": {
+    "registration_audience": "participating_organizations",
+    "ticket_selection_required": true,
+    "ticket_types": [
+      {
+        "id": 8,
+        "name": "Participant",
+        "amount": "100.00",
+        "audience": "public",
+        "spots_left": null
+      }
+    ],
+    "currency": "INR",
+    "promo_codes_enabled": true,
+    "invite_code_allowed": true,
+    "verified_email_invite_supported": true,
+    "contact_requirements": {
+      "email": {
+        "fallback_required": true
+      },
+      "phone": {
+        "fallback_required": true
+      }
+    },
+    "host_waiver": {
+      "id": 13,
+      "version": "host-2026-10",
+      "body": "Fixture host waiver.",
+      "acceptance_required": true,
+      "accepted_version": null,
+      "accepted_at": null
+    }
+  },
+  "requirements_after_submit": {
+    "registration_audience": "participating_organizations",
+    "ticket_selection_required": true,
+    "ticket_types": [
+      {
+        "id": 8,
+        "name": "Participant",
+        "amount": "100.00",
+        "audience": "public",
+        "spots_left": null
+      }
+    ],
+    "currency": "INR",
+    "promo_codes_enabled": true,
+    "invite_code_allowed": true,
+    "verified_email_invite_supported": true,
+    "contact_requirements": {
+      "email": {
+        "fallback_required": true
+      },
+      "phone": {
+        "fallback_required": true
+      }
+    },
+    "host_waiver": {
+      "id": 13,
+      "version": "host-2026-10",
+      "body": "Fixture host waiver.",
+      "acceptance_required": false,
+      "accepted_version": "host-2026-10",
+      "accepted_at": "2026-10-18T11:00:00Z"
+    }
+  },
+  "ordinary_branches": [
+    {
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "event_date_revision": 7
+      },
+      "status": 201,
+      "response": {
+        "status": "registered"
+      }
+    },
+    {
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "event_date_revision": 7,
+        "custom_answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        }
+      },
+      "status": 201,
+      "response": {
+        "status": "registered"
+      }
+    }
+  ],
+  "replay": {
+    "same_operation": "same_response_no_extra_code_use_or_stamp_or_intent",
+    "changed_digest_status": 409,
+    "changed_digest_error": {
+      "code": "idempotency_conflict",
+      "detail": "Idempotency conflict.",
+      "fields": {}
+    }
+  },
+  "invalid": [
+    {
+      "case": "missing_ticket_type_id",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 400,
+      "error": {
+        "code": "ticket_selection_required",
+        "detail": "Ticket selection required.",
+        "fields": {
+          "ticket_type_id": [
+            "Choose an available ticket type."
+          ]
+        }
+      },
+      "no_writes": true
+    },
+    {
+      "case": "missing_host_waiver_accepted",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 400,
+      "error": {
+        "code": "host_waiver_required",
+        "detail": "Host waiver required.",
+        "fields": {
+          "host_waiver_accepted": [
+            "Accept the current host waiver."
+          ]
+        },
+        "refresh_context_url": "/api/v1/public/event-programmes/11111111-2222-4333-8444-555555555555/context/"
+      },
+      "no_writes": true
+    },
+    {
+      "case": "missing_phone",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 400,
+      "error": {
+        "code": "contact_required",
+        "detail": "Contact required.",
+        "fields": {
+          "phone": [
+            "Provide a contact phone."
+          ]
+        }
+      },
+      "no_writes": true
+    },
+    {
+      "case": "missing_email",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 400,
+      "error": {
+        "code": "contact_required",
+        "detail": "Contact required.",
+        "fields": {
+          "email": [
+            "Provide a contact email."
+          ]
+        }
+      },
+      "no_writes": true
+    },
+    {
+      "case": "false_waiver",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": false,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 400,
+      "error": {
+        "code": "host_waiver_required",
+        "detail": "Host waiver required.",
+        "fields": {
+          "host_waiver_accepted": [
+            "Accept the current host waiver."
+          ]
+        }
+      },
+      "no_writes": true
+    },
+    {
+      "case": "stale_waiver",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-old",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 400,
+      "error": {
+        "code": "host_waiver_required",
+        "detail": "Host waiver required.",
+        "fields": {
+          "host_waiver_accepted": [
+            "Accept the current host waiver."
+          ]
+        }
+      },
+      "no_writes": true
+    },
+    {
+      "case": "foreign_ticket",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 9999,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 404,
+      "error": {
+        "code": "not_found",
+        "detail": "Not found.",
+        "fields": {}
+      },
+      "no_writes": true
+    },
+    {
+      "case": "changed_form",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 2
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 409,
+      "error": {
+        "code": "form_revision_changed",
+        "detail": "Form revision changed.",
+        "fields": {}
+      },
+      "no_writes": true
+    },
+    {
+      "case": "application_custom_answers",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7,
+        "custom_answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        }
+      },
+      "status": 400,
+      "error": {
+        "code": "answer_field_conflict",
+        "detail": "Answer field conflict.",
+        "fields": {
+          "custom_answers": [
+            "Use one raw answer map."
+          ]
+        }
+      },
+      "no_writes": true
+    },
+    {
+      "case": "ordinary_both_keys",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7,
+        "custom_answers": null
+      },
+      "status": 400,
+      "error": {
+        "code": "answer_field_conflict",
+        "detail": "Answer field conflict.",
+        "fields": {
+          "custom_answers": [
+            "Use one raw answer map."
+          ]
+        }
+      },
+      "no_writes": true
+    },
+    {
+      "case": "invalid_invite",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "invalid-invite",
+        "promo_code": "MAKER10",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 404,
+      "error": {
+        "code": "not_found",
+        "detail": "Not found.",
+        "fields": {}
+      },
+      "no_writes": true
+    },
+    {
+      "case": "invalid_promo",
+      "request": {
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "expected_version": 0,
+        "form": {
+          "schema_version": 2,
+          "form_id": "hackathon-application",
+          "revision": 3
+        },
+        "answers": {
+          "institution": "Maker College",
+          "emergency": {
+            "name": "Fixture Contact",
+            "relationship": "Friend",
+            "phone": "+919876543210"
+          }
+        },
+        "derivations": {},
+        "save_choices": {
+          "institution": false,
+          "emergency_contact": false
+        },
+        "saved_detail_versions": {},
+        "ticket_type_id": 8,
+        "invite_code": "fixture-invite",
+        "promo_code": "INVALID",
+        "email": "fixture.member@example.test",
+        "phone": "+919800000017",
+        "host_waiver_id": 13,
+        "host_waiver_version": "host-2026-10",
+        "host_waiver_accepted": true,
+        "coc": {
+          "revision": 5,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        },
+        "event_date_revision": 7
+      },
+      "status": 404,
+      "error": {
+        "code": "not_found",
+        "detail": "Not found.",
+        "fields": {}
+      },
+      "no_writes": true
+    }
+  ],
+  "account_values_present": {
+    "account": {
+      "name": "Fixture Account Name",
+      "email": "account@example.test",
+      "phone": "+919800000099"
+    },
+    "input_fallback": {
+      "email": "fallback@example.test",
+      "phone": "+919800000017"
+    },
+    "effective_contact": {
+      "name": "Fixture Account Name",
+      "email": "account@example.test",
+      "phone": "+919800000099"
+    },
+    "account_unchanged": true
+  },
+  "v1_branch": {
+    "schema": [
+      {
+        "id": "institution",
+        "type": "short_text",
+        "label": "School or organisation",
+        "required": true,
+        "options": []
+      }
+    ],
+    "request": {
+      "custom_answers": {
+        "institution": "Maker College"
+      }
+    },
+    "canonical_snapshot": {
+      "version": 1,
+      "answers": [
+        {
+          "id": "institution",
+          "type": "short_text",
+          "label": "School or organisation",
+          "value": "Maker College"
+        }
+      ]
+    }
+  }
+}

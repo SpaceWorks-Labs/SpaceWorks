@@ -1,0 +1,13 @@
+{
+  "name": "projects/PROJECT/locations/REGION/jobs/spaceworks-scheduler",
+  "schedule": "* * * * *",
+  "timeZone": "UTC",
+  "httpTarget": {
+    "uri": "https://run.googleapis.com/v2/projects/PROJECT/locations/REGION/jobs/spaceworks-scheduler-job:run",
+    "httpMethod": "POST",
+    "oauthToken": {
+      "serviceAccountEmail": "spaceworks-trigger@PROJECT.iam.gserviceaccount.com",
+      "scope": "https://www.googleapis.com/auth/cloud-platform"
+    }
+  }
+}

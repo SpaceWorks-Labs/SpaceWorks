@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.db.models.lookups import Exact
+from django.db.models.fields.json import KeyTextTransform
 from django.utils import timezone
 
 
@@ -51,6 +52,11 @@ class AuditLog(models.Model):
         indexes = [
             models.Index(fields=["makerspace", "created_at"]),
             models.Index(fields=["action"]),
+            models.Index(
+                models.F("makerspace"), KeyTextTransform("payment_id", "meta"),
+                name="audit_venue_fee_payment_idx",
+                condition=models.Q(action="event.venue_fee_charged", target_type="events.eventvenuefee"),
+            ),
         ]
         constraints = [
             models.CheckConstraint(

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.operations.serializers_health import (
@@ -14,7 +15,6 @@ from apps.boxes.serializers import BoxSerializer, QrCodeSerializer
 from apps.inventory.models import InventoryAsset, InventoryProduct
 from apps.inventory.kit_serializers import KitDefinitionField
 from apps.operations.models import (
-    InventoryAdjustment,
     QrPrintBatch,
     QrPrintBatchItem,
     StockTransfer,
@@ -52,10 +52,13 @@ class AnalyticsSummarySerializer(serializers.Serializer):
     issued_quantity = serializers.IntegerField()
     damaged_quantity = serializers.IntegerField()
     missing_quantity = serializers.IntegerField()
-
-
-class ReportRowsSerializer(serializers.Serializer):
-    rows = serializers.ListField(child=serializers.ListField(child=serializers.CharField(allow_blank=True, allow_null=True)))
+    asset_available = serializers.IntegerField()
+    asset_reserved = serializers.IntegerField()
+    asset_issued = serializers.IntegerField()
+    asset_damaged = serializers.IntegerField()
+    asset_lost = serializers.IntegerField()
+    asset_maintenance = serializers.IntegerField()
+    asset_retired = serializers.IntegerField()
 
 
 class LedgerUnitSerializer(serializers.Serializer):
@@ -80,6 +83,9 @@ class LedgerRowSerializer(serializers.Serializer):
     makerspace_id = serializers.IntegerField()
     reference_id = serializers.IntegerField()
     status = serializers.CharField()
+    request_id = serializers.IntegerField(allow_null=True, required=False)
+    product_id = serializers.IntegerField(allow_null=True, required=False)
+    holder_id = serializers.IntegerField(allow_null=True, required=False)
 
 
 class LedgerResponseSerializer(serializers.Serializer):
@@ -114,7 +120,7 @@ class StockTransferLineInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("product_id")) == bool(attrs.get("asset_id")):
-            raise serializers.ValidationError("Provide exactly one of product_id or asset_id.")
+            raise serializers.ValidationError(gettext("Provide exactly one of product_id or asset_id."))
         return attrs
 
 
@@ -163,25 +169,6 @@ from .serializers_stocktake import (
 )
 
 
-class InventoryAdjustmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InventoryAdjustment
-        fields = [
-            "id",
-            "makerspace",
-            "stocktake",
-            "transfer",
-            "product",
-            "asset",
-            "delta_available",
-            "delta_damaged",
-            "delta_lost",
-            "reason",
-            "created_by",
-            "created_at",
-        ]
-
-
 class ContainerMoveSerializer(serializers.Serializer):
     kit_components = KitDefinitionField(required=False)
     parent_id = serializers.IntegerField(required=False, allow_null=True)
@@ -221,10 +208,10 @@ class QrPrintBatchDetailSerializer(QrPrintBatchSerializer):
 
 
 class QrPrintBatchCreateSerializer(serializers.Serializer):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=200)
 
 
 class QrPrintBatchItemCreateSerializer(serializers.Serializer):
     qr_code_id = serializers.IntegerField()
-    label_text = serializers.CharField(required=False, allow_blank=True)
+    label_text = serializers.CharField(required=False, allow_blank=True, max_length=255)
     sort_order = serializers.IntegerField(min_value=0, required=False)

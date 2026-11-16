@@ -52,7 +52,11 @@ def xlsx_rows(data):
         raise ValueError("XLSX import requires openpyxl to be installed.") from exc
     try:
         workbook = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-        sheet = workbook.active
+        # The first sheet in tab order, never `workbook.active`: the column-matching
+        # preview (bulk_import_sheet.py) reads this one, and the import must agree.
+        if not workbook.worksheets:
+            return []
+        sheet = workbook.worksheets[0]
         rows = sheet.iter_rows(values_only=True)
         header_row = next(rows, None)
         if not header_row:

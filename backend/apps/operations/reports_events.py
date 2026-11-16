@@ -1,7 +1,8 @@
+from django.utils.translation import gettext
 from django.db.models import Count, Q
 
 from apps.events.models import Event, EventOrganizer, EventRegistration
-from apps.operations.report_registry import ReportResult
+from apps.operations.report_types import ReportResult
 from apps.operations.report_scope import scoped_ids
 
 
@@ -15,11 +16,16 @@ FIELDS = (
 )
 
 
-def build_event_attendance(makerspace_id, *, limit=None, date_range=None):
+def build_event_attendance(makerspace_id, *, limit=None, date_range=None, subject_kind=None, subject_id=None):
     aggregate = makerspace_id is None
     queryset = Event.objects.filter(
         makerspace_id__in=scoped_ids(makerspace_id, "events")
     )
+    if subject_id is not None:
+        if makerspace_id is None or subject_kind != "event":
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(gettext("An event subject requires a single tenant."))
+        queryset = queryset.filter(pk=subject_id)
     if date_range:
         start, end = date_range
         if start is not None:

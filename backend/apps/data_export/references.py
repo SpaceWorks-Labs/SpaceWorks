@@ -11,10 +11,111 @@ from .references_7c import LABEL_USER_FIELDS
 from .references_7b import PRINTER_USER_FIELDS
 from .references_devices import DEVICE_EXCLUDED_USER_EDGE_REASONS, DEVICE_USER_FIELDS
 
-RELATIONAL_USER_FIELDS = _CORE_RELATIONAL_USER_FIELDS | DEVICE_USER_FIELDS | PRINTER_USER_FIELDS | LABEL_USER_FIELDS
+from apps.tenant_migration.catalog_notifications_contract import USER_FIELDS as NOTIFICATION_USER_FIELDS
+from apps.tenant_migration.catalog_p2_presence import USER_FIELDS as PRESENCE_USER_FIELDS
+RELATIONAL_USER_FIELDS = PRESENCE_USER_FIELDS | _CORE_RELATIONAL_USER_FIELDS | DEVICE_USER_FIELDS | PRINTER_USER_FIELDS | LABEL_USER_FIELDS | NOTIFICATION_USER_FIELDS
 _EXCLUDED_USER_EDGE_REASONS = {
     **_CORE_EXCLUDED_USER_EDGE_REASONS, **DEVICE_EXCLUDED_USER_EDGE_REASONS,
 }
+from apps.tenant_migration import catalog_p2_events as _p2_events
+RELATIONAL_USER_FIELDS |= _p2_events.USER_FIELDS
+from apps.tenant_migration.catalog_public_pages import USER_FIELDS as PAGE_USER_FIELDS, EXCLUDED_USER_EDGES
+RELATIONAL_USER_FIELDS |= PAGE_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(EXCLUDED_USER_EDGES)
+RELATIONAL_USER_FIELDS |= EXCLUDED_USER_EDGES.keys()
+RELATIONAL_USER_FIELDS |= {("makerspaces.PublicHandleRedirect", "user")}
+_EXCLUDED_USER_EDGE_REASONS[("makerspaces.PublicHandleRedirect", "user")] = "Retired reservations are deployment-local."
+from apps.tenant_migration.catalog_events_programme_references import (
+    USER_FIELDS as PROGRAMME_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as PROGRAMME_EXCLUDED_EDGES,
+)
+RELATIONAL_USER_FIELDS |= PROGRAMME_USER_FIELDS
+from .classification_r2_l1 import RELATIONAL_USER_FIELDS as R2_L1_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L1_USER_FIELDS
+from .classification_r2_l2 import RELATIONAL_USER_FIELDS as R2_L2_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L2_USER_FIELDS
+from .classification_r2_l4 import RELATIONAL_USER_FIELDS as R2_L4_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L4_USER_FIELDS
+from .classification_r2_l5 import RELATIONAL_USER_FIELDS as R2_L5_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L5_USER_FIELDS
+from .classification_r2_l15 import RELATIONAL_USER_FIELDS as R2_L15_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L15_USER_FIELDS
+from .classification_l12 import RELATIONAL_USER_FIELDS as L12_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L12_USER_FIELDS
+from .classification_l23 import RELATIONAL_USER_FIELDS as L23_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L23_USER_FIELDS
+from .classification_guest_passes import RELATIONAL_USER_FIELDS as GUEST_PASS_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= GUEST_PASS_USER_FIELDS
+from .classification_l3b import RELATIONAL_USER_FIELDS as L3B_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L3B_USER_FIELDS
+from .classification_l3a import RELATIONAL_USER_FIELDS as L3A_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L3A_USER_FIELDS
+from .classification_l16 import RELATIONAL_USER_FIELDS as L16_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L16_USER_FIELDS
+from .classification_l3 import EXCLUDED_USER_EDGE_REASONS as L3_EXCLUDED, RELATIONAL_USER_FIELDS as L3_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L3_USER_FIELDS
+from .classification_r2_l6 import RELATIONAL_USER_FIELDS as R2_L6_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L6_USER_FIELDS
+from .classification_r2_l18 import (  # noqa: E402
+    EXCLUDED_USER_EDGE_REASONS as R2_L18_EXCLUDED, RELATIONAL_USER_FIELDS as R2_L18_USER_FIELDS,
+)
+RELATIONAL_USER_FIELDS |= R2_L18_USER_FIELDS
+from .classification_r2_l21a import RELATIONAL_USER_FIELDS as R2_L21A_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L21A_USER_FIELDS
+from .classification_r3_events_badges import RELATIONAL_USER_FIELDS as R3_EVENTS_BADGES_USER_FIELDS  # noqa: E402  (parity E-B2)
+RELATIONAL_USER_FIELDS |= R3_EVENTS_BADGES_USER_FIELDS
+from .classification_r2_l22 import RELATIONAL_USER_FIELDS as R2_L22_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L22_USER_FIELDS
+from .classification_hackmoney import RELATIONAL_USER_FIELDS as HACKMONEY_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= HACKMONEY_USER_FIELDS
+from .classification_r2_superadmin import RELATIONAL_USER_FIELDS as R2_SUPERADMIN_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_SUPERADMIN_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(L3_EXCLUDED)
+_EXCLUDED_USER_EDGE_REASONS.update(R2_L18_EXCLUDED)
+_EXCLUDED_USER_EDGE_REASONS.update(PROGRAMME_EXCLUDED_EDGES)
+_EXCLUDED_USER_EDGE_REASONS.update(_p2_events.EXCLUDED_USER_EDGE_REASONS)
+from apps.tenant_migration.catalog_reimbursements import (
+    USER_FIELDS as REIMBURSEMENT_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as REIMBURSEMENT_EXCLUDED_EDGES,
+)
+RELATIONAL_USER_FIELDS |= REIMBURSEMENT_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(REIMBURSEMENT_EXCLUDED_EDGES)
+from .classification_security import USER_FIELDS as SECURITY_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as SECURITY_EDGES
+RELATIONAL_USER_FIELDS |= SECURITY_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(SECURITY_EDGES)
+from .classification_unified_accounts import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as UA1_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as UA1_EDGES,
+)
+RELATIONAL_USER_FIELDS |= UA1_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(UA1_EDGES)
+from .classification_account_profile import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as ACCOUNT_PROFILE_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as ACCOUNT_PROFILE_EDGES,
+)
+RELATIONAL_USER_FIELDS |= ACCOUNT_PROFILE_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(ACCOUNT_PROFILE_EDGES)
+from .classification_login_security import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as S0_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as S0_EDGES,
+)
+RELATIONAL_USER_FIELDS |= S0_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(S0_EDGES)
+from .classification_r2_l10 import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as R2_L10_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as R2_L10_EDGES,
+)
+RELATIONAL_USER_FIELDS |= R2_L10_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(R2_L10_EDGES)
+from .classification_adapter import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as ADAPTER_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as ADAPTER_EDGES,
+)
+RELATIONAL_USER_FIELDS |= ADAPTER_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(ADAPTER_EDGES)
+from .classification_r2_l11 import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as R2_L11_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as R2_L11_EDGES,
+)
+RELATIONAL_USER_FIELDS |= R2_L11_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(R2_L11_EDGES)
+from .classification_gap_api import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as GAP_API_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as GAP_API_EDGES,
+)
+RELATIONAL_USER_FIELDS |= GAP_API_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(GAP_API_EDGES)
 from .types import (
     Fidelity,
     Omitted,
@@ -31,6 +132,12 @@ def require_raw_user(fidelity, *, model, row_pk, field, user_id, existing_user_i
             f"{model} row {row_pk} has dangling {field}={user_id}"
         )
     return user_id
+RELATIONAL_USER_FIELDS |= frozenset({("machines.MachineUsageEntry", "member"), ("integrations.PushDeliveryAttempt", "recipient")})
+_EXCLUDED_USER_EDGE_REASONS[("integrations.PushDeliveryAttempt", "recipient")] = "Runtime delivery ownership is exported only through the personal allowlist; never a portable tenant user edge."
+RELATIONAL_USER_FIELDS |= frozenset({("integrations.MessagingConsent", "user"), ("integrations.MessagingDelivery", "user")})
+_EXCLUDED_USER_EDGE_REASONS[("integrations.MessagingDelivery", "user")] = "Personal runtime telemetry is omitted from tenant artifacts."
+RELATIONAL_USER_FIELDS |= frozenset({("accounts.WebSessionActivityDay", "user")})
+_EXCLUDED_USER_EDGE_REASONS[("accounts.WebSessionActivityDay", "user")] = "Runtime browser-session activity is omitted; target sessions start with no history."
 USER_EDGES = {}
 for _fidelity in Fidelity:
     for _label, _field in RELATIONAL_USER_FIELDS | RAW_USER_REFERENCE_FIELDS:
@@ -96,7 +203,17 @@ for _fidelity in Fidelity:
             ),
         )
     for _model, _field in JSON_FIELDS:
-        if (_model, _field) == ("audit.AuditLog", "meta"):
+        if (_model, _field) == ("events.EventBookingDecision", "intent"):
+            decision = SourceLocalProvenance(_model, "intent typed IDs",
+                "The creator FK supplies identity closure; event and booking IDs are typed remapped before insert or made unavailable.")
+        elif (_model, _field) == ("events.SubmissionSnapshot", "sealed_member_ids"):
+            decision = SemanticUserRef(_model, "sealed_member_ids[]",
+                "Frozen roster members join portable identity closure; readable exports omit this private vector.",
+                included=_fidelity is Fidelity.PORTABLE)
+        elif (_model, _field) == ("events.HackathonTeam", "deleted_snapshot"):
+            decision = SourceLocalProvenance(_model, "deleted_snapshot.leader_id+member_ids",
+                "Short-lived organiser undo snapshot of the roster at delete time: source-local ids, reset to empty on tenant import and never remapped.")
+        elif (_model, _field) == ("audit.AuditLog", "meta"):
             decision = SourceLocalProvenance(
                 _model,
                 "meta id-bearing paths",

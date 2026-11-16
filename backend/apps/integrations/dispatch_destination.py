@@ -7,6 +7,7 @@ every other rule the fan-out applies -- the channel's module gate, the credentia
 the daily quota, the same transports -- and returns `(ok, error_code)` instead of raising,
 because the caller records the outcome on its own delivery row.
 """
+from apps.integrations.notification_cutover import guarded, sending_allowed
 
 import logging
 from dataclasses import dataclass, field
@@ -16,6 +17,7 @@ from django.utils import timezone
 
 from apps.integrations.dispatch_channels import (
     _channel_configured,
+    ChannelModuleUnavailable,
     channel_module_blocks,
     sanitize_notification_error,
 )
@@ -43,10 +45,13 @@ class DestinationEnvelope:
     created_at: datetime = field(default_factory=timezone.now)
 
 
+@guarded()
 def deliver_text_to_destination(
     makerspace, destination, *, text, feature, event, reference, payload=None
 ):
     """Send `text` to `destination`; returns (delivered, error_code)."""
+    if not sending_allowed():
+        return (False, "notification_cutover_closed")
     if destination.makerspace_id != makerspace.pk:
         return False, "notification_destination_foreign"
     if not destination.is_active:
@@ -54,7 +59,13 @@ def deliver_text_to_destination(
     channel = destination.channel
     if channel not in ChatNotificationChannel.values:
         return False, "notification_channel_unsupported"
-    if channel_module_blocks(makerspace, channel):
+    try:
+        blocked = channel_module_blocks(makerspace, channel, strict=True)
+    except ChannelModuleUnavailable:
+        # This synchronous room leg has no outbox row to retry from, so an unknown
+        # module state fails closed before quota; independent legs still proceed.
+        return False, "channel_module_unavailable"
+    if blocked:
         return False, "notification_channel_module_disabled"
     if not _channel_configured(makerspace, channel, destination):
         return False, "notification_channel_not_configured"

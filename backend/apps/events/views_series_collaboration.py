@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.events import event_authority
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events.models import EventSeriesCollaborator
 from apps.events.serializers_series_collaboration import (
@@ -40,9 +41,7 @@ def _collaborator_space(actor, makerspace_id):
             actor, rbac.Action.MANAGE_EVENTS, Makerspace.objects.all(), field="id"
         ), pk=makerspace_id,
     )
-    require_module(space, "events")
-    if not rbac.can(actor, rbac.Action.MANAGE_EVENTS, space.pk):
-        raise PermissionDenied()
+    event_authority.require_tenant(actor, space)
     return space
 
 
@@ -56,9 +55,7 @@ def _manageable_invitation(actor, pk):
             field="makerspace_id",
         ), pk=pk,
     )
-    require_module(row.makerspace, "events")
-    if not rbac.can(actor, rbac.Action.MANAGE_EVENTS, row.makerspace_id):
-        raise PermissionDenied()
+    event_authority.require_tenant(actor, row.makerspace)
     return row
 
 

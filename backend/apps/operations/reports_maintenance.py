@@ -7,6 +7,7 @@ from django.utils import timezone
 from apps.machines.models import Machine
 from apps.operations.report_registry import ReportResult
 from apps.operations.report_scope import scoped_ids
+from apps.payments.money import trim_money
 
 
 FIELDS = (
@@ -17,11 +18,21 @@ FIELDS = (
 CENT = Decimal("0.01")
 
 
+def _space_today(makerspace_id):
+    """m13: the space's own local date for a single-space report (the server date only for an aggregate)."""
+    if makerspace_id is None:
+        return timezone.localdate()
+    from apps.makerspaces.local_time import to_local
+    from apps.makerspaces.models import Makerspace
+    space = Makerspace.objects.filter(pk=makerspace_id).first()
+    return to_local(space, timezone.now()).date() if space is not None else timezone.localdate()
+
+
 def build_maintenance_activity(makerspace_id, *, limit=None, date_range=None):
     from apps.maintenance.models import MaintenanceLog, MaintenanceSchedule
 
     aggregate = makerspace_id is None
-    today = timezone.localdate()
+    today = _space_today(makerspace_id)
     log_filter = Q()
     if date_range:
         start, end = date_range
@@ -39,12 +50,12 @@ def build_maintenance_activity(makerspace_id, *, limit=None, date_range=None):
         active=Count("id"), overdue=Count("id", filter=Q(next_due__lt=today)),
     )
     qs = Machine.objects.filter(
-        makerspace_id__in=scoped_ids(makerspace_id, "machines", "maintenance")
+        makerspace_id__in=scoped_ids(makerspace_id, "machines", "machines.maintenance")
     ).values("id", "makerspace_id", "name", "machine_type__name", "is_active").annotate(
         logs=Coalesce(Subquery(log_stats.values("count")[:1], output_field=IntegerField()), Value(0)),
         costed=Coalesce(Subquery(log_stats.values("costed")[:1], output_field=IntegerField()), Value(0)),
-        total=Coalesce(Subquery(log_stats.values("total")[:1], output_field=DecimalField(max_digits=20, decimal_places=2)), Value(Decimal("0.00"))),
-        average=Subquery(log_stats.values("average")[:1], output_field=DecimalField(max_digits=20, decimal_places=2)),
+        total=Coalesce(Subquery(log_stats.values("total")[:1], output_field=DecimalField(max_digits=21, decimal_places=3)), Value(Decimal("0.00"))),
+        average=Subquery(log_stats.values("average")[:1], output_field=DecimalField(max_digits=21, decimal_places=3)),
         first=Subquery(log_stats.values("first")[:1], output_field=DateTimeField()),
         last=Subquery(log_stats.values("last")[:1], output_field=DateTimeField()),
         active=Coalesce(Subquery(schedules.values("active")[:1], output_field=IntegerField()), Value(0)),
@@ -74,8 +85,8 @@ def _record(row, aggregate):
         "machine_id": row["id"], "machine_name": row["name"],
         "machine_type": row["machine_type__name"], "is_active": row["is_active"],
         "log_count": row["logs"], "costed_log_count": row["costed"],
-        "total_cost": (row["total"] or Decimal("0.00")).quantize(CENT),
-        "average_cost": row["average"].quantize(CENT, rounding=ROUND_HALF_UP) if row["average"] is not None else None,
+        "total_cost": trim_money(row["total"] or Decimal("0.00")),
+        "average_cost": trim_money(row["average"]) if row["average"] is not None else None,
         "last_performed_at": row["last"], "average_interval_days": interval,
         "active_schedules": row["active"], "overdue_schedules": row["overdue"],
         # Internal aggregation inputs deliberately stay outside FIELDS. Existing

@@ -44,6 +44,11 @@ def presentation_catalog_errors(*, discovery=None, sites=None):
             f"WRAPPER_SITE_PREFIXES drifted: {sorted(wrappers ^ set(WRAPPER_SITE_PREFIXES))}"
         )
     known = discovery.actions | exact
+
+    def _wrapper_covered(action):
+        # A reviewed wrapper namespace (action taken from a parameter or f-string) cannot be enumerated by AST, so a
+        # catalogue label inside one is vouched for by the prefix review, not by a literal emitter.
+        return any(str(action).startswith(tuple(prefixes)) for site, prefixes in WRAPPER_SITE_PREFIXES.items() if site in wrappers)
     missing = discovery.actions - set(PRESENTATION_CATALOG)
     if missing:
         errors.append(f"literal audit actions without a catalogue entry: {sorted(missing)}")
@@ -52,7 +57,8 @@ def presentation_catalog_errors(*, discovery=None, sites=None):
         paths.setdefault(action, set()).add(path)
     for action, entry in PRESENTATION_CATALOG.items():
         if action not in known:
-            errors.append(f"catalogue entry for an action nothing emits: {action}")
+            if not _wrapper_covered(action):
+                errors.append(f"catalogue entry for an action nothing emits: {action}")
             continue
         declared = paths.get(action, set())
         for path in entry.permitted_meta_paths:

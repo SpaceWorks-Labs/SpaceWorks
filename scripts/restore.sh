@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
 # Privileged host supervisor for an app-recorded Phase 5A restore intent.
+set +x
 set -euo pipefail
+umask 077
 
 RESTORE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${SPACEWORKS_UPDATE_INSTALL_DIR:-$(cd "$RESTORE_SCRIPT_DIR/.." && pwd)}"
 cd "$ROOT"
 export SPACEWORKS_UPDATE_INSTALL_DIR="$ROOT"
+source "$RESTORE_SCRIPT_DIR/installer/restore-owner.sh"
+require_restore_root "$RESTORE_SCRIPT_DIR/restore.sh" "$@"
 
 COMPOSE=("$RESTORE_SCRIPT_DIR/spaceworks-compose.sh" bundled)
 source "$RESTORE_SCRIPT_DIR/spaceworks-repository.sh"
 source "$RESTORE_SCRIPT_DIR/compose-deployment.sh"
 deployment_services
-OPS_DIR="${SPACEWORKS_OPS_HOST_DIR:-$(repository_env_value SPACEWORKS_OPS_HOST_DIR)}"
-OPS_DIR="${OPS_DIR:-/var/lib/spaceworks/ops}"
+source "$RESTORE_SCRIPT_DIR/installer/host-paths.sh"
+resolve_host_paths || exit $?
 RESTORE_ID="${1:-}"
+# An outside database is only replaced on explicit confirmation (--replace or SPACEWORKS_RESTORE_REPLACE=1).
+REPLACE_CONFIRMED=0
+if [[ "${2:-}" == --replace ]]; then REPLACE_CONFIRMED=1; set -- "$1"; fi
+[[ "${SPACEWORKS_RESTORE_REPLACE:-}" != 1 ]] || REPLACE_CONFIRMED=1
 OPS_WORK_DIR="$OPS_DIR/work"
 IDENTITY_FILE="${BACKUP_AGE_IDENTITY_FILE:-$OPS_WORK_DIR/age-identity.txt}"
 
@@ -27,23 +35,35 @@ control() {
     --role management python manage.py backup_control "$@"
 }
 reprovision_grants() {
-  local database_name="${1:-}"
+  local database_name="${1:-$RESTORE_DATABASE}" proof oid identity
+  [[ "$database_name" =~ ^[A-Za-z_][A-Za-z0-9_$]{0,62}$ ]] || return 1
+  proof="$(restore_db_grant_proof "$database_name")" || return
+  proof="${proof//$'\r'/}"
+  IFS='|' read -r oid identity <<< "$proof"
+  [[ "$oid" =~ ^[1-9][0-9]*$ && "$identity" =~ ^[0-9a-f-]{36}$ && "$proof" == "$oid|$identity" ]] || return 1
   local command=(run --rm --no-deps -T -e SPACEWORKS_GRANTS_ONLY=1)
+  command+=(-e "SPACEWORKS_GRANT_DATABASE_OID=$oid" -e "SPACEWORKS_GRANT_DATABASE_UUID=$identity")
   if [[ -n "$database_name" ]]; then
     command+=(-e "SPACEWORKS_GRANT_DATABASE_NAME=$database_name")
   fi
   ${COMPOSE[@]+"${COMPOSE[@]}"} ${command[@]+"${command[@]}"} orchestration-ready >/dev/null
 }
 
-[[ $# == 1 ]] || die "Usage: scripts/restore.sh <restore-uuid>"
-[[ "$RESTORE_ID" =~ ^[0-9a-fA-F-]{36}$ ]] || die "Usage: scripts/restore.sh <restore-uuid>"
+[[ $# == 1 ]] || die "Usage: scripts/restore.sh <restore-uuid> [--replace]"
+[[ "$RESTORE_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || die "Usage: scripts/restore.sh <restore-uuid>"
+RESTORE_ID="$(printf '%s' "$RESTORE_ID" | tr '[:upper:]' '[:lower:]')"
 command -v docker >/dev/null 2>&1 || die "Docker is required."
+[[ "$(uname -s)" == Linux ]] || die 'Destructive restore requires Linux or a WSL2 Linux shell.'
 command -v flock >/dev/null 2>&1 || die "In-place restore must run under WSL2 (not native Git Bash/Windows). WSL2 supplies the Linux flock, AF_UNIX sockets, and root-owned-file trust semantics that fence destructive host orchestration; start Docker Desktop's WSL2 integration, open this install from a WSL2 shell, and rerun scripts/restore.sh there."
 [[ -d "$OPS_DIR" ]] || die "$OPS_DIR is missing; run setup on this host first."
 [[ -f "$IDENTITY_FILE" ]] || die "The age identity file is missing: $IDENTITY_FILE"
 
 exec 9>"$OPS_DIR/operation.lock"
 flock -n 9 || die "Another backup, restore, verification, or update is running."
+source "$RESTORE_SCRIPT_DIR/restore-database-ops.sh"
+source "$RESTORE_SCRIPT_DIR/restore-database-identity.sh"
+prove_restore_database
+confirm_external_replace
 
 WORK="$OPS_WORK_DIR/restore-$RESTORE_ID"
 ARCHIVE="$WORK/archive.tar.age"
@@ -53,6 +73,8 @@ JOURNAL="$WORK/swap-journal.jsonl"
 PRE_DB="$WORK/pre-restore.dump"
 CONTROL_RECORD="$WORK/restore-control.json"
 DESTRUCTIVE_MARKER="$WORK/destructive-started"
+source "$RESTORE_SCRIPT_DIR/installer/restore-work.sh"
+validate_restore_workspace || die 'Restore workspace is not an owned canonical path.'
 mkdir -p "$BUNDLE"
 if [[ "$(id -u)" == "0" ]]; then
   chown -R 10001:10001 "$WORK"
@@ -82,22 +104,24 @@ cleanup() {
   set +e
   if [[ "$finished" == 0 ]]; then
     if [[ "$destructive" == 1 ]]; then
+      restart_allowed=0
       say "Restore failed after database replacement; rolling objects and database back."
       control stage "$RESTORE_ID" rolling_back >/dev/null 2>&1 || true
-      control rollback-objects "$RESTORE_ID" >/dev/null 2>&1 || true
+      objects_rolled_back=0
       rollback_grants_ready=0
-      if ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-        'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
-        < "$PRE_DB" >/dev/null 2>&1 && reprovision_grants >/dev/null 2>&1; then
+      if restore_db_rollback >/dev/null 2>&1 && reprovision_grants >/dev/null 2>&1 \
+        && prove_restore_database >/dev/null 2>&1 && control rotate-context-generations "$RESTORE_ID" >/dev/null 2>&1; then
         rollback_grants_ready=1
+        control rollback-objects "$RESTORE_ID" >/dev/null 2>&1 && objects_rolled_back=1
       fi
-      if [[ "$rollback_grants_ready" == 1 ]]; then
+      if [[ "$rollback_grants_ready" == 1 && "$objects_rolled_back" == 1 ]]; then
         RESTORE_CONTROL_TAG="${MAKERSPACE_IMAGE_TAG:-}"
         control reconcile-journal "$RESTORE_ID" \
           --journal "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/swap-journal.jsonl" \
-          >/dev/null 2>&1 || true
-        control fail "$RESTORE_ID" --message "Privileged host restore failed; inspect $JOURNAL." \
-          >/dev/null 2>&1 || true
+          >/dev/null 2>&1 && control fail "$RESTORE_ID" \
+          --message "Privileged host restore failed; inspect the private operation journal." \
+          >/dev/null 2>&1 && restart_allowed=1
+        [[ "$restart_allowed" != 1 ]] || retain_rolled_back_restore || restart_allowed=0
       else
         say "Rollback database grants could not be reprovisioned; Django remains stopped."
         restart_allowed=0
@@ -118,25 +142,18 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   prior_metadata="$(control describe "$RESTORE_ID" 2>/dev/null | tail -n 1 || true)"
   prior_stage="$(printf '%s' "$prior_metadata" | sed -n 's/.*"stage": "\([a-z_]*\)".*/\1/p')"
   if [[ "$prior_stage" == "completed" || "$prior_stage" == "restored_quarantined" ]]; then
-    rm -f -- "$DESTRUCTIVE_MARKER"
-    finished=1
+    reconcile_completed_restore_work || die 'Completed restore cleanup needs private recovery.'
     say "A completed restore marker was reconciled; no rollback was required."
     exit 0
   fi
   [[ -s "$PRE_DB" ]] \
     || die "Interrupted destructive restore lacks its pre-restore database dump."
   say "Interrupted destructive restore detected; restoring the pre-restore database and objects."
-  if [[ "$APP_SERVICE" == app ]]; then
-    # The single container includes SSE, workers and the scheduler.
-    "${COMPOSE[@]}" stop app >/dev/null
-  else
-    "${COMPOSE[@]}" stop backend worker beat live >/dev/null
-  fi
+  "${COMPOSE[@]}" stop backend worker beat live >/dev/null
   backend_stopped=1
   workers_stopped=1
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-    'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
-    < "$PRE_DB"
+  restart_allowed=0
+  restore_db_rollback
   if ! reprovision_grants; then
     restart_allowed=0
     die "Interrupted rollback grants could not be reprovisioned; Django remains stopped."
@@ -145,8 +162,12 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   control reconcile-journal "$RESTORE_ID" \
     --journal "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/swap-journal.jsonl" >/dev/null
   control rollback-objects "$RESTORE_ID" >/dev/null
+  prove_restore_database
+  control rotate-context-generations "$RESTORE_ID" >/dev/null || die 'Generation rotation failed; writers remain stopped.'
   control fail "$RESTORE_ID" --message \
     "Interrupted destructive restore was rolled back from the durable host journal." >/dev/null
+  retain_rolled_back_restore || die 'Rolled-back work retained; terminal cleanup could not be proven.'
+  restart_allowed=1
   rm -f -- "$DESTRUCTIVE_MARKER"
   finished=1
   restart_backend
@@ -160,15 +181,19 @@ kind="$(printf '%s' "$metadata" | sed -n 's/.*"kind": "\([a-z_]*\)".*/\1/p')"
 requested_by="$(printf '%s' "$metadata" | sed -n 's/.*"requested_by": \([0-9]*\).*/\1/p')"
 [[ -n "$archive_id" && -n "$kind" && -n "$requested_by" ]] || die "Could not read restore metadata."
 
-backend_container="$(${COMPOSE[@]+"${COMPOSE[@]}"} ps -q "$APP_SERVICE")"
+backend_container="$(${COMPOSE[@]+"${COMPOSE[@]}"} ps -a -q "$APP_SERVICE")"
 image_id="$(docker inspect --format '{{.Image}}' "$backend_container")"
 oci_digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image_id" 2>/dev/null || true)"
+source "$RESTORE_SCRIPT_DIR/installer/capacity.sh"
+require_operation_capacity restore || die 'Insufficient measured capacity before archive export.'
 control export-archive "$RESTORE_ID" --output "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar.age" >/dev/null
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T "$APP_SERVICE" age -d \
+require_operation_capacity restore "$ARCHIVE" || die 'Insufficient capacity before archive decryption.'
+${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management age -d \
   -i "${IDENTITY_FILE/$OPS_DIR/\/var\/lib\/spaceworks\/ops}" \
   -o "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar" \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar.age"
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T "$APP_SERVICE" python - \
+require_operation_capacity restore "$ARCHIVE" "$PLAIN" || die 'Insufficient measured extraction/rollback capacity.'
+${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management python - \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar" \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/bundle" <<'PY'
 import pathlib
@@ -191,9 +216,6 @@ restore_preflight() {
     --current-oci-digest "$oci_digest"
 }
 preflight_result="$(restore_preflight | tail -n 1)"
-if [[ "$preflight_result" == "compound-coordinator-ready" ]]; then
-  die "scripts/restore.sh is the legacy in-place path and cannot execute a compound restore; invoke the target compound pre-cutover coordinator."
-fi
 [[ "$preflight_result" == "preflight-ok" ]] \
   || die "The restore preflight returned an unknown path result."
 claim_result="$(control claim "$RESTORE_ID" | tail -n 1)"
@@ -205,36 +227,24 @@ claimed=1
 
 drain_seconds="$(control quiesce "$RESTORE_ID" | tail -n 1)"
 [[ "$drain_seconds" =~ ^[0-9]+$ ]] || die "The app returned an invalid presign drain window."
-if [[ "$APP_SERVICE" == app ]]; then
-  "${COMPOSE[@]}" stop app >/dev/null
-  backend_stopped=1
-else
-  "${COMPOSE[@]}" stop worker beat live >/dev/null
-fi
+"${COMPOSE[@]}" stop worker beat live >/dev/null
 workers_stopped=1
 say "Writers are excluded; draining presigned uploads for ${drain_seconds}s."
 sleep "$drain_seconds"
 
 say "Taking the mandatory pre-restore database snapshot."
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-  'pg_dump --format=custom --no-owner --no-acl -U "$POSTGRES_USER" "$POSTGRES_DB"' \
-  > "$PRE_DB"
+restore_db_snapshot
 [[ -s "$PRE_DB" ]] || die "The pre-restore database snapshot is empty."
 
 if [[ "$kind" == "rollback_in_place" ]]; then
   temp_db="spaceworks_restore_${RESTORE_ID//-/}"
   temp_db="${temp_db:0:60}"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-    'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db"' && createdb -U "$POSTGRES_USER" '"$temp_db"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-    'pg_restore --no-owner --no-acl -U "$POSTGRES_USER" -d '"$temp_db" \
-    < "$BUNDLE/database.dump"
-  reprovision_grants "$temp_db"
+  restore_db_scratch_load "$temp_db"
+  reprovision_grants "$temp_db" || die "Grants could not be provisioned on the diff database; nothing destructive has run."
   say "Computing every-table diff in one live snapshot; choose before the console countdown expires."
   decision="$(control diff-wait "$RESTORE_ID" --archive-database-name "$temp_db" | tail -n 1)"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-    'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db" >/dev/null 2>&1 || true
-  [[ "$decision" != "abort" ]] || { finished=1; say "Restore aborted without destructive effect."; exit 0; }
+  restore_db_scratch_drop "$temp_db"
+  [[ "$decision" != "abort" ]] || { finished=1; seal_terminal_restore_work aborted; say "Restore aborted without destructive effect."; exit 0; }
 else
   decision="reset"
 fi
@@ -250,10 +260,8 @@ ${COMPOSE[@]+"${COMPOSE[@]}"} stop "$APP_SERVICE" >/dev/null
 backend_stopped=1
 destructive=1
 say "Replacing the database."
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-  'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()" >/dev/null && pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
-  < "$BUNDLE/database.dump"
-reprovision_grants
+restore_db_replace
+reprovision_grants || die "Restored database grants could not be reprovisioned."
 
 control rehydrate "$RESTORE_ID" --archive-id "$archive_id" --kind "$kind" \
   --requested-by "$requested_by" \
@@ -276,6 +284,7 @@ fi
 rm -f -- "$DESTRUCTIVE_MARKER"
 finished=1
 control cleanup-rollback "$RESTORE_ID" >/dev/null
+cleanup_completed_restore_plaintext || die 'Completed restore plaintext cleanup failed; private work was retained.'
 restart_backend
 restart_workers
 say "Restore supervisor completed."

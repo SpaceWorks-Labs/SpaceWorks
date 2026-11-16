@@ -1,15 +1,18 @@
 """Organization report orchestration: breakdown and combined total are inseparable."""
 
 from decimal import Decimal
+from apps.accounts.rbac import Action
 
 from apps.operations.org_report_aggregate import aggregate_rows
 from apps.operations.org_report_identity import (
     distinct_member_activity,
-    globally_ranked_borrowers,
 )
 from apps.operations.org_report_strategies import STRATEGIES, organization_strategy
 from apps.operations.report_registry import ReportDefinition, ReportResult
+from apps.operations.report_definitions_audit import AUDIT_VIEWER_REPORT_KEYS
 from apps.operations.report_scope import ReportScope, ReportScopeMode
+from apps.operations.report_output import project_report_output
+from apps.payments.money import money_text
 
 
 class OrganizationAggregationError(ValueError):
@@ -21,7 +24,10 @@ class InvalidOrganizationAggregationScope(OrganizationAggregationError):
 
 
 def organization_strategy_keys():
-    return tuple(STRATEGIES)
+    from .report_registry import REPORT_REGISTRY
+    return tuple(key for key in STRATEGIES if key in REPORT_REGISTRY
+                 and not REPORT_REGISTRY[key].platform_only
+                 and not REPORT_REGISTRY[key].identity_bearing)
 
 
 def organization_report_data(
@@ -31,6 +37,8 @@ def organization_report_data(
     limit: int,
     date_range=None,
     report_filters=None,
+    grain="day",
+    actor=None,
 ):
     _validate_inputs(definition, scope, limit)
     strategy = organization_strategy(definition.key)
@@ -44,6 +52,10 @@ def organization_report_data(
             makerspace_id,
             limit=None,
             date_range=date_range,
+            **({"grain": grain} if definition.grains else {}),
+            **({"actor": actor} if definition.required_action == Action.MANAGE_MACHINES
+               or definition.key == "procurement-performance" else {}),
+            **({"viewer": actor} if definition.key in AUDIT_VIEWER_REPORT_KEYS else {}),
             **(report_filters or {}),
         )
         rows = _result_rows(result)
@@ -53,15 +65,11 @@ def organization_report_data(
             "rows": [_public_row(row, definition, strategy) for row in rows[:limit]],
         })
 
-    if definition.key == "top-borrowers":
-        total = globally_ranked_borrowers(
-            scope, date_range=date_range, limit=limit
-        )
-    elif definition.key == "member-activity":
+    if definition.key == "member-activity":
         total = distinct_member_activity(scope, date_range=date_range)
     else:
         total = aggregate_rows(definition.key, rows_by_space, limit=limit)
-    total = [_project(row, strategy.total_fields) for row in total]
+    total = [_project(project_report_output(definition, row), strategy.total_fields) for row in total]
     return _payload(
         definition.key,
         strategy.kind.value,
@@ -88,6 +96,11 @@ MAX_ORGANIZATION_SCOPE_SPACES = 25
 def _validate_inputs(definition, scope, limit):
     if not isinstance(definition, ReportDefinition):
         raise TypeError("definition must be a ReportDefinition.")
+    if definition.platform_only:
+        from .report_types import ReportNotFound
+        raise ReportNotFound()
+    if definition.identity_bearing:
+        raise OrganizationAggregationError("Identity-bearing reports are tenant-only.")
     if not isinstance(scope, ReportScope):
         raise TypeError("scope must be a ReportScope.")
     if scope.mode is not ReportScopeMode.COMBINED:
@@ -107,7 +120,7 @@ def _validate_inputs(definition, scope, limit):
         declared_fields = set(strategy.total_fields) | set(
             strategy.breakdown_only_fields
         )
-        if declared_fields != set(definition.fields):
+        if declared_fields != set(definition.fields) - {"makerspace_id"}:
             raise OrganizationAggregationError(
                 f"Strategy fields for {definition.key!r} do not match its report definition."
             )
@@ -128,7 +141,7 @@ def _result_rows(result):
 
 def _public_row(row, definition, strategy):
     fields = strategy.total_fields if definition.summary else definition.fields
-    return _project(row, fields)
+    return _project(project_report_output(definition, row), tuple(f for f in fields if f != "makerspace_id"))
 
 
 def _project(row, fields):
@@ -137,14 +150,17 @@ def _project(row, fields):
 
 def _json_value(value):
     if isinstance(value, Decimal):
-        return format(value.quantize(Decimal("0.01")), ".2f")
+        return money_text(value)
     return value
 
 
 def _payload(report_key, strategy, breakdown, total):
+    from .report_registry import REPORT_REGISTRY
+    from .org_report_charts import combined_chart_spec
     return {
         "report_key": report_key,
         "strategy": strategy,
         "breakdown": breakdown,
         "total": {"rows": total},
+        "chart_spec": combined_chart_spec(REPORT_REGISTRY[report_key], organization_strategy(report_key)),
     }

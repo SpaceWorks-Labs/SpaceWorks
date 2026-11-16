@@ -32,6 +32,9 @@ class AdminSourceGateMixin:
 
     def _assert_source_gate(self, request, *, object_id=None, queryset=None):
         from apps.tenant_migration.gate_runtime import assert_write_allowed
+        from apps.space_controls.superadmin_bypass import confirm
+
+        confirm(request.user)  # #195: a superadmin's write in a paused/read-only space is audited
 
         lookup = self.resolve_hidden_lookup()
         if lookup is None:
@@ -40,9 +43,8 @@ class AdminSourceGateMixin:
             queryset = self.model._default_manager.filter(pk=object_id)
         if queryset is not None:
             makerspace_ids = queryset.values_list(lookup, flat=True).distinct()
-            for makerspace_id in sorted(set(makerspace_ids)):
-                if makerspace_id is not None:
-                    assert_write_allowed(makerspace_id)
+            for makerspace_id in sorted({pk for pk in makerspace_ids if pk is not None}):
+                assert_write_allowed(makerspace_id)
             return
         parts = lookup.split("__")
         form_field = parts[0].removesuffix("_id")

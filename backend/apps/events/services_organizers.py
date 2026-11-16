@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -21,10 +22,10 @@ def _is_superadmin(actor):
 def replace_organizers(event, *, actor, organization_ids):
     requested = list(organization_ids)
     if len(requested) != len(set(requested)):
-        raise ValidationError({"organization_ids": "Organization IDs must be unique."})
+        raise ValidationError({"organization_ids": gettext("Organization IDs must be unique.")})
     if len(requested) > MAX_ORGANIZERS:
         raise ValidationError(
-            {"organization_ids": f"At most {MAX_ORGANIZERS} organizers are allowed."}
+            {"organization_ids": gettext('At most {MAX_ORGANIZERS} organizers are allowed.').format(MAX_ORGANIZERS=MAX_ORGANIZERS)}
         )
 
     locked_event = Event.objects.select_for_update().get(pk=event.pk)
@@ -44,7 +45,7 @@ def replace_organizers(event, *, actor, organization_ids):
         .order_by("pk")
     )
     if {organization.pk for organization in organizations} != set(requested):
-        raise ValidationError({"organization_ids": "An organization is unavailable."})
+        raise ValidationError({"organization_ids": gettext("An organization is unavailable.")})
 
     newly_assigned = set(requested) - existing_ids
     if not _is_superadmin(actor) and newly_assigned:
@@ -55,7 +56,7 @@ def replace_organizers(event, *, actor, organization_ids):
         )
         if set(memberships.values_list("organization_id", flat=True)) != newly_assigned:
             raise PermissionDenied(
-                "You need an active membership in every assigned organization."
+                gettext("You need an active membership in every assigned organization.")
             )
 
     old_ids = sorted(link.organization_id for link in existing)

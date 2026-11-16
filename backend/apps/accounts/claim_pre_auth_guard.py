@@ -15,63 +15,11 @@ from rest_framework.throttling import BaseThrottle
 from rest_framework.versioning import BaseVersioning
 from rest_framework.views import APIView
 
+from apps.accounts.claim_pre_auth_allowlists import (  # re-exported: the reviewed allowlists
+    LIFECYCLE_OVERRIDE_ALLOWLIST,
+    POLICY_OVERRIDE_ALLOWLIST,
+)
 
-# These are the normal extension hooks implemented by the custom policies currently
-# configured on claim-reachable routes. Exact class+method matching makes a new hook a
-# build failure instead of silently trusting executable pre-auth code.
-POLICY_OVERRIDE_ALLOWLIST = {
-    "apps.bookings.throttles_feed.BookingFeedTokenThrottle": {"get_cache_key"},
-    "apps.bookings.throttles_feed.BookingFeedIpThrottle": {"get_cache_key"},
-    "apps.accounts.throttles_mfa.MFAChallengeThrottle": {"get_cache_key"},
-    "apps.accounts.throttles_mfa.MFAUserThrottle": {"get_cache_key"},
-    # `_authenticate_claim` is the sanctioned claim-session path added in D5. It is listed
-    # deliberately: this guard exists so that a NEW method on a configured policy class is a
-    # decision rather than an accident, and the claim authenticator is exactly such a decision.
-    "apps.accounts.authentication.SpaceWorksJWTAuthentication": {
-        "authenticate",
-        "_authenticate_claim",
-    },
-    "apps.accounts.throttles.DeviceLoginThrottle": {"get_cache_key"},
-    "apps.accounts.throttles.DeviceLoginUserThrottle": {"get_cache_key"},
-    "apps.accounts.throttles.MemberVerificationEmailThrottle": {"get_cache_key"},
-    "apps.accounts.throttles.PasswordResetEmailThrottle": {"get_cache_key"},
-    # Phase 8: the per-email confirm budget, kept distinct from the request budget
-    # so guessing a code cannot exhaust the ability to ask for a new one.
-    "apps.accounts.throttles.PasswordResetConfirmEmailThrottle": {"get_cache_key"},
-    "apps.accounts.throttles.PhoneConfirmNumberThrottle": {"get_cache_key"},
-    "apps.accounts.throttles.PhoneLoginConfirmThrottle": {"get_cache_key"},
-    "apps.accounts.throttles.PhoneOtpNumberThrottle": {"get_cache_key"},
-    "apps.accounts.throttles.PhoneOtpRequestThrottle": {"get_cache_key"},
-    "apps.apiclients.throttling.ClientTierRateThrottle": {
-        "_tier", "allow_request", "get_cache_key"
-    },
-    "apps.apiclients.throttling.MemberPrincipalRateThrottle": {
-        "_tier", "allow_request", "get_cache_key"
-    },
-    "apps.events.throttles.CollaborativeRegistrationThrottle": {
-        "_tier", "allow_request", "get_cache_key"
-    },
-    # Public feedback reads and submissions take separate budgets. The scope is chosen in
-    # `allow_request` rather than a view-level `get_throttles()` override precisely BECAUSE
-    # this guard forbids a lifecycle-hook override on a pre-auth route; the override set is
-    # therefore identical to its ClientTierRateThrottle base.
-    "apps.events.throttles.PublicFeedbackRateThrottle": {
-        "_tier", "allow_request", "get_cache_key"
-    },
-    # The account-less borrow-request budgets. Both override `get_cache_key` only, to
-    # return None for an authenticated caller: they sit in `throttle_classes` beside the
-    # member throttle, and DRF applies every class on every request, so without the skip a
-    # makerspace behind one NAT would rate-limit its own signed-in members by egress IP.
-    "apps.hardware_requests.throttles.AnonymousRequestIpBurstThrottle": {"get_cache_key"},
-    "apps.hardware_requests.throttles.AnonymousRequestIpHourThrottle": {"get_cache_key"},
-    # The subscribable calendar feed is fetched by a calendar client with only its
-    # bearer token, so the budget keys on that token rather than the caller.
-    "apps.events.throttles.EventCalendarFeedTokenThrottle": {"get_cache_key"},
-    "apps.events.throttles.EventCalendarFeedIpThrottle": {"get_cache_key"},
-    "apps.machines.permissions.IsActiveRequester": {"has_permission"},
-    "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
-    "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},
-}
 
 POLICY_ATTRIBUTES = (
     "authentication_classes",
@@ -98,6 +46,8 @@ def validate_pre_auth_route(route):
     errors = []
     for method_name in framework_lifecycle_methods():
         implementation = _implementation(view_class, method_name)
+        if _allowlisted_override(view_class, method_name):
+            continue
         if implementation is not None and not _is_framework_callable(implementation):
             errors.append(
                 f"{route.view_name} overrides pre-auth lifecycle hook {method_name}"
@@ -207,6 +157,17 @@ def _implementation(view_class, name):
         None,
     )
     return None if owner is None else _function(owner.__dict__[name])
+
+
+def _allowlisted_override(view_class, name):
+    owner = next(
+        (candidate for candidate in view_class.__mro__ if name in candidate.__dict__),
+        None,
+    )
+    if owner is None:
+        return False
+    key = f"{owner.__module__}.{owner.__qualname__}"
+    return name in LIFECYCLE_OVERRIDE_ALLOWLIST.get(key, ())
 
 
 def _function(value):

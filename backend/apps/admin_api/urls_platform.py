@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.accounts.views_mobile_readiness import MobileReadinessView
+
 from apps.admin_api.views_platform_monitoring import (
     MakerspaceUsageView, PlatformDashboardView, PlatformProblemsView,
 )
@@ -21,7 +23,7 @@ from apps.backup.views_archives import (
     DeploymentArchiveListCreateView,
     MakerspaceArchiveListCreateView,
 )
-from apps.backup.views_custody import MakerspaceBackupCustodyView
+from apps.backup.views_backup_status import MakerspaceBackupStatusView
 from apps.backup.views_offsite import (
     BackupArchiveRehydrateView,
     BackupDestinationDetailView,
@@ -37,19 +39,12 @@ from apps.backup.views_restore import (
     RestoreOperationListCreateView,
     RestoreOperationView,
 )
-from apps.backup.views_recipients import (
-    ArchiveRecipientCompromiseView,
-    ArchiveRecipientListCreateView,
-    ArchiveRecipientReactivateView,
-    ArchiveRecipientReissueView,
-    ArchiveRecipientRevokeView,
-    ArchiveRecipientVerifyView,
-)
 from apps.data_export.views import (
     DataExportDetailView,
     DataExportDownloadUrlView,
     DataExportListCreateView,
 )
+from apps.tenant_migration.views_selfhost_move import SelfHostMoveRequestView
 from apps.tenant_migration.views import (
     DeploymentIdentityView,
     DisclosureApprovalListCreateView,
@@ -65,6 +60,9 @@ from apps.tenant_migration.views import (
     TargetAbortView,
     TargetActivateView,
     TenantImportDetailView,
+    TenantImportArchiveChunkView,
+    TenantImportArchiveCompleteView,
+    TenantImportUploadStartView,
     TenantImportIdentityDecisionsView,
     TenantImportListCreateView,
     TenantImportRunView,
@@ -75,6 +73,7 @@ from .urls_utils import _separable
 
 
 urlpatterns = [
+    path("platform/mobile-readiness", MobileReadinessView.as_view(), name="admin-platform-mobile-readiness"),
     path("platform/dashboard", PlatformDashboardView.as_view(), name="admin-platform-dashboard"),
     path("platform/problems", PlatformProblemsView.as_view(), name="admin-platform-problems"),
     path("makerspace/<int:makerspace_id>/usage", MakerspaceUsageView.as_view(), name="admin-makerspace-usage"),
@@ -95,41 +94,11 @@ urlpatterns = [
     path("platform/backup-destinations/<int:destination_id>/test", BackupDestinationProbeView.as_view(), name="admin-backup-destination-probe"),
     path("platform/backup-destinations/<int:destination_id>/uploads", BackupDestinationUploadListView.as_view(), name="admin-backup-destination-uploads"),
     path("platform/backups/<uuid:archive_id>/rehydrate", BackupArchiveRehydrateView.as_view(), name="admin-backup-archive-rehydrate"),
-    path("makerspace/<int:makerspace_id>/backup-custody", MakerspaceBackupCustodyView.as_view(), name="admin-makerspace-backup-custody"),
+    path("makerspace/<int:makerspace_id>/backup-status", MakerspaceBackupStatusView.as_view(), name="admin-makerspace-backup-status"),
     path(
         "makerspace/<int:makerspace_id>/backups",
         MakerspaceArchiveListCreateView.as_view(),
         name="admin-makerspace-backups",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients",
-        ArchiveRecipientListCreateView.as_view(),
-        name="admin-archive-recipient-list-create",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/verify",
-        ArchiveRecipientVerifyView.as_view(),
-        name="admin-archive-recipient-verify",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/reissue-challenge",
-        ArchiveRecipientReissueView.as_view(),
-        name="admin-archive-recipient-reissue",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/revoke",
-        ArchiveRecipientRevokeView.as_view(),
-        name="admin-archive-recipient-revoke",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/compromise",
-        ArchiveRecipientCompromiseView.as_view(),
-        name="admin-archive-recipient-compromise",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/reactivate",
-        ArchiveRecipientReactivateView.as_view(),
-        name="admin-archive-recipient-reactivate",
     ),
     path(
         "backups/<uuid:archive_id>/download-url",
@@ -171,6 +140,9 @@ urlpatterns = [
         path("platform/tenant-migrations/deployment-identity", DeploymentIdentityView.as_view(), name="tenant-migration-deployment-identity"),
         path("platform/tenant-migrations/pairings", MigrationPairingListCreateView.as_view(), name="tenant-migration-pairings"),
         path("platform/tenant-migrations/imports", TenantImportListCreateView.as_view(), name="tenant-migration-imports"),
+        path("platform/tenant-migrations/imports/uploads", TenantImportUploadStartView.as_view(), name="tenant-migration-import-upload-start"),
+        path("platform/tenant-migrations/imports/<uuid:job_id>/archive", TenantImportArchiveChunkView.as_view(), name="tenant-migration-import-archive-chunk"),
+        path("platform/tenant-migrations/imports/<uuid:job_id>/archive/complete", TenantImportArchiveCompleteView.as_view(), name="tenant-migration-import-archive-complete"),
         path("platform/tenant-migrations/imports/<uuid:job_id>", TenantImportDetailView.as_view(), name="tenant-migration-import-detail"),
         path("platform/tenant-migrations/imports/<uuid:job_id>/identity-decisions", TenantImportIdentityDecisionsView.as_view(), name="tenant-migration-import-decisions"),
         path("platform/tenant-migrations/imports/<uuid:job_id>/run", TenantImportRunView.as_view(), name="tenant-migration-import-run"),
@@ -186,6 +158,7 @@ urlpatterns = [
         path("makerspace/<int:makerspace_id>/tenant-migration/exports/<uuid:job_id>/quiesce", SourceQuiesceView.as_view(), name="tenant-migration-source-quiesce"),
         path("makerspace/<int:makerspace_id>/tenant-migration/pairings/<uuid:pairing_id>/archive-source", SourceArchiveView.as_view(), name="tenant-migration-source-archive"),
         path("makerspace/<int:makerspace_id>/tenant-migration/pairings/<uuid:pairing_id>/recover", SourceRecoverView.as_view(), name="tenant-migration-source-recover"),
+        path("makerspace/<int:makerspace_id>/selfhost-move-request", SelfHostMoveRequestView.as_view(), name="admin-makerspace-selfhost-move-request"),
     ),
     # Module install/uninstall. NOT wrapped in _separable: the registry is core, and a
     # console that could not list modules on a deployment with one app tombstoned would

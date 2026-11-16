@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "build": {
+    "node": "22",
+    "cwd": "frontend",
+    "command": "npm ci && npm run build",
+    "VITE_API_URL": "/api"
+  },
+  "runtime_public_configuration": [
+    "apiUrl=/api",
+    "originBootstrap",
+    "optional publishable tenantToken"
+  ],
+  "edge_configuration": {
+    "PUBLIC_ORIGIN": "one exact HTTPS app origin; previews refused",
+    "BACKEND_ORIGIN": "one fixed HTTPS backend origin; no path/query/userinfo",
+    "TRUSTED_EDGE_INGRESS_SECRET": "server-only provider secret, same independent 32..256-byte value as backend; overwrite browser header on every backend proxy; rotate/redeploy both sides; never in frontend/config.js",
+    "ORIGIN_BOOTSTRAP": "true only for verified-domain SaaS",
+    "CONNECT_ORIGINS": "space-separated exact API/storage/analytics HTTPS origins",
+    "IMAGE_ORIGINS": "space-separated exact public-image/storage HTTPS origins",
+    "ANALYTICS_SCRIPT_ORIGINS": "space-separated exact approved analytics HTTPS origins",
+    "LIVE_ORIGIN": "optional exact HTTPS gthread streaming upstream in full only; absent => polling, never pin a sync web worker",
+    "MEDIA_ORIGINS": "space-separated exact signed media storage HTTPS origins",
+    "FRAME_ORIGINS": "optional space-separated exact HTTPS origins of embedded analytics dashboards (Metabase, Grafana); absent => only same-origin frames",
+    "PUBLIC_API_URL": "optional explicit cross-site HTTPS URL ending /api; default /api, never /api/v1; add its exact origin to CONNECT_ORIGINS",
+    "PUBLIC_TENANT_TOKEN": "optional publishable tenant bootstrap token; not an account credential, exposed in config.js"
+  },
+  "backend_prerequisites": [
+    "Validate exact upstream Host and independently authenticate trusted edge ingress before trusting X-Forwarded-Host/Proto/For",
+    "Use validated forwarded host for tenant/bootstrap/staff-origin and CSRF checks; never ALLOWED_HOSTS=*",
+    "Configure exact proxy count; bind direct self-host ingress privately",
+    "Secure host-only auth cookies, original Cookie/Origin/CSRF headers preserved; no Domain rewriting",
+    "Deny every internal/control path at public backend ingress; admit precisely the secret-authenticated free tick on its separate backend path",
+    "Disable/redact provider request logs containing bearer paths or signed queries; no cache rules overriding no-store"
+  ],
+  "route_order": [
+    "deny control/internal/metrics",
+    "no-store config.js",
+    "API/share/embed/backend static/redoc/schema/robots/sitemap",
+    "crawler page/event/booking metadata",
+    "assets",
+    "SPA navigation"
+  ],
+  "worker_full": "deploy/static/cloudflare/wrangler.toml",
+  "worker_free": {
+    "config": "deploy/static/cloudflare/free/wrangler.toml",
+    "secret": "FREE_TICK_SECRET via wrangler secret put; same protected value as backend, never browser env",
+    "schedule": "*/10 * * * *",
+    "path": "/api/v1/internal/free/tick",
+    "method": "POST",
+    "header": "X-Cron-Secret",
+    "attempts": 3,
+    "timeout_per_attempt_seconds": 85,
+    "backoff_seconds": [
+      2,
+      5
+    ],
+    "response_limit_bytes": 65536,
+    "rotation": "replace backend and trigger secret, restart/redeploy, verify progress and old-secret refusal",
+    "validation": "Measure deployed CPU/request/cron/subrequest allowances; real scheduler, no always-awake guarantee"
+  },
+  "pages": "node deploy/static/prepare.mjs pages <new-output-dir>; deploy staged output with Wrangler Pages; runtime env from edge_configuration; fail closed on function quota exhaustion",
+  "vercel": "node deploy/static/prepare.mjs vercel <new-output-dir>; deploy staged root with Vercel CLI; exact production env, no preview authority; verify account plan permits use",
+  "netlify": "Use deploy/static/netlify/netlify.same-origin.toml (copy over the root netlify.toml, which keeps the original split setup); exact runtime edge env via provider UI/API, never toml secrets",
+  "cross_site_alternative": "Explicit HTTPS apiUrl; exact CORS/CSRF/staff/public origins, Secure cookies and supported SameSite; third-party cookie blocking may prevent unrelated provider-domain sessions",
+  "acceptance": "Not certified by source/unit checks; run cloud-static.spec.ts for every host and real managed/free flows, uploads, auth, tenant boundaries, QR/WASM, polling/PWA, scheduled calls and CPU measurement before release"
+}

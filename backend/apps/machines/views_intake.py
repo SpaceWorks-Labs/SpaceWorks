@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import ValidationError
@@ -23,7 +24,7 @@ class MachineTypeIntakeView(APIView):
         space = managed_space(request.user, makerspace_id, "machines.structured_intake")
         machine_type = type_for(space, type_id)
         if machine_type.makerspace_id is None:
-            raise ValidationError({"detail": "Built-in intake contracts are protected."})
+            raise ValidationError({"detail": gettext("Built-in intake contracts are protected.")})
         serializer = IntakeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         machine_type.intake_schema = serializer.validated_data["intake_schema"]

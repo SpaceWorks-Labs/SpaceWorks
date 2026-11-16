@@ -1,0 +1,161 @@
+"""Analytics views: events, registrations and check-ins. No attendee names, emails, phones,
+answers, join links or check-in tokens: a registration is its member id, ticket and state."""
+
+from .types import Col, View
+
+D = "events"
+VIEWS = (
+    View("events", D, "Events with their dates, capacity and price.",
+         "FROM {events.Event} e", "e.makerspace_id", (
+             Col("event_id", "e.id", "Event id."),
+             Col("series_id", "e.series_id", "Series, if part of one."),
+             Col("category_id", "e.category_id", "Category."),
+             Col("title", "e.title", "Event title."),
+             Col("status", "e.status", "Event state."),
+             Col("starts_at", "e.starts_at", "Starts."),
+             Col("ends_at", "e.ends_at", "Ends."),
+             Col("location_kind", "e.location_kind", "In person, online or hybrid."),
+             Col("delivery_mode", "e.delivery_mode", "How it is delivered."),
+             Col("capacity", "e.capacity", "Capacity."),
+             Col("payment_amount", "e.payment_amount", "Base price."),
+             Col("is_public", "e.is_public", "Public event."),
+             Col("listing", "e.listing", "Listed or unlisted."),
+             Col("requires_approval", "e.registration_requires_approval", "Registrations need approval."),
+             Col("created_at", "e.created_at", "Created."),
+         )),
+    View("event_registrations", D, "Registrations; the attendee is a member id only.",
+         "FROM {events.EventRegistration} r JOIN {events.Event} e ON e.id = r.event_id", "e.makerspace_id", (
+             Col("registration_id", "r.id", "Registration id."),
+             Col("event_id", "r.event_id", "Event (events)."),
+             Col("member_id", "r.member_id", "Member (members)."),
+             Col("ticket_type_id", "r.ticket_type_id", "Ticket type (event_ticket_types)."),
+             Col("status", "r.status", "Registration state."),
+             Col("audience", "r.registration_audience", "Audience it registered under."),
+             Col("quoted_amount", "r.quoted_amount", "Price quoted."),
+             Col("discount_amount", "r.discount_amount", "Discount given."),
+             Col("created_at", "r.created_at", "Registered."),
+             Col("cancelled_at", "r.cancelled_at", "Cancelled."),
+         )),
+    View("event_checkins", D, "Attendance records (each check-in at the door or a station).",
+         "FROM {events.EventCheckInEvent} c", "c.makerspace_id", (
+             Col("checkin_id", "c.id", "Check-in id."),
+             Col("event_id", "c.event_id", "Event (events)."),
+             Col("registration_id", "c.registration_id", "Registration (event_registrations)."),
+             Col("source", "c.source", "Where it was recorded."),
+             Col("attended_at", "c.attended_at", "Attended at."),
+         )),
+    View("event_applications", D, "Applications to events that admit by application (hackathons and others).",
+         "FROM {events.HackathonApplication} a JOIN {events.Event} e ON e.id = a.event_id", "e.makerspace_id", (
+             Col("application_id", "a.id", "Application id."),
+             Col("event_id", "a.event_id", "Event (events)."),
+             Col("member_id", "a.member_id", "Applicant (members)."),
+             Col("registration_id", "a.registration_id", "Registration once admitted (event_registrations)."),
+             Col("cohort_id", "a.cohort_id", "Cohort."),
+             Col("state", "a.state", "Application state."),
+             Col("submitted_at", "a.submitted_at", "Submitted."),
+             Col("offered_at", "a.offered_at", "Offered a place."),
+             Col("response_at", "a.response_at", "Applicant responded."),
+             Col("rsvp_accepted_at", "a.rsvp_accepted_at", "Accepted the offer."),
+         )),
+)
+
+# Release 2 L21a (catalogue version 2): committed admission decisions and event crew. Never answers,
+# dietary notes or consents.
+VIEWS += (
+    View("application_decisions", "events", "Committed admission decisions, per stage.",
+         "FROM {events.ApplicationDecision} d JOIN {events.ApplicationDecisionBatch} b ON b.id = d.batch_id "
+         "JOIN {events.Event} e ON e.id = b.event_id", "e.makerspace_id", (
+             Col("decision_id", "d.id", "Decision id."),
+             Col("event_id", "b.event_id", "Event (events)."),
+             Col("application_id", "d.application_id", "Application (event_applications)."),
+             Col("stage_id", "d.stage_id", "Admission stage."),
+             Col("outcome", "d.outcome", "Offer, waitlist, reject or advance."),
+             Col("reason_code", "d.reason_code", "Reason code."),
+             Col("batch_state", "b.state", "Draft, committed or cancelled batch."),
+             Col("sent_at", "d.sent_at", "Sent to the applicant."),
+         ), since=2),
+    View("event_crew", "events", "Event crew (volunteers, mentors and others); no answers or dietary notes.",
+         "FROM {events.EventCrewMember} c", "c.makerspace_id", (
+             Col("crew_id", "c.id", "Crew entry id."),
+             Col("event_id", "c.event_id", "Event (events)."),
+             Col("member_id", "c.member_id", "Crew member (members)."),
+             Col("origin", "c.origin", "Signed up or invited."),
+             Col("crew_role", "c.crew_role", "Role on the crew."),
+             Col("state", "c.state", "Crew state."),
+             Col("decided_at", "c.decided_at", "Decided."),
+             Col("created_at", "c.created_at", "Joined."),
+         ), since=2),
+)
+
+# Release 2 L21b (catalogue version 2): judging rounds, finalists, announcements, prizes and payouts.
+# The payout recipient is masked like a name; references, judge notes and criterion values never appear.
+VIEWS += (
+    View("judging_rounds", "events", "Judging rounds per event.",
+         "FROM {events.JudgingRound} r JOIN {events.Event} e ON e.id = r.event_id", "e.makerspace_id", (
+             Col("round_id", "r.id", "Round id."),
+             Col("event_id", "r.event_id", "Event (events)."),
+             Col("key", "r.key", "Round key."),
+             Col("mode", "r.mode", "Scoring mode."),
+             Col("state", "r.state", "Round state."),
+             Col("visibility", "r.visibility", "What judges see."),
+             Col("fresh_eyes", "r.fresh_eyes", "Judges new to the projects."),
+             Col("advanced_from_id", "r.advanced_from_id", "Round its finalists came from (judging_rounds)."),
+             Col("min_reviews", "r.min_reviews", "Reviews per project."),
+             Col("opens_at", "r.opens_at", "Opens."),
+             Col("closes_at", "r.closes_at", "Closes."),
+         ), since=2),
+    View("finalist_advances", "events", "Finalist advances from one round to the next.",
+         "FROM {events.FinalistAdvance} a JOIN {events.Event} e ON e.id = a.event_id", "e.makerspace_id", (
+             Col("advance_id", "a.id", "Advance id."),
+             Col("event_id", "a.event_id", "Event (events)."),
+             Col("source_round_id", "a.source_round_id", "From round (judging_rounds)."),
+             Col("target_round_id", "a.target_round_id", "To round (judging_rounds)."),
+             Col("selection", "a.selection", "Top N or hand-picked."),
+             Col("top_n", "a.top_n", "N, for a top-N advance."),
+             Col("created_at", "a.created_at", "Advanced."),
+         ), since=2),
+    View("judging_finalists", "events", "The projects each advance carried forward.",
+         "FROM {events.JudgingFinalist} f JOIN {events.FinalistAdvance} a ON a.id = f.advance_id "
+         "JOIN {events.Event} e ON e.id = a.event_id", "e.makerspace_id", (
+             Col("finalist_id", "f.id", "Finalist id."),
+             Col("advance_id", "f.advance_id", "Advance (finalist_advances)."),
+             Col("snapshot_id", "f.snapshot_id", "Submitted project snapshot."),
+             Col("source_rank", "f.source_rank", "Rank in the source round."),
+         ), since=2),
+    View("finalist_announcements", "events", "When finalists were announced.",
+         "FROM {events.FinalistAnnouncement} n JOIN {events.Event} e ON e.id = n.event_id", "e.makerspace_id", (
+             Col("announcement_id", "n.id", "Announcement id."),
+             Col("event_id", "n.event_id", "Event (events)."),
+             Col("advance_id", "n.advance_id", "Advance (finalist_advances)."),
+             Col("published_at", "n.published_at", "Published."),
+         ), since=2),
+    View("hackathon_prizes", "events", "Prizes and their money per winner.",
+         "FROM {events.HackathonPrize} p JOIN {events.Event} e ON e.id = p.event_id", "e.makerspace_id", (
+             Col("prize_id", "p.id", "Prize id."),
+             Col("event_id", "p.event_id", "Event (events)."),
+             Col("name", "p.name", "Prize name."),
+             Col("award_count", "p.award_count", "Winners."),
+             Col("amount_per_winner", "p.amount_per_winner", "Money per winner."),
+         ), since=2),
+    View("prize_payouts", "events", "Prize payouts and reversals; the recipient is masked like a name.",
+         "FROM {events.HackathonPrizePayout} p", "p.makerspace_id", (
+             Col("payout_id", "p.id", "Payout id."),
+             Col("event_id", "p.event_id", "Event (events)."),
+             Col("prize_id", "p.prize_id", "Prize (hackathon_prizes)."),
+             Col("recipient_id", "p.recipient_id", "Winner (members); masked unless member details are on.",
+                 pii=True, pii_type="bigint"),
+             Col("kind", "p.kind", "Payout or reversal."),
+             Col("amount", "p.amount", "Amount."),
+             Col("currency", "p.currency", "Currency."),
+             Col("method", "p.method", "How it was paid."),
+             Col("paid_on", "p.paid_on", "Paid on."),
+             Col("ledger_entry_id", "p.ledger_entry_id", "Ledger entry (finance_ledger)."),
+         ), since=2),
+    View("judge_scores", "events", "When judge scores were saved and submitted (no values, no notes).",
+         "FROM {events.JudgeScore} s JOIN {events.Event} e ON e.id = s.event_id", "e.makerspace_id", (
+             Col("score_id", "s.id", "Score id."),
+             Col("assignment_id", "s.assignment_id", "Judge assignment."),
+             Col("saved_at", "s.saved_at", "Last saved."),
+             Col("submitted_at", "s.submitted_at", "Submitted."),
+         ), since=2),
+)

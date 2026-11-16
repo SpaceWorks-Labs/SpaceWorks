@@ -31,7 +31,11 @@ from apps.tenant_migration.protocol_errors import ClosureAdmissionError
 from apps.tenant_migration.source_gate import quiesced_snapshot
 
 FORMAT = "spaceworks-tenant-migration-v1"
-FORMAT_VERSION = 1
+# 2: one account per person -- user rows carry merged_into (not a staff tenant), the roster
+# carries both membership tracks, and a credential block may travel (C-18). Version 1
+# (the split format) is still accepted one version back and converted on import (Q11).
+FORMAT_VERSION = 2
+READABLE_FORMAT_VERSIONS = frozenset({1, 2})
 
 
 class MigrationArchiveError(RuntimeError):
@@ -78,6 +82,8 @@ def build_tenant_migration_archive(
                 existing_snapshot=True,
             )
             try:
+                from .credential_block import write_credential_block
+                write_credential_block(Path(export_root), makerspace, keys)
                 key_payload = _serialize_keys(keys)
                 object_records = capture_tenant_objects(
                     export_root, makerspace, preflight.storage_mode
@@ -114,6 +120,7 @@ def build_tenant_migration_archive(
             raise MigrationArchiveError(
                 "The tenant migration archive could not be built."
             ) from exc
+
 
 
 def _portable_job(makerspace, disclosure_approval):
@@ -200,7 +207,10 @@ def _stream_age_archive(root, key_payload, manifest_payload, output, recipient):
     # plaintext ZIP until finally-cleanup. A hard kill could preserve it. That
     # packaging path is deliberately bypassed here, and DEKs exist only in this
     # in-memory member before tar bytes flow directly into age.
-    command = ["age", "-r", recipient, "-o", str(output)]
+    # One recipient, or several (the self-host move: a one-shot target key plus the
+    # platform key, #111 Q7); age lets any one of them open the archive.
+    recipients = [recipient] if isinstance(recipient, str) else list(recipient)
+    command = ["age", *[arg for value in recipients for arg in ("-r", value)], "-o", str(output)]
     process = None
     try:
         process = subprocess.Popen(

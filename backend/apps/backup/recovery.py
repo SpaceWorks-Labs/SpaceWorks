@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -9,7 +10,6 @@ from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, Va
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
 from apps.audit import services as audit
-from apps.backup.custody import validate_deployment_custody
 from apps.backup.models import DeploymentRecoveryState, RestoreOperation
 
 
@@ -48,7 +48,7 @@ def assert_principal_allowed(user):
     if state and state.mode == DeploymentRecoveryState.Mode.QUARANTINED:
         if not is_recovery_principal(user, state):
             raise AuthenticationFailed(
-                "Only the out-of-band recovery superadmin may authenticate during quarantine.",
+                gettext("Only the out-of-band recovery superadmin may authenticate during quarantine."),
                 code="deployment_quarantined",
             )
 
@@ -110,6 +110,8 @@ def enter_quarantine(restore, reason):
             public_api_key=generate_publishable_key()
         )
     _reset_device_authority(now)
+    from .station_revocation import revoke_station_credentials
+    revoke_station_credentials(actor=restore.requested_by, now=now)
     PasswordResetEnvelope.objects.update(
         status=PasswordResetEnvelopeStatus.DISCARDED,
         digest_is_live=False,
@@ -166,8 +168,10 @@ def _invalidate_tokens(now):
 def set_recovery_principal(user, raw_password):
     User = get_user_model()
     locked = User.objects.select_for_update().get(pk=user.pk)
-    if not (locked.is_superuser or locked.role == User.Role.SUPERADMIN):
-        raise ValidationError("The recovery principal must already be a superadmin.")
+    from apps.accounts.staff_identity import is_platform
+
+    if not is_platform(locked) or not (locked.is_superuser and locked.role == User.Role.SUPERADMIN):
+        raise ValidationError(gettext("The recovery principal must already be a superadmin."))
     locked.is_active = True
     locked.is_staff = True
     locked.is_superuser = True
@@ -178,7 +182,7 @@ def set_recovery_principal(user, raw_password):
     locked.save()
     state = _locked_state()
     if state.mode != DeploymentRecoveryState.Mode.QUARANTINED:
-        raise ValidationError("The deployment is not quarantined.")
+        raise ValidationError(gettext("The deployment is not quarantined."))
     state.recovery_principal = locked
     state.save(update_fields=("recovery_principal", "updated_at"))
     audit.record(
@@ -194,21 +198,11 @@ def set_recovery_principal(user, raw_password):
 def acknowledge_quarantine(actor, acknowledgement):
     state = _locked_state()
     if state.mode != DeploymentRecoveryState.Mode.QUARANTINED:
-        raise ValidationError("The deployment is not quarantined.")
+        raise ValidationError(gettext("The deployment is not quarantined."))
     if not is_recovery_principal(actor, state):
-        raise PermissionDenied("Only the recovered superadmin may acknowledge quarantine.")
+        raise PermissionDenied(gettext("Only the recovered superadmin may acknowledge quarantine."))
     if acknowledgement != RESIDUAL_RISK:
-        raise ValidationError({"acknowledgement": "The residual-risk acknowledgement must match exactly."})
-    custody = validate_deployment_custody()
-    if custody.zero_recipient_off_makerspace_ids:
-        raise ValidationError(
-            {
-                "archive_custody": (
-                    "Quarantine cannot be acknowledged while a self-governed "
-                    "makerspace has zero verified archive recipients."
-                )
-            }
-        )
+        raise ValidationError({"acknowledgement": gettext("The residual-risk acknowledgement must match exactly.")})
     now = timezone.now()
     state.mode = DeploymentRecoveryState.Mode.NORMAL
     state.acknowledged_at = now

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -59,5 +60,5 @@ class EventCollaborator(models.Model):
         super().clean()
         if self.event_id and self.makerspace_id == self.event.makerspace_id:
             raise ValidationError(
-                {"makerspace": "An event's host makerspace cannot be a collaborator."}
+                {"makerspace": gettext("An event's host makerspace cannot be a collaborator.")}
             )

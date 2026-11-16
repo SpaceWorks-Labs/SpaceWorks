@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 
@@ -5,6 +6,8 @@ import { Card, EmptyState } from "../../components/ui";
 import { FilePicker, TextArea, TextInput } from "./PublicPrintRequestParts";
 import type { TypeIntake } from "../inventory/MachineIntakeForm";
 import type { PublicFilamentPool } from "./publicApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type FormState = {
   title: string;
@@ -86,9 +89,8 @@ export function PrintDetailsForm({
   const noAvailablePools = poolsQuery.isSuccess && (poolsQuery.data?.length ?? 0) === 0;
   return (
     <Card>
-      <h2 className="title-panel text-secondary-ink">
-        Print Details
-      </h2>
+      <h2 className="title-panel text-brand-ink">
+        {t`Print details`}</h2>
       <form className="mt-4 space-y-4" onSubmit={onSubmit}>
         {/* Honeypot: hidden from humans; bots that autofill it trigger the server decoy. */}
         <input
@@ -100,41 +102,42 @@ export function PrintDetailsForm({
           value={website}
           onChange={(event) => onWebsiteChange(event.target.value)}
         />
-        <fieldset className="space-y-4" disabled={submitPending}>
+        <fieldset className="space-y-4" disabled={submitPending}><legend className="title-section mb-4">{t`Your print`}</legend>
           <TextInput
-            label="Title"
+            label={t`Title`}
             required
             value={form.title}
             onChange={(value) => updateField("title", value)}
           />
           <TextArea
-            label="Project brief"
+            label={t`Project brief`}
             value={form.projectBrief}
             onChange={(value) => updateField("projectBrief", value)}
           />
           <TextArea
-            label="Slicer settings / personal preferences"
+            label={t`Slicer settings / personal preferences`}
             value={form.preferredSettings}
             onChange={(value) => updateField("preferredSettings", value)}
           />
+        </fieldset>
+        <fieldset className="space-y-4" disabled={submitPending}><legend className="title-section mb-4">{t`Material`}</legend>
           {catalogue?.materials.length ? <div className="grid gap-3 md:grid-cols-2">
-            <label className="grid gap-1 text-sm">Material<select className="desk-input" value={form.material} onChange={event => { updateField("material", event.target.value); updateField("color", ""); updateField("consumablePoolId", ""); }}><option value="">No preference</option>{catalogue.materials.map(material => <option key={material.name}>{material.name}</option>)}</select></label>
-            <label className="grid gap-1 text-sm">Colour<select className="desk-input" value={form.color} required={Boolean(form.material)} onChange={event => updateField("color", event.target.value)}><option value="">Choose a colour</option>{catalogue.materials.find(m => m.name === form.material)?.colours.map(c => <option key={c}>{c}</option>)}</select></label>
+            <label className="grid gap-1 text-sm">{t`Material`}<select className="desk-input w-full" value={form.material} onChange={event => { updateField("material", event.target.value); updateField("color", ""); updateField("consumablePoolId", ""); }}><option value="">{t`No preference`}</option>{catalogue.materials.map(material => <option key={material.name}>{material.name}</option>)}</select></label>
+            <label className="grid gap-1 text-sm">{t`Colour`}<select className="desk-input w-full" value={form.color} required={Boolean(form.material)} onChange={event => updateField("color", event.target.value)}><option value="">{t`Choose a colour`}</option>{catalogue.materials.find(m => m.name === form.material)?.colours.map(c => <option key={c}>{c}</option>)}</select></label>
           </div> : null}
           <div className="grid gap-4 md:grid-cols-2">
             {noAvailablePools ? (
               <div>
-                <span className="eyebrow mb-1 block">Filament / material</span>
+                <span className="mb-1 block text-sm font-semibold text-ink">{t`Filament / material`}</span>
                 <EmptyState
-                  title="No filament currently available"
-                  description="There is no filament available to choose right now. You can still submit without a preference, and staff will confirm the options."
+                  title={t`No filament currently available`}
+                  description={t`There is no filament available to choose right now. You can still submit without a preference, and staff will confirm the options.`}
                 />
               </div>
             ) : (
               <label className="block">
-                <span className="eyebrow mb-1 block">
-                  Filament / material
-                </span>
+                <span className="mb-1 block text-sm font-semibold text-ink">
+                  {t`Filament / material`}</span>
                 <select
                   className="desk-input w-full"
                   value={form.consumablePoolId}
@@ -144,33 +147,32 @@ export function PrintDetailsForm({
                     if (pool) { updateField("material", pool.material); updateField("color", pool.color); }
                   }}
                 >
-                  <option value="">No preference</option>
+                  <option value="">{t`No preference`}</option>
                   {groupPoolsByMaterial(poolsQuery.data ?? []).map(([material, pools]) => (
                     <optgroup key={material} label={material}>
                       {pools.map((pool) => (
                         <option key={pool.id} value={pool.id}>
-                          {pool.color || "Default color"}
+                          {pool.color || t`Default color`}
                         </option>
                       ))}
                     </optgroup>
                   ))}
                 </select>
                 {poolsQuery.isLoading ? (
-                  <p className="mt-1 text-xs text-muted">Loading filament...</p>
+                  <LogoLoader label={t`Loading filament…`} size={48} className="min-h-16 py-3" />
                 ) : null}
                 {poolsQuery.isError ? (
-                  <p className="mt-1 text-xs text-danger">
+                  <p className="mt-1 text-sm text-danger">
                     {poolsQuery.error.message}
                   </p>
                 ) : null}
               </label>
             )}
             <label className="block">
-              <span className="eyebrow mb-1 block">
-                Quantity
-              </span>
+              <span className="mb-1 block text-sm font-semibold text-ink">
+                {t`Quantity`}</span>
               <input
-                className="desk-input w-full font-mono"
+                className="desk-input w-full tabular-nums"
                 min={1}
                 type="number"
                 value={form.quantity}
@@ -180,11 +182,10 @@ export function PrintDetailsForm({
               />
             </label>
             <label className="block">
-              <span className="eyebrow mb-1 block">
-                Estimated filament (g) &mdash; optional
-              </span>
+              <span className="mb-1 block text-sm font-semibold text-ink">
+                {t`Estimated filament (g) — optional`}</span>
               <input
-                className="desk-input w-full font-mono"
+                className="desk-input w-full tabular-nums"
                 min={0}
                 step="0.01"
                 type="number"
@@ -193,23 +194,24 @@ export function PrintDetailsForm({
                   updateField("estimatedFilamentGrams", event.target.value)
                 }
               />
-              <span className="mt-1 block text-xs text-muted">
-                If you know it from your slicer &mdash; staff can adjust this.
-              </span>
+              <span className="mt-1 block text-sm text-muted">
+                {t`If you know it from your slicer — staff can adjust this.`}</span>
             </label>
-            <TextInput label="Source link (optional)" value={form.sourceLink} onChange={(value) => updateField("sourceLink", value)} />
+            <TextInput label={t`Source link (optional)`} value={form.sourceLink} onChange={(value) => updateField("sourceLink", value)} />
           </div>
+        </fieldset>
+        <fieldset className="space-y-4" disabled={submitPending}><legend className="title-section mb-4">{t`Files`}</legend>
           <div className="grid gap-4 md:grid-cols-2">
             <FilePicker
               accept=".stl,.3mf,.step,.stp,.obj,.amf,.ply,.gcode,.gco,.iges,.igs,.dxf"
               files={modelFiles}
-              label="Model, CAD, or toolpath files"
+              label={t`Model, CAD, or toolpath files`}
               setFiles={setModelFiles}
             />
             <FilePicker
               accept="image/*,application/pdf"
               files={screenshotFiles}
-              label="Estimated print-time screenshots (Bambu Lab)"
+              label={t`Estimated print-time screenshots (Bambu Lab)`}
               setFiles={setScreenshotFiles}
             />
           </div>
@@ -217,19 +219,19 @@ export function PrintDetailsForm({
 
         {uploadProgress ? <p className="text-sm text-muted">{uploadProgress}</p> : null}
         {submitError ? (
-          <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p className="rounded-lg border border-danger-line bg-panel px-3 py-2 text-sm text-danger">
             {submitError.message}
           </p>
         ) : null}
         <button
-          className="desk-button-secondary w-full disabled:cursor-not-allowed disabled:opacity-50"
+          className="desk-button-brand w-full disabled:cursor-not-allowed"
           disabled={
             !form.title.trim() ||
             submitPending
           }
           type="submit"
         >
-          {submitPending ? "Submitting..." : "Submit print request"}
+          {submitPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send print request`}
         </button>
       </form>
     </Card>

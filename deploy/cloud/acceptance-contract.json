@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "custody": "0600 owner-owned report from actual deployed harness; never fabricate results or publish configuration hashes",
+  "fields": {
+    "version": 1,
+    "deployment_id": "same as protected SPACEWORKS_DEPLOYMENT_ID",
+    "backend_image": "same immutable OCI reference as answers",
+    "configuration_sha256": "scripts.cloud_setup.completion.configuration_hash(effective_environment)",
+    "profile": "full or free",
+    "checked_at": "ISO 8601 with timezone; <=1 hour old",
+    "checks": "mapping name -> passed only when actual checks pass"
+  },
+  "common_checks": [
+    "browser_cors",
+    "database_cache",
+    "event_registration",
+    "generated_credential_policy",
+    "loan_issue_return",
+    "mandatory_encryption",
+    "outbox_delivery",
+    "polling",
+    "private_upload",
+    "runtime_grants"
+  ],
+  "full_checks": [
+    "full_binaries",
+    "full_profile_isolation",
+    "scheduler_progress",
+    "worker_task_roundtrip"
+  ],
+  "free_checks": [
+    "free_quotas",
+    "full_profile_isolation",
+    "single_web_512mb",
+    "tick_auth",
+    "tick_overlap",
+    "tick_progress"
+  ],
+  "owner": "Q implements real harness evidence; I integrates runtime hooks; R validates receipt",
+  "never_sufficient": [
+    "process exists",
+    "health ready alone",
+    "YAML parses",
+    "offsite archive custody as restore evidence"
+  ],
+  "conditional_checks": {
+    "scan_policy=external": [
+      "external_scanner_signature_stream_limits"
+    ]
+  }
+}

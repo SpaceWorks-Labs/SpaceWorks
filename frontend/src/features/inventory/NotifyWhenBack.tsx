@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation } from "@tanstack/react-query";
 import { tenantPublicRequest } from "../../lib/api";
 
@@ -17,9 +18,9 @@ export function NotifyWhenBack({ slug, productId }: { slug: string; productId: n
   return <div className="mt-4">
     <button className="desk-button" type="button" disabled={subscription.isPending || cancel.isPending}
       onClick={() => subscription.isSuccess ? cancel.mutate() : subscription.mutate()}>
-      {subscription.isSuccess ? "Cancel notification" : subscription.isPending ? "Saving…" : "Notify me when back"}
+      {subscription.isSuccess ? t`Cancel notification` : subscription.isPending ? t`Saving…` : t`Notify me when back`}
     </button>
-    {subscription.isSuccess ? <p role="status" className="mt-2 text-sm text-muted">We’ll notify your member account when stock rises. Sign in as an active member to subscribe.</p> : null}
+    {subscription.isSuccess ? <p role="status" className="mt-2 text-sm text-muted">{t`We’ll notify your member account when stock rises. Sign in as an active member to subscribe.`}</p> : null}
     {subscription.error || cancel.error ? <p role="alert" className="mt-2 text-sm text-danger">{(subscription.error || cancel.error)?.message}</p> : null}
   </div>;
 }

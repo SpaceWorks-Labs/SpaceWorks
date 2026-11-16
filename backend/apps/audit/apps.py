@@ -6,4 +6,6 @@ class AuditConfig(AppConfig):
     name = "apps.audit"
 
     def ready(self):
-        from apps.audit import checks, signals  # noqa: F401
+        from apps.audit import checks, control_log, signals  # noqa: F401
+
+        control_log.install()

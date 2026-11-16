@@ -1,11 +1,13 @@
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.hardware_requests import direct_loan_workflow
@@ -43,11 +45,21 @@ class DirectLoanListCreateView(generics.ListAPIView):
         status_filter = self.request.query_params.get("status")
         if status_filter:
             queryset = queryset.filter(status=status_filter)
+        if self.request.query_params.get("overdue") == "true":  # decision 242: IN4
+            queryset = queryset.filter(returned_at__isnull=True, due_at__lt=timezone.now())
+        if term := (self.request.query_params.get("search") or "").strip():
+            queryset = queryset.filter(
+                Q(requester__username__icontains=term) | Q(requester__first_name__icontains=term)
+                | Q(requester__last_name__icontains=term) | Q(requester__email__icontains=term)
+            )
         return queryset.order_by("-checked_out_at")
 
     @extend_schema(
         tags=["Admin requests"],
         summary="List direct handout loans",
+        parameters=[OpenApiParameter("status", str, required=False), OpenApiParameter("overdue", bool, required=False),
+                    OpenApiParameter("search", str, required=False,
+                                     description="Borrower name, username or email (decision 242).")],
         responses={200: DirectLoanSerializer(many=True), **ACTION_ERROR_RESPONSES},
     )
     def get(self, request, *args, **kwargs):
@@ -138,16 +150,21 @@ class DirectLoanMemberListView(generics.ListAPIView):
         makerspace = _makerspace_for_action(self.request.user, rbac.Action.ISSUE_DIRECT_LOAN, makerspace_id)
         require_feature(makerspace, "inventory.self_checkout")
         _require(self.request.user, rbac.Action.ISSUE_DIRECT_LOAN, makerspace.id)
-        return MakerspaceMembership.objects.select_related("user").filter(
+        members = list(MakerspaceMembership.objects.select_related("user").filter(
+            person_q("user__"),
             makerspace=makerspace,
             status="active",
             user__is_active=True,
             user__access_status=User.AccessStatus.ACTIVE,
-        ).order_by("user__display_name", "user__username")
+        ).order_by("user__display_name", "user__username"))
+        # Live guest-pass holders are valid borrowers too (decision 223); see `_borrower_for_makerspace`.
+        from apps.hardware_requests.direct_loan_guests import guest_pass_rows
+        return members + guest_pass_rows(makerspace, exclude_user_ids=[row.user_id for row in members])
 
 
 def _borrower_for_makerspace(makerspace, borrower_id):
     membership = MakerspaceMembership.objects.select_related("user").filter(
+        person_q("user__"),
         makerspace=makerspace,
         user_id=borrower_id,
         status="active",
@@ -155,7 +172,13 @@ def _borrower_for_makerspace(makerspace, borrower_id):
         user__access_status=User.AccessStatus.ACTIVE,
     ).first()
     if membership is None:
-        raise PermissionDenied()
+        # Decision 223: a person holding a live guest pass here may be handed items too (the
+        # workflow then enforces the pass's borrowing mode, waiver and presence).
+        from apps.makerspaces.guest_pass_queries import active_pass_for
+        guest = User.objects.filter(person_q(), pk=borrower_id).first()
+        if guest is None or active_pass_for(guest, makerspace) is None:
+            raise PermissionDenied()
+        return guest
     return membership.user
 
 

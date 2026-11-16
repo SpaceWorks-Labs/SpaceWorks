@@ -1,5 +1,6 @@
 """Calendar recurrence retains phase; missed intervals are skipped in one step."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from rest_framework.exceptions import ValidationError
@@ -10,7 +11,7 @@ from .models import MaintenanceSchedule
 
 def clean_anchor(value):
     if value not in MaintenanceSchedule.Anchor.values:
-        raise ValidationError({"anchor": "Choose completion or calendar."})
+        raise ValidationError({"anchor": gettext("Choose completion or calendar.")})
     return value
 
 
@@ -23,4 +24,4 @@ def next_due_after_completion(schedule, performed_at):
         steps = max(1, (completed - schedule.next_due).days // schedule.interval_days + 1)
         return schedule.next_due + timedelta(days=steps * schedule.interval_days)
     except OverflowError as exc:
-        raise ValidationError({"interval_days": "The next due date is outside the supported range."}) from exc
+        raise ValidationError({"interval_days": gettext("The next due date is outside the supported range.")}) from exc

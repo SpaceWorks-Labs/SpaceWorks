@@ -47,6 +47,7 @@ CORE_UNIQUE_RULES = {
     ("bookings.BookableSpace", "field:public_token"): _policy(
         FRESH, "Source bearer tokens are replaced."
     ),
+    ("bookings.Booking", "field:checkin_token"): _policy(FRESH, "Fresh target arrival credential."),
     ("bookings.Booking", "field:public_token"): _policy(
         FRESH, "Source bearer tokens are replaced."
     ),

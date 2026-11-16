@@ -8,9 +8,9 @@ import tempfile
 import time
 
 from django.conf import settings
-from django.db import connection, transaction
+from django.db import transaction
 
-from apps.backup import quiescence, recipients, storage
+from apps.backup import age_recipients, quiescence, storage
 from apps.backup.archive_payload import (
     CONTINUITY_KEYS,
     OBJECT_FIELD_NAMES,
@@ -21,7 +21,6 @@ from apps.backup.archive_payload import (
     _module_for_model,
     _object_closure,
     _pg_dump,
-    _postgres_environment,
     _settings_manifest,
     _snapshot_payload,
     _storage_modes,
@@ -29,17 +28,16 @@ from apps.backup.archive_payload import (
     _write_continuity_keys,
     _write_json,
 )
-from apps.backup.compound_archive import CompoundCapture, add_slice_metadata
+from apps.backup.compound_archive import CompoundCapture
 from apps.backup.digests import build_content_ledger, sha256_file
 from apps.backup.models import BackupArchive, DeploymentRecoveryState
-from apps.backup.not_restored import assert_deployment_fully_restored, assert_restored
 from apps.backup.outer_manifest import build_outer_manifest
 from apps.backup.postgres_client import (
     PostgresClientUnavailable,
     client_binary,
 )
 from apps.backup.producer_capability import assert_producer_capability
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 @dataclass(frozen=True)
@@ -60,12 +58,13 @@ class ArchiveBuildResult:
 
 
 def build_archive(archive):
+    from .cloud_operations import require_deployment_archive
+    require_deployment_archive(archive.scope)
+    from .cloud_operations import require_managed_tenant_capture
+    require_managed_tenant_capture()
     if archive.scope == BackupArchive.Scope.DEPLOYMENT:
-        assert_deployment_fully_restored()
         assert_producer_capability()
-    else:
-        assert_restored(archive.makerspace_id)
-    selected_recipients = recipients.selection_for(archive)
+    selected_recipients = age_recipients.selection_for(archive)
     _require_binary("age")
     if archive.scope == BackupArchive.Scope.DEPLOYMENT:
         _require_postgres_clients()
@@ -86,16 +85,19 @@ def build_archive(archive):
                     platform_recipients=selected_recipients,
                 )
             quiesced = "quiesced" in modes.values()
-            if quiesced:
+            managed_capture = settings.SPACEWORKS_DEPLOYMENT_MODE == "managed"
+            if quiesced and not managed_capture:
                 _set_backup_quiescence(True)
                 quiescence_enabled = True
                 workers_paused = quiescence.pause_worker_consumers()
                 drain_presigned_uploads()
                 quiescence.assert_workers_drained()
             if compound_capture is None:
-                manifest = _snapshot_payload(
-                    archive, root, modes, selected_recipients
-                )
+                from contextlib import nullcontext
+                from .managed.capture import capture_pause
+                pause = capture_pause(archive.pk) if quiesced and managed_capture else nullcontext()
+                with pause:
+                    manifest = _snapshot_payload(archive, root, modes, selected_recipients)
             else:
                 manifest = _snapshot_payload(
                     archive,
@@ -105,33 +107,21 @@ def build_archive(archive):
                     compound_capture=compound_capture,
                 )
                 manifest = compound_capture.project_readable_main(manifest)
-                manifest = add_slice_metadata(
-                    manifest,
-                    slices=compound_capture.slice_entries,
-                    recipients=selected_recipients,
-                )
             manifest["contents"] = build_content_ledger(root)
             promotion_snapshot = None
             if compound_capture is not None:
-                try:
-                    manifest = build_outer_manifest(
-                        archive=archive,
-                        capture=compound_capture,
-                        detailed_manifest=manifest,
-                        root=root,
-                    )
-                    promotion_snapshot = compound_capture.promotion_snapshot()
-                finally:
-                    compound_capture.cleanup_verifier_material()
+                manifest = build_outer_manifest(
+                    archive=archive,
+                    capture=compound_capture,
+                    detailed_manifest=manifest,
+                    root=root,
+                )
+                promotion_snapshot = compound_capture.promotion_snapshot()
             _write_json(root / "manifest.json", manifest)
             encrypted = Path(tempdir.name, f"{archive.id}.tar.age")
             plain = Path(tempdir.name, f"{archive.id}.tar")
             with tarfile.open(plain, "w") as bundle:
                 bundle.add(root, arcname=".")
-            if _selection_at_read_committed(archive) != selected_recipients:
-                raise BackupBuildError(
-                    "Archive recipient selection changed before encryption."
-                )
             args = ["age"]
             for entry in selected_recipients:
                 args += ["-r", entry["public_recipient"]]
@@ -161,15 +151,6 @@ def build_archive(archive):
     except BaseException:
         tempdir.cleanup()
         raise
-
-
-def _selection_at_read_committed(archive):
-    with transaction.atomic(durable=True):
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SET TRANSACTION ISOLATION LEVEL READ COMMITTED, READ ONLY"
-            )
-        return recipients.selection_for(archive)
 
 
 def drain_presigned_uploads(*, sleep=time.sleep):

@@ -15,6 +15,7 @@ _SCHEDULE_ACTIONS = (
 )
 
 REPORT_SCHEDULE_AUDIT_EDGES = {
+    ("report.downloaded", "filters.subject_id"): AuditReference(S, None, "source_report_subject"),
     **{
         (action, "schedule_id"): AuditReference(R, "operations.ReportSchedule")
         for action in _SCHEDULE_ACTIONS

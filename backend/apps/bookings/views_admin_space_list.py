@@ -28,21 +28,16 @@ class BookableSpaceListCreateView(APIView):
         responses={200: BookableSpaceListResponseSerializer, **VALIDATED_ERROR_RESPONSES},
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        makerspace = _visible_makerspace(request.user, makerspace_id)
-        queryset = rbac.scope_by_action(
-            request.user,
-            rbac.Action.MANAGE_BOOKINGS,
-            BookableSpace.objects.select_related('makerspace').filter(
-                makerspace=makerspace
-            ),
-            field='makerspace_id',
-        ).order_by('name', 'id')
+        from .booking_authority import spaces_for
+        makerspace = _visible_makerspace(request.user, makerspace_id, "view")
+        queryset = spaces_for(request.user, "view", BookableSpace.objects.select_related(
+            "makerspace").filter(makerspace=makerspace)).order_by("name", "id")
         if request.query_params.get("q"):
             queryset = queryset.filter(name__icontains=request.query_params["q"])
         queryset = order_list(queryset, request.query_params, {"name", "kind", "created_at"}, "name")
         paginator = _SpacePagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
-        return _page_response(paginator, page, BookableSpaceAdminSerializer)
+        return _page_response(paginator, page, BookableSpaceAdminSerializer, request.user)
 
     @extend_schema(
         tags=['Admin bookings'],
@@ -60,7 +55,7 @@ class BookableSpaceListCreateView(APIView):
             **serializer.validated_data,
         )
         return Response(
-            BookableSpaceAdminSerializer(space).data,
+            BookableSpaceAdminSerializer(space, context={"actor": request.user}).data,
             status=status.HTTP_201_CREATED,
         )
 

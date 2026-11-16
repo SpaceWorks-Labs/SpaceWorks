@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { staffRequest } from '../../lib/api';
 import type { MachineCollection, MachineDocument } from './machinesApi';
 
@@ -13,6 +14,7 @@ export async function uploadMachineDocument(machineId: number, file: File, docTy
       method: 'POST',
       body: JSON.stringify({
         filename: file.name,
+        size: file.size,
         content_type: file.type || 'application/octet-stream',
       }),
     },
@@ -22,7 +24,7 @@ export async function uploadMachineDocument(machineId: number, file: File, docTy
     const response = await fetch(presigned.upload.url, {
       method: 'PUT', body: file, headers: presigned.upload.headers,
     });
-    if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+    if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
   } else {
     const formData = new FormData();
     Object.entries(presigned.upload.fields ?? {}).forEach(([key, value]) =>
@@ -30,7 +32,7 @@ export async function uploadMachineDocument(machineId: number, file: File, docTy
     );
     formData.append('file', file);
     const response = await fetch(presigned.upload.url, { method: 'POST', body: formData });
-    if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+    if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
   }
 
   return staffRequest<MachineDocument>(`/admin/machines/${machineId}/documents`, {

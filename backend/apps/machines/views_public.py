@@ -37,11 +37,8 @@ from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
     ],
     responses={
         200: PublicMachineSerializer(many=True),
-        400: OpenApiResponse(
-            {"type": "object", "properties": {"module": {"type": "string"}},
-             "required": ["module"]}, description="Machines module disabled.",
-        ),
-        404: OpenApiResponse(ErrorSerializer, description="Public makerspace not found."),
+        404: OpenApiResponse(ErrorSerializer, description="Public makerspace not found, or the machines module "
+                             "is turned off (`module_disabled`)."),
         401: OpenApiResponse(ErrorSerializer, description="Invalid API credentials."),
         403: OpenApiResponse(ErrorSerializer, description="API client not authorized."),
         429: OpenApiResponse(ErrorSerializer, description="Rate limit exceeded."),

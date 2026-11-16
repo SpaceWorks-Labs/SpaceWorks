@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
 from apps.events.badge_templates import MAX_BADGES
+from apps.operations.printable_serializers import PositionedElementSerializer, PrintInputSerializer
 
 
-class BadgeTemplateSerializer(serializers.Serializer):
+class BadgeTemplateSerializer(PrintInputSerializer):
     version = serializers.IntegerField(required=False)
     paper_size = serializers.ChoiceField(
         choices=("A4", "LETTER", "custom"), required=False
@@ -25,6 +26,8 @@ class BadgeTemplateSerializer(serializers.Serializer):
     name_font_size_pt = serializers.FloatField(required=False)
     text_align = serializers.ChoiceField(choices=("left", "center"), required=False)
     include_qr = serializers.BooleanField(required=False)
+    grid_mm = serializers.FloatField(min_value=0.5, max_value=10, required=False)
+    elements = PositionedElementSerializer(many=True, required=False)
 
 
 class BadgePdfRequestSerializer(serializers.Serializer):
@@ -35,4 +38,3 @@ class BadgePdfRequestSerializer(serializers.Serializer):
     )
     template_override = BadgeTemplateSerializer(allow_null=True, required=False)
     include_attended = serializers.BooleanField(default=False, required=False)
-

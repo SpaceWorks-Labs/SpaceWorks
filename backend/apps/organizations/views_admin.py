@@ -1,7 +1,9 @@
-from django.db.models import Prefetch
+from django.utils.translation import gettext
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -77,11 +79,27 @@ class OrganizationListView(APIView):
         tags=["Admin organizations"],
         summary="List organizations visible to the actor",
         request=None,
-        responses={200: OrganizationListSerializer, **ERRORS},
+        parameters=[
+            OpenApiParameter("active", OpenApiTypes.BOOL, OpenApiParameter.QUERY,
+                             description="Filter by active status: true or false."),
+            OpenApiParameter("search", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                             description="Case-insensitive substring of organization name or slug."),
+        ],
+        responses={200: OrganizationListSerializer, **ERRORS,
+                   400: OpenApiResponse(description="Invalid active filter; use true or false.")},
     )
     def get(self, request):
+        queryset = _organizations_for(request.user)
+        active = request.query_params.get("active")
+        if active is not None:
+            if active not in ("true", "false"):
+                raise ValidationError({"active": gettext("Use true or false.")})
+            queryset = queryset.filter(is_active=active == "true")
+        search = request.query_params.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(slug__icontains=search))
         return _page(
-            _organizations_for(request.user).order_by("name", "id"),
+            queryset.order_by("name", "id"),
             request,
             self,
             OrganizationSummarySerializer,
@@ -132,6 +150,18 @@ class OrganizationDetailView(APIView):
         )
 
 
+    @extend_schema(tags=["Admin organizations"], request=None,
+                   summary="Delete an unlinked organization after recent re-authentication",
+                   responses={204: None, **WRITE_ERRORS})
+    def delete(self, request, pk):
+        from apps.accounts.reauthentication import require_recent_reauth
+        from apps.organizations.services_governance import delete_organization
+        organization = _organization(request.user, pk)
+        require_recent_reauth(request)
+        delete_organization(organization, actor=request.user)
+        return Response(status=204)
+
+
 class OrganizationMembershipListView(APIView):
     permission_classes = [IsActiveStaff]
 
@@ -173,6 +203,8 @@ class OrganizationInvitationListCreateView(APIView):
         responses={201: OrganizationInvitationCreatedSerializer, **WRITE_ERRORS},
     )
     def post(self, request, pk):
+        from apps.accounts.reauthentication import require_recent_reauth
+        require_recent_reauth(request)
         organization = _organization(request.user, pk)
         serializer = OrganizationInvitationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -199,6 +231,8 @@ class OrganizationInvitationRevokeView(APIView):
         responses={204: None, **WRITE_ERRORS},
     )
     def delete(self, request, pk):
+        from apps.accounts.reauthentication import require_recent_reauth
+        require_recent_reauth(request)
         invitation = get_object_or_404(
             OrganizationInvitation.objects.select_related("organization").filter(
                 organization__in=visible_organizations(request.user)

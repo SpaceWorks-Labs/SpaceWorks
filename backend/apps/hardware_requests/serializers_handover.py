@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.inventory.kit_serializers import KitCountsField
 
@@ -17,7 +18,7 @@ class AcceptRequestSerializer(serializers.Serializer):
         item_ids = [entry["item_id"] for entry in attrs.get("accepted_quantities", [])]
         if len(item_ids) != len(set(item_ids)):
             raise serializers.ValidationError(
-                {"accepted_quantities": "Duplicate item_id values are not allowed."}
+                {"accepted_quantities": gettext("Duplicate item_id values are not allowed.")}
             )
         return attrs
 
@@ -84,7 +85,7 @@ class ReturnRequestSerializer(serializers.Serializer):
         item_ids = [resolution["item_id"] for resolution in attrs["resolutions"]]
         if len(item_ids) != len(set(item_ids)):
             raise serializers.ValidationError(
-                {"resolutions": "Duplicate item_id values are not allowed."}
+                {"resolutions": gettext("Duplicate item_id values are not allowed.")}
             )
         asset_ids = []
         for resolution in attrs["resolutions"]:
@@ -96,10 +97,10 @@ class ReturnRequestSerializer(serializers.Serializer):
                 + len(resolution.get("assets", []))
             ) == 0:
                 raise serializers.ValidationError(
-                    {"resolutions": "Each resolution must resolve at least one item."}
+                    {"resolutions": gettext("Each resolution must resolve at least one item.")}
                 )
         if len(asset_ids) != len(set(asset_ids)):
             raise serializers.ValidationError(
-                {"resolutions": "Duplicate asset_id values are not allowed."}
+                {"resolutions": gettext("Duplicate asset_id values are not allowed.")}
             )
         return attrs

@@ -60,4 +60,5 @@ class RequestIdMiddleware:
         finally:
             reset_request_id(token)
         response[REQUEST_ID_HEADER] = request_id
-        return response
+        from apps.makerspaces.confirmation_privacy import private_confirmation_response
+        return private_confirmation_response(request, response)

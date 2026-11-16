@@ -1,12 +1,16 @@
+
+from apps.accounts.account_kind_guards import require_member_account
 from collections import Counter
 
 from django.utils import timezone
 
 from apps.boxes.access import inventory_qr_codes
 from apps.boxes.models import Box, QrCode
+from apps.boxes.qr_lookup import scanned_q
 from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem, PublicToolLoan
 from apps.hardware_requests.workflow_errors import RequestValidationError
 from apps.inventory import availability
+from apps.inventory.event_only import refuse_event_only
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 
 
@@ -15,7 +19,7 @@ def _locked_qr(makerspace, payload):
     # credential, never a loanable target (see `boxes.access.inventory_qr_codes`).
     qr = (
         inventory_qr_codes(QrCode.objects.select_for_update())
-        .filter(payload=payload, makerspace=makerspace, status=QrCode.Status.ACTIVE)
+        .filter(scanned_q(payload), makerspace=makerspace, status=QrCode.Status.ACTIVE)
         .first()
     )
     if qr is None:
@@ -132,6 +136,9 @@ def _eligible_product(pk, makerspace, *, require_public=True):
     product = InventoryProduct.objects.select_for_update().filter(pk=pk, makerspace=makerspace).first()
     if product is None or product.is_archived:
         raise RequestValidationError("Tool is not enabled for public self-checkout.")
+    if product.is_consumable:
+        raise RequestValidationError("Consumables are logged as used, not lent.")
+    refuse_event_only([product])
     if require_public and (
         not product.is_public or not product.public_self_checkout_enabled
     ):
@@ -157,6 +164,7 @@ def _eligible_asset(pk, makerspace, *, require_public=True):
 
 
 def _issue_product(product, quantity):
+    refuse_event_only([product])  # decision 221b: covers box contents too
     # Friendly public-facing guard (-> 400) before delegating the actual count
     # mutation to the Inventory Availability module, which owns the math.
     if product.available_quantity < quantity:
@@ -204,6 +212,7 @@ def _create_issued_request(
     requested_for,
     issued_by,
 ):
+    require_member_account(requester)
     request = HardwareRequest.objects.create(
         makerspace=makerspace,
         requester=requester,

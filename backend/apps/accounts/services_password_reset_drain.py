@@ -1,9 +1,12 @@
 """Lease-fenced, at-most-once issuance drain for password reset envelopes."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 import os
 import socket
 import uuid
+import secrets
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -12,7 +15,13 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus, User
-from apps.accounts.principal_guards import is_anonymous_requester
+from apps.accounts.staff_identity import context_label, is_person
+from apps.accounts.password_reset_context import (
+    lock_recovery_account, recoverable, reset_destination, recovery_transaction,
+)
+from apps.integrations.email import platform_email_configured
+from apps.accounts.account_restore import restorable, identifier_fingerprint
+from apps.accounts.account_restore_email import send_restore_link
 from apps.accounts.password_reset_crypto import (
     credential_fingerprint,
     generate_otp,
@@ -44,15 +53,19 @@ class DeliveryAttempt:
     claim: EnvelopeClaim
     recipient: str
     code: str
+    reset_url: str = ""
+    account_label: str = ""
+    restore: bool = False
 
 
 def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None):
     """Resolve, mint and synchronously deliver one bounded claimed batch."""
     expire_delivery_leases(batch_size=batch_size)
     discard_expired_issued(batch_size=batch_size)
+    batch_size = bounded.limit(batch_size)
     claims = claim_pending_envelopes(batch_size=batch_size, owner=owner)
     outcomes = {"claimed": len(claims), "issued": 0, "terminal": 0, "stale": 0}
-    for claim in claims:
+    for claim in bounded.items(claims):
         attempt = prepare_delivery(claim)
         if attempt is None:
             outcomes["stale"] += 1
@@ -64,11 +77,14 @@ def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None)
         try:
             # The digest and `delivering` state committed before this SMTP call. This
             # call must remain synchronous and outside every row-lock transaction.
+            recovery_details = ({"reset_url": attempt.reset_url, "account_label": attempt.account_label}
+                                if attempt.reset_url else {})
             delivered = bool(
-                send_password_reset_otp(
+                send_restore_link(attempt.recipient, attempt.code) if attempt.restore else send_password_reset_otp(
                     attempt.recipient,
                     attempt.code,
                     expires_in_minutes=int(CHALLENGE_TTL.total_seconds() // 60),
+                    **recovery_details,
                 )
             )
         except Exception:  # provider failure is terminal but never crashes the drain
@@ -124,7 +140,14 @@ def claim_pending_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None, now=No
 def prepare_delivery(claim, *, now=None):
     """Commit the digest and delivering state, returning the in-memory secret."""
     issued_at = now or timezone.now()
-    with transaction.atomic():
+    snapshot = PasswordResetEnvelope.objects.filter(pk=claim.envelope_id).first()
+    if snapshot is None:
+        return None
+    account = User.objects.filter(pk=snapshot.user_id).first()
+    if account is None:
+        return None
+    with recovery_transaction(account):
+        user = lock_recovery_account(account)
         envelope = (
             PasswordResetEnvelope.objects.select_for_update()
             .filter(
@@ -136,36 +159,49 @@ def prepare_delivery(claim, *, now=None):
         )
         if envelope is None:
             return None
-        # Envelope -> User is the declared lock order shared with confirmation.
-        user = (
-            User.objects.select_for_update()
-            .filter(email__iexact=envelope.email_normalized)
-            .first()
-        )
-        if not _recoverable(user):
+        if user is None:
+            # The account vanished between lookup and lock: it can never be recovered, so
+            # the claimed envelope ends DISCARDED rather than staying claimed.
+            return _finish_claimed_terminal(
+                envelope, claim, PasswordResetEnvelopeStatus.DISCARDED, issued_at
+            )
+        if envelope.email_normalized != claim.email_normalized or envelope.user_id != user.pk:
+            return None
+        slug = envelope.makerspace.slug if envelope.makerspace_id else None
+        archived = bool(envelope.context == "member" and is_person(user)
+                        and restorable(user, now=issued_at))
+        if (not archived and (not recoverable(user, context=envelope.context, makerspace=slug,
+                                             origin=envelope.request_origin)
+                              or user.deletion_requested_at is not None)
+                or envelope.context != context_label(user)
+                or envelope.makerspace_id is not None
+                or user.email.strip().lower() != envelope.email_normalized
+                or user.credential_generation != envelope.credential_generation
+                or user.account_restored_at and envelope.requested_at <= user.account_restored_at):
             return _finish_claimed_terminal(
                 envelope, claim, PasswordResetEnvelopeStatus.DISCARDED, issued_at
             )
         # Availability is re-checked where issuance actually occurs. The deployment-level
         # request-time gate alone is insufficient because configuration may change in queue.
-        if not email_enabled():
+        if not (email_enabled() if envelope.context == "member" else platform_email_configured()):
             return _finish_claimed_terminal(
                 envelope, claim, PasswordResetEnvelopeStatus.UNDELIVERABLE, issued_at
             )
 
-        code = generate_otp()
+        code = secrets.token_urlsafe(48) if archived else generate_otp()
         updated = PasswordResetEnvelope.objects.filter(
             pk=envelope.pk,
             generation=claim.generation,
             status=PasswordResetEnvelopeStatus.CLAIMED,
         ).update(
             user=user,
+            purpose="restore" if archived else "reset",
             digest=otp_digest(code, envelope.email_normalized),
             digest_is_live=True,
-            credential_fingerprint=credential_fingerprint(
+            credential_fingerprint=identifier_fingerprint(user) if archived else credential_fingerprint(
                 user, envelope.email_normalized
             ),
-            expires_at=issued_at + CHALLENGE_TTL,
+            expires_at=issued_at + (timedelta(hours=24) if archived else CHALLENGE_TTL),
             consumed_at=None,
             attempts=0,
             status=PasswordResetEnvelopeStatus.DELIVERING,
@@ -175,7 +211,9 @@ def prepare_delivery(claim, *, now=None):
         )
         if updated != 1:
             return None
-    return DeliveryAttempt(claim, envelope.email_normalized, code)
+        # Resolve trusted routing while the tenant is locked.
+        url, label = reset_destination(user) if envelope.context != "member" else ("", "")
+    return DeliveryAttempt(claim, envelope.email_normalized, code, url, label, restore=archived)
 
 
 def finalize_delivery(claim, *, delivered, now=None):
@@ -215,7 +253,6 @@ def _finish_claimed_terminal(envelope, claim, status, now):
         status=PasswordResetEnvelopeStatus.CLAIMED,
     ).update(
         status=status,
-        user=None,
         digest=new_dummy_digest(envelope.email_normalized),
         digest_is_live=False,
         credential_fingerprint="",
@@ -226,17 +263,6 @@ def _finish_claimed_terminal(envelope, claim, status, now):
         claim_expires_at=None,
     )
     return status if updated == 1 else None
-
-
-def _recoverable(user):
-    return bool(
-        user is not None
-        and not user.is_tenant_dump_stub
-        and user.is_active
-        and user.access_status == User.AccessStatus.ACTIVE
-        and not user.is_walk_in
-        and not is_anonymous_requester(user)
-    )
 
 
 def _worker_identity():

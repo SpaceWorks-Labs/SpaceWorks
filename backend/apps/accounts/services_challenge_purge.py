@@ -9,6 +9,8 @@ touched regardless of age, so this can never invalidate a code somebody is mid-w
 through using. The window is generous on purpose: "I never got my code" is a real support
 question, and answering it needs the row to still exist for a while.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -47,6 +49,21 @@ def purge_spent_challenges(*, retention=RETENTION):
     now = timezone.now()
     cutoff = now - retention
     deleted = {}
+    # Provider recovery stores an encrypted PKCE verifier and an optional app
+    # anchor. Expired proofs have no authority and follow auth-state retention.
+    from apps.accounts.models_account_restore import AccountRestoreIntent
+    label = AccountRestoreIntent._meta.label
+    try:
+        from django.db import transaction
+        from apps.audit.services import record
+        with transaction.atomic():
+            count, _ = AccountRestoreIntent.objects.filter(expires_at__lt=cutoff).delete()
+            if count:
+                record(None, "auth.account_restore_intents_purged", meta={"count": count})
+        deleted[label] = count
+    except Exception:
+        logger.exception("auth_challenge_purge_failed", extra={"model": label})
+        deleted[label] = 0
     for model in (EmailVerificationChallenge, PhoneVerificationChallenge, MFAChallenge):
         label = model._meta.label
         spent = _spent(now) if model is not MFAChallenge else (
@@ -55,9 +72,7 @@ def purge_spent_challenges(*, retention=RETENTION):
         )
         try:
             count, _ = (
-                model.objects.filter(spent)
-                .filter(created_at__lt=cutoff)
-                .delete()
+                bounded.delete(model.objects.filter(spent).filter(created_at__lt=cutoff), label)
             )
             deleted[label] = count
         except Exception:
@@ -69,13 +84,40 @@ def purge_spent_challenges(*, retention=RETENTION):
     # exist for an attacker-submitted address stranded before issuance.
     label = PasswordResetEnvelope._meta.label
     try:
-        count, _ = PasswordResetEnvelope.objects.filter(
+        count, _ = bounded.delete(PasswordResetEnvelope.objects.filter(
             Q(terminal_at__isnull=False, terminal_at__lt=cutoff)
             | Q(terminal_at__isnull=True, requested_at__lt=cutoff)
-        ).delete()
+        ), label)
         deleted[label] = count
     except Exception:
         logger.exception("auth_challenge_purge_failed", extra={"model": label})
         deleted[label] = 0
+    # Account-merge intents (U-C): an abandoned or finished intent is spent proof state.
+    # The durable outcome is the AccountMergeRecord, which never points at an intent.
+    from apps.accounts.models_account_merge import AccountMergeIntent
+    label = AccountMergeIntent._meta.label
+    try:
+        count, _ = bounded.delete(AccountMergeIntent.objects.filter(expires_at__lt=cutoff), label)
+        deleted[label] = count
+    except Exception:
+        logger.exception("auth_challenge_purge_failed", extra={"model": label})
+        deleted[label] = 0
+    from apps.accounts.models_reauthentication import ReauthenticationSession
+    # Step-up proof is platform session state, never tenant-owned retention.
+    label = ReauthenticationSession._meta.label
+    try:
+        from django.db import transaction
+        from apps.audit.services import record
+        with transaction.atomic():
+            count, _ = bounded.delete(ReauthenticationSession.objects.filter(updated_at__lt=cutoff), label)
+            if count:
+                record(None, "auth.reauthentication_proofs_purged", meta={"count": count})
+        deleted[label] = count
+    except Exception:
+        logger.exception("auth_challenge_purge_failed", extra={"model": label})
+        deleted[label] = 0
+    # S-B: remembered devices, familiar networks, alert links and passkey ceremonies.
+    from apps.accounts.login_risk_retention import purge_login_risk_state
+    deleted.update(purge_login_risk_state(now))
     logger.info("auth_challenge_purge_complete", extra={"deleted": deleted})
     return deleted

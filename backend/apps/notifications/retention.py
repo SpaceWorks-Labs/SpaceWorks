@@ -1,4 +1,6 @@
 """Bounded F1 cleanup; unread inbox and in-flight deliveries are never selected."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -42,6 +44,8 @@ def _terminal_rows(queryset, now):
 
 def _delete_batch(queryset, limit):
     # Keep eligibility stable against a concurrent retry claim until deletion commits.
+    bounded.check()
+    limit = bounded.limit(limit)
     with transaction.atomic():
         ids = list(queryset.select_for_update(skip_locked=True).order_by("pk").values_list("pk", flat=True)[:limit])
         queryset.filter(pk__in=ids).delete()
@@ -58,7 +62,7 @@ def run_notification_retention(*, now, limit):
     except Exception as exc:
         counts["failed"] += 1
         logger.error("platform_email_retention_failed", extra={"failure_type": type(exc).__name__})
-    for space in rbac.scope_for_scheduled_work(Makerspace.objects.all(), field="pk").order_by("pk").iterator():
+    for space in bounded.page(rbac.scope_for_scheduled_work(Makerspace.objects.all(), field="pk").order_by("pk"), "notification-retention-spaces"):
         try:
             with fanout_tenant_write(space.pk, operation="notification_retention", counts=counts) as permitted:
                 if not permitted:

@@ -1,5 +1,6 @@
 """Stocktake policy snapshots and idempotent F1 scheduled session creation."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -17,7 +18,7 @@ from .reminder_types import ReminderMessage, ReminderSource, ReminderSubject
 def session_policy(space, data, actor=None):
     if not feature_enabled(space, "stocktake.discipline"):
         if data.get("blind"):
-            raise ValidationError({"blind": "Stocktake discipline is disabled."})
+            raise ValidationError({"blind": gettext("Stocktake discipline is disabled.")})
         return {"blind": False, "variance_threshold": None}
     rows = StocktakePolicy.objects.all()
     rows = rbac.scope_by_action(actor, rbac.Action.EDIT_INVENTORY, rows) if actor else (
@@ -59,9 +60,13 @@ def build(space, reminder, now, local_tz):
 def dispatch(space, reminder, message, now, local_tz):
     from .models import StocktakeSession
     from apps.notifications.emit import emit_notification
+    from apps.makerspaces.models import Makerspace
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    space = Makerspace.objects.select_for_update(no_key=True).get(pk=space.pk)
     row = current(space, reminder, lock=True)
     if row is None:
         return None
+    check_extra_quota(space, "stocktake_sessions_monthly")
     values = session_policy(space, {"blind": row.blind})
     session = StocktakeSession.objects.create(makerspace=space, container=row.container,
                                               notes=row.name, **values)
@@ -70,8 +75,11 @@ def dispatch(space, reminder, message, now, local_tz):
     row.next_due += timedelta(days=(max(0, (today-row.next_due).days)//row.interval_days+1)*row.interval_days)
     row.save(update_fields=["next_due"])
     record(None, "stocktake.scheduled", makerspace=space, target=session)
+    from .notifications_p2_alerts import notify_stocktake, stocktake_intent
+    notify_stocktake(session, "scheduled")
     emit_notification(space, title=message.title, event=message.event,
-                      body="A scheduled stocktake is ready for counting.", level="info")
+                      body=gettext("A scheduled stocktake is ready for counting."), level="info",
+                      source_intent=stocktake_intent(session, "scheduled"))
 
 
 SOURCE = ReminderSource("stocktake.scheduled", "stocktake", discover, build,

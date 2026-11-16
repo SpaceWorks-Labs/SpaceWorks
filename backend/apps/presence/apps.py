@@ -9,3 +9,8 @@ class PresenceConfig(AppConfig):
         from apps.separability.tombstones import register_separable_app
 
         register_separable_app("presence")
+        from apps.separability.tombstones import app_is_tombstoned
+        if not app_is_tombstoned("presence"):
+            from . import signals, notifications
+            signals.register()
+            notifications.register()

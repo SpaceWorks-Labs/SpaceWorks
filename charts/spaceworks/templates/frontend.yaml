@@ -1,0 +1,30 @@
+{{- if .Values.frontend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spaceworks.name" . }}-frontend
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: {app: {{ include "spaceworks.name" . }}-frontend}
+  template:
+    metadata:
+      labels: {app: {{ include "spaceworks.name" . }}-frontend}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: frontend
+          {{- if and (eq .Values.deploymentMode "host") (empty .Values.frontendDigest) }}
+          image: {{ printf "%s:%s" .Values.frontendImage (required "imageTag is required" .Values.imageTag) | quote }}
+          {{- else }}
+          image: {{ printf "%s@%s" .Values.frontendImage (required "frontendDigest is required" .Values.frontendDigest) | quote }}
+          {{- end }}
+          ports: [{name: http, containerPort: 80}]
+          env:
+            {{- range $name, $value := .Values.frontendEnv }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+{{- end }}

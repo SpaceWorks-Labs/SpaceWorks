@@ -1,5 +1,6 @@
 """WP4 detail surface, independent of WP2's original public machine list."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
@@ -31,12 +32,23 @@ class PublicMachineDetailMixin:
         require_public_surface("machines")
         require_module_for_servable(space, "machines")
         if not feature_enabled(space, "machines.public_detail"):
-            raise ValidationError({"detail": "Public machine details are disabled."})
+            from apps.makerspaces.guards import feature_off
+            raise feature_off("machines.public_detail", "Public machine details are turned off.")
         if not getattr(space, "public_site_enabled", space.public_inventory_enabled):
-            raise ValidationError({"detail": "Public site is disabled."})
+            raise ValidationError({"detail": gettext("Public site is disabled.")})
         return rbac.scope_public_catalogue(
             Machine.objects.select_related("machine_type", "makerspace"), space,
         ).filter(is_public=True, is_active=True).order_by("name", "pk")
+
+
+    def get_serializer(self, *args, **kwargs):
+        from .public_detail import queue_summaries
+        instance = args[0] if args else None
+        if instance is not None:
+            rows = list(instance) if kwargs.get("many") else [instance]
+            kwargs.setdefault("context", self.get_serializer_context())
+            kwargs["context"]["queue_summaries"] = queue_summaries(rows)
+        return super().get_serializer(*args, **kwargs)
 
 
 class PublicMachineDetailView(PublicMachineDetailMixin, generics.RetrieveAPIView):

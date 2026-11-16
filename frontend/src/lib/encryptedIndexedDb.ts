@@ -1,3 +1,4 @@
+import { i18n } from "./i18n";
 // Crypto/IDB mechanics shared by the legacy event adapter and kiosk queue.
 export type Ciphertext = { iv: ArrayBuffer; ciphertext: ArrayBuffer };
 export type StoreDefinition = { name: string; keyPath?: string };
@@ -13,7 +14,7 @@ export function transactionDone(transaction: IDBTransaction) {
   return new Promise<void>((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error ?? new Error("Storage transaction aborted."));
+    transaction.onabort = () => reject(transaction.error ?? new Error(i18n._({ id: "offline.447fc58a3398", message: "Storage transaction aborted." })));
   });
 }
 
@@ -32,7 +33,7 @@ export function openEncryptedDatabase(name: string, version: number, stores: Sto
       resolve(request.result);
     };
     request.onerror = () => reject(request.error);
-    request.onblocked = () => reject(new Error("Close older tabs to enable offline storage."));
+    request.onblocked = () => reject(new Error(i18n._({ id: "offline.ff5d557d7982", message: "Close older tabs to enable offline storage." })));
   });
 }
 

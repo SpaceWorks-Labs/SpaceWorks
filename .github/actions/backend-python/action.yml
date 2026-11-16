@@ -1,0 +1,34 @@
+name: Backend Python environment
+description: >-
+  Python 3.12 with backend/requirements.txt installed in a virtualenv that is cached
+  by the requirements hash, so an unchanged lockfile restores the installed packages
+  instead of reinstalling them (the pip download cache alone still cost ~18 s per job).
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      id: python
+      with:
+        python-version: "3.12"
+
+    - uses: actions/cache@v4
+      id: venv
+      with:
+        path: ~/.venv-backend
+        key: backend-venv-${{ runner.os }}-py${{ steps.python.outputs.python-version }}-${{ hashFiles('backend/requirements.txt') }}
+
+    - name: Install backend dependencies (cache miss only)
+      if: steps.venv.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -m venv ~/.venv-backend
+        ~/.venv-backend/bin/python -m pip install --upgrade pip
+        ~/.venv-backend/bin/python -m pip install -r "$GITHUB_WORKSPACE/backend/requirements.txt"
+
+    - name: Use the backend virtualenv
+      shell: bash
+      run: |
+        echo "VIRTUAL_ENV=$HOME/.venv-backend" >> "$GITHUB_ENV"
+        echo "$HOME/.venv-backend/bin" >> "$GITHUB_PATH"

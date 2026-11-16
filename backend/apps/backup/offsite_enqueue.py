@@ -3,6 +3,8 @@
 Split out of `offsite_push`: this half decides eligibility and the integrity facts a
 copy must match; `offsite_push` does the remote byte work.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -69,7 +71,13 @@ def expected_facts(archive):
 def enqueue_offsite_uploads(limit=200):
     """Create one journal row per (active destination, eligible archive) pair."""
     created = 0
-    destinations = list(active_destinations())
+    if bounded.active():
+        from apps.operations.cloud_jobs.outcomes import TaskReportedFailure
+        destinations = list(active_destinations().order_by("pk")[:3])
+        if len(destinations) > 2:
+            raise TaskReportedFailure("free_offsite_destination_limit")
+    else:
+        destinations = list(active_destinations())
     if not destinations:
         return 0
     now = timezone.now()
@@ -82,7 +90,7 @@ def enqueue_offsite_uploads(limit=200):
             distinct=True,
         )
     ).filter(covered__lt=len(destinations))
-    for archive in pending[:limit]:
+    for archive in bounded.page(pending[:limit], "offsite-archives"):
         existing = set(
             BackupDestinationUpload.objects.filter(archive_id_snapshot=archive.pk)
             .values_list("destination_id", flat=True)
@@ -97,7 +105,7 @@ def enqueue_offsite_uploads(limit=200):
                 "backup_offsite_integrity_refused", extra={"archive_id": str(archive.pk)}
             )
             continue
-        for destination in missing:
+        for destination in bounded.items(missing):
             try:
                 with transaction.atomic():
                     BackupDestinationUpload.objects.create(

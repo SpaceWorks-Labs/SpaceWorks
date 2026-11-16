@@ -25,16 +25,12 @@ from apps.backup.postgres_client import client_binary
 from apps.backup.models import ARCHIVE_PURGE_WARNING, BackupArchive
 from apps.backup.raw_projection import canonical_owner_q, no_decrypt_guard, raw_records
 from apps.backup.tenant_projection import project_raw_dataset
-from apps.data_export.datasets import DATASET_SPECS
+from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS
 
 
-CONTINUITY_KEYS = (
-    "SECRET_KEY", "API_CLIENT_ENC_KEY", "PII_MASTER_KEY", "PII_MASTER_KEY_PREVIOUS",
-    "PII_SEARCH_HASH_KEY", "HMAC_SECRET", "PUSH_TOKEN_HMAC_KEY", "CRON_SECRET",
-    # The database carries AuditMacKey.wrapped_key, which is useless without the
-    # master key that wrapped it -- so it travels with the other continuity secrets.
-    "AUDIT_MAC_MASTER_KEY",
-)
+from cloud_contracts.continuity import CONTINUITY_KEYS
+from .capture_managers import every_row
+
 
 
 def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_capture=None):
@@ -63,9 +59,7 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
                 object_plan = None
             else:
                 compound_capture.prepare_from_snapshot()
-                object_plan = build_object_ownership_plan(
-                    item.makerspace_id for item in compound_capture.frozen_slices
-                )
+                object_plan = build_object_ownership_plan()
                 object_keys = object_plan.closure(MAIN_COMPONENT)
             _write_continuity_keys(root / "keys" / "env.json")
         else:
@@ -76,12 +70,7 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
             object_plan.bind_component(
                 MAIN_COMPONENT, root / "objects", object_manifest
             )
-            compound_capture.capture_from_snapshot(
-                tenant_payload=_tenant_payload,
-                capture_objects=_capture_objects,
-                write_json=_write_json,
-                object_plan=object_plan,
-            )
+            compound_capture.capture_from_snapshot(object_plan=object_plan)
     return {
         "format": "spaceworks-phase5a-v3",
         "archive_id": str(archive.pk),
@@ -92,6 +81,7 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
         "makerspace_id": archive.makerspace_id,
         "recipients": selected_recipients,
         "covered_makerspace_ids": covered_makerspace_ids,
+        **_space_restore_facts(archive, selected_recipients),
         "excluded_makerspace_ids": [],
         "partial": False,
         "snapshot_at": snapshot_at.isoformat(),
@@ -111,32 +101,33 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
     }
 
 
-def _pg_dump(destination, snapshot_id):
-    env = _postgres_environment()
-    command = [
-        # The server's own client major, not PATH's newest: a 1.16 archive from
-        # pg_dump 17 is unreadable by the pg_restore the restore path runs.
-        client_binary("pg_dump"), "--format=custom", "--no-owner", "--no-acl",
-        f"--snapshot={snapshot_id}", f"--file={destination}",
-    ]
-    subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-
-
-def _postgres_environment():
-    database = settings.DATABASES["default"]
-    env = os.environ.copy()
-    mapping = {
-        "PGDATABASE": database.get("NAME"),
-        "PGUSER": database.get("USER"),
-        "PGPASSWORD": database.get("PASSWORD"),
-        "PGHOST": database.get("HOST"),
-        "PGPORT": database.get("PORT"),
+def _space_restore_facts(archive, selected_recipients):
+    """What an in-app space restore checks before it trusts this archive."""
+    if archive.scope != BackupArchive.Scope.MAKERSPACE:
+        return {}
+    from apps.tenant_migration.deployment_keys import public_deployment_identity
+    from .space_restore_plan import FORMAT
+    return {
+        "payload_format": FORMAT,
+        "trigger": archive.trigger,
+        "deployment_id": public_deployment_identity()["deployment_id"],
+        "server_restorable": any(
+            item["label"] == "This server's restore key" for item in selected_recipients
+        ),
     }
-    env.update({key: str(value) for key, value in mapping.items() if value not in (None, "")})
-    return env
 
 
-def _tenant_payload(makerspace_id, root):
+def _pg_dump(destination, snapshot_id):
+    from .cloud_database_tools import configuration_spec
+    from .postgres_client import run_client
+    run_client("pg_dump", ["--format=custom", "--no-owner", "--no-acl",
+               f"--snapshot={snapshot_id}", f"--file={destination}"],
+               spec=configuration_spec(settings.DATABASES["default"]))
+
+
+
+
+def _tenant_payload(makerspace_id, root, *, using="default"):
     # The guard ends with raw row/object-key projection. Future DEK rewrap belongs
     # after this context because it is the separately authorized unwrap phase.
     with no_decrypt_guard():
@@ -146,7 +137,7 @@ def _tenant_payload(makerspace_id, root):
         external_references = []
         for label, (_path, predicate) in sorted(DATASET_SPECS.items()):
             model = apps.get_model(label)
-            queryset = model.objects.filter(canonical_owner_q(predicate, makerspace_id)).order_by(
+            queryset = every_row(model).using(using).filter(canonical_owner_q(predicate, makerspace_id)).order_by(
                 model._meta.pk.name
             )
             records = raw_records(queryset, model)
@@ -170,7 +161,7 @@ def _tenant_payload(makerspace_id, root):
                     )
         User = apps.get_model("accounts.User")
         users = list(
-            User.objects.filter(pk__in=referenced_users).values("id", "username")
+            User.objects.using(using).filter(pk__in=referenced_users).values("id", "username")
         )
         _write_json(root / "global_user_references.json", users)
         _write_json(root / "external_references.json", external_references)
@@ -185,8 +176,10 @@ def _storage_modes():
 
 
 def _write_continuity_keys(path):
+    from .continuity import validate_continuity_secrets
     values = {name: os.environ.get(name, "") for name in CONTINUITY_KEYS}
-    _write_json(path, values)
+    values["EVENT_STATION_PIN_PEPPER"] = settings.EVENT_STATION_PIN_PEPPER
+    _write_json(path, validate_continuity_secrets(values))
 
 
 def _write_json(path, value):

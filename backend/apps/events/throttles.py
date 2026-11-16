@@ -10,6 +10,27 @@ from apps.makerspaces.station_throttles import (
 )
 
 
+class CredentialRenderThrottle(SimpleRateThrottle):
+    scope = "credential_render"
+    rate = "30/hour"
+
+    def get_cache_key(self, request, view):
+        if not getattr(request.user, "is_authenticated", False):
+            return None
+        return self.cache_format % {"scope": self.scope, "ident": request.user.pk}
+
+
+class CertificateArtworkThrottle(CredentialRenderThrottle):
+    scope = "certificate_artwork"
+    rate = "20/hour"
+
+
+class SpeakerClaimThrottle(CredentialRenderThrottle):
+    """Per account; claim tokens are 32 random bytes, this bounds guessing and replays."""
+    scope = "event_speaker_claim"
+    rate = "10/hour"
+
+
 class CollaborativeRegistrationThrottle(ClientTierRateThrottle):
     """New registrations share the create budget; repair retries get their own.
 

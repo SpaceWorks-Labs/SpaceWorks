@@ -8,7 +8,10 @@ from apps.integrations.smtp_validation import validate_smtp_settings
 from apps.openapi_errors import errors
 
 
-class PlatformEmailSettingsSerializer(serializers.ModelSerializer):
+from apps.integrations.email_provider_serializers import EmailProviderFields, validate_provider_update, apply_provider_update
+
+
+class PlatformEmailSettingsSerializer(EmailProviderFields, serializers.ModelSerializer):
     smtp_password = serializers.CharField(
         write_only=True,
         required=False,
@@ -20,6 +23,7 @@ class PlatformEmailSettingsSerializer(serializers.ModelSerializer):
         model = PlatformEmailSettings
         fields = (
             "id",
+            "email_provider", "email_provider_config", "email_provider_configured",
             "smtp_host",
             "smtp_port",
             "smtp_username",
@@ -32,14 +36,18 @@ class PlatformEmailSettingsSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "smtp_password_set", "updated_at")
 
+    def get_email_provider_configured(self, obj) -> bool:
+        return super().get_email_provider_configured(obj)
+
     def get_smtp_password_set(self, obj) -> bool:
         return bool(obj.smtp_password)
 
     def validate(self, attrs):
-        validate_smtp_settings(attrs, self.instance)
+        validate_provider_update(attrs, self.instance, tenant=False)
         return attrs
 
     def update(self, instance, validated_data):
+        apply_provider_update(instance, validated_data)
         smtp_password = validated_data.pop("smtp_password", None)
         if smtp_password is not None:
             instance.set_smtp_password(smtp_password)

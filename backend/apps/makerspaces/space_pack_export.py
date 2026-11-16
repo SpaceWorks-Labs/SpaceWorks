@@ -1,4 +1,5 @@
 """Configuration read projection. All tenant queries are action-scoped."""
+from django.utils.translation import gettext
 import json
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
@@ -23,8 +24,6 @@ def project_row(row, fields):
             value = value.slug if value else None
         elif key == "default_plan":
             value = value.name if value else None
-        elif key == "granted_actions":
-            value = sorted(value)
         values[key] = value
     return json.loads(json.dumps(values, cls=DjangoJSONEncoder))
 
@@ -42,9 +41,7 @@ def configuration_for(actor, makerspace):
             config[name] = [] if spec.identity else None
             continue
         rows = scoped_rows(actor, makerspace, spec)
-        if name == "roles":
-            rows = rows.filter(is_default=False, is_protected=False)
-        elif name == "active_waiver":
+        if name == "active_waiver":
             rows = rows.filter(is_active=True)
         elif name == "item_templates":
             rows = rows.filter(is_archived=False).select_related("category")
@@ -68,7 +65,7 @@ def configuration_for(actor, makerspace):
         else:
             identities = [tuple(row[key] for key in spec.identity) for row in values]
             if len(set(identities)) != len(identities):
-                raise PackError("ambiguous_pack_entry", f"{name} has duplicate local names; rename them first.")
+                raise PackError("ambiguous_pack_entry", gettext("%(name)s has duplicate local names; rename them first.") % {"name": name})
             config[name] = sorted(values, key=lambda value: canonical(value))
     return config
 

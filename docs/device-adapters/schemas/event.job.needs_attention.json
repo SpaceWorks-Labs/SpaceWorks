@@ -1,0 +1,23 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.job.needs_attention.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "job_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "reason": {
+      "format": "code",
+      "maxLength": 48,
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "reason"
+  ],
+  "type": "object"
+}

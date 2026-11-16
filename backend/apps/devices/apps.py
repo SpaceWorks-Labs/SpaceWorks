@@ -15,3 +15,7 @@ class DevicesConfig(AppConfig):
         from apps.separability.tombstones import register_separable_app
 
         register_separable_app("devices")
+        from .notifications_p2 import register
+        register()
+        from .adapter_notifications import register as register_adapter
+        register_adapter()

@@ -1,0 +1,28 @@
+# Upload role-specific private secrets. Run the separate finite release before residents.
+# Scale worker/scheduler to one; they have no autostop service. No web maintenance secret.
+app = "spaceworks-scheduler-REPLACE"
+primary_region = "sin"
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+[build]
+  image = "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+[processes]
+  app = "--role cron python -m scripts.run_cloud_role scheduler"
+[env]
+  SPACEWORKS_DEPLOYMENT_MODE = "managed"
+  SPACEWORKS_DEPLOYMENT_PROFILE = "full"
+  CLOUD_TASK_PROFILE = "brokerless"
+  CLOUD_SCHEDULER = "loop"
+  PORT = "8000"
+[[vm]]
+  memory = "1024mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[[files]]
+  guest_path = "/etc/secrets/storage-capabilities.json"
+  secret_name = "SPACEWORKS_STORAGE_CAPABILITIES_B64"
+
+[[files]]
+  guest_path = "/etc/secrets/email-provider.json"
+  secret_name = "SPACEWORKS_EMAIL_PROVIDER_CONFIG_B64"

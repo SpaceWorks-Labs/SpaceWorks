@@ -1,5 +1,6 @@
 """Server-authoritative, privacy-preserving presence geofence checks."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from math import asin, cos, isfinite, radians, sin, sqrt
 
@@ -20,14 +21,10 @@ def haversine_distance_m(latitude_a, longitude_a, latitude_b, longitude_b):
     latitude_delta = radians(latitude_b - latitude_a)
     longitude_delta = radians(longitude_b - longitude_a)
     component = sin(latitude_delta / 2) ** 2 + cos(radians(latitude_a)) * cos(radians(latitude_b)) * sin(longitude_delta / 2) ** 2
-    return EARTH_RADIUS_M * 2 * asin(sqrt(component))
+    return EARTH_RADIUS_M * 2 * asin(sqrt(min(1, max(0, component))))
 
 
 def evaluate_geofence(makerspace, *, latitude, longitude, accuracy):
-    # Additive master switch (plan A6) in front of the existing configuration check, not
-    # a replacement. `None` means "not checked", which is exactly the dormant behaviour
-    # an unconfigured space already has -- and the geofence stays ADVISORY either way:
-    # this can only remove a classification, never start blocking a check-in.
     from apps.makerspaces.platform import feature_enabled
 
     if not feature_enabled(makerspace, "presence.geofence"):
@@ -41,13 +38,33 @@ def evaluate_geofence(makerspace, *, latitude, longitude, accuracy):
     distance_m = haversine_distance_m(float(makerspace.geofence_latitude), float(makerspace.geofence_longitude), latitude, longitude)
     if accuracy > ACCURACY_CEILING_M:
         return GeofenceResult(in_range=False, reason="low_accuracy", distance_m=distance_m, accuracy_m=accuracy)
-    in_range = distance_m - min(accuracy, ACCURACY_CEILING_M) <= makerspace.geofence_radius_m
+    in_range = distance_m <= makerspace.geofence_radius_m
     return GeofenceResult(
         in_range=in_range,
         reason=None if in_range else "out_of_range",
         distance_m=distance_m,
         accuracy_m=accuracy,
     )
+
+
+def require_inside(makerspace, *, latitude=None, longitude=None, accuracy=None):
+    """Hard self-check-in rule. Validate then discard; GPS remains spoofable."""
+    from .policy import PresenceError
+    from apps.makerspaces.platform import feature_enabled
+
+    if not feature_enabled(makerspace, "presence.geofence") or not makerspace.geofence_effective:
+        raise PresenceError("geofence_unconfigured", gettext("Self check-in needs a configured geofence. Ask staff to check you in."))
+    if latitude is None or longitude is None:
+        raise PresenceError("location_required", gettext("Allow location access to check in, or ask staff to check you in."))
+    values = (latitude, longitude) if accuracy is None else (latitude, longitude, accuracy)
+    if (any(isinstance(v, bool) or not isinstance(v, (int, float)) or not isfinite(v) for v in values)
+            or not -90 <= latitude <= 90 or not -180 <= longitude <= 180
+            or (accuracy is not None and accuracy < 0)):
+        raise PresenceError("location_invalid", gettext("Provide a valid location reading."))
+    result = evaluate_geofence(makerspace, latitude=latitude, longitude=longitude, accuracy=accuracy or 0)
+    if result is None or result.in_range is not True:
+        code = "location_inaccurate" if result and result.reason == "low_accuracy" else "outside_geofence"
+        raise PresenceError(code, gettext("Location must be inside the makerspace radius. Ask staff for help."))
 
 
 def geofence_metadata(result):

@@ -169,7 +169,7 @@ def _request_item_queryset(makerspace_id):
     )
     if makerspace_id is not None:
         return queryset.filter(request__makerspace_id=makerspace_id)
-    excluded = rbac.superadmin_hidden_makerspace_ids() | rbac.archived_makerspace_ids()
+    excluded = rbac.archived_makerspace_ids()
     return queryset.exclude(request__makerspace_id__in=excluded) if excluded else queryset
 
 def _container_only_loan_queryset(makerspace_id):
@@ -194,5 +194,5 @@ def _container_only_loan_queryset(makerspace_id):
     )
     if makerspace_id is not None:
         return queryset.filter(makerspace_id=makerspace_id)
-    excluded = rbac.superadmin_hidden_makerspace_ids() | rbac.archived_makerspace_ids()
+    excluded = rbac.archived_makerspace_ids()
     return queryset.exclude(makerspace_id__in=excluded) if excluded else queryset

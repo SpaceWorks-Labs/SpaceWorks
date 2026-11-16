@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -20,12 +21,16 @@ class MachineUsageEntry(ScopedPiiModelMixin, models.Model):
     """Append-only generic and typed service-usage ledger."""
 
     class Source(models.TextChoices):
-        MANUAL = "manual", "Manual hours"
-        TYPED_MANUAL = "typed_manual", "Typed manual service"
+        MANUAL = "manual", gettext_noop("Manual hours")
+        TYPED_MANUAL = "typed_manual", gettext_noop("Typed manual service")
+        # Lane L23: one entry per finished machine session (minutes).
+        SESSION = "session", gettext_noop("Machine session")
 
     machine = models.ForeignKey(
         Machine, on_delete=models.CASCADE, related_name="usage_entries"
     )
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="machine_usage_entries")
+    started_at = models.DateTimeField(null=True, blank=True)
     hours = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     source = models.CharField(
         max_length=16, choices=Source.choices, default=Source.MANUAL
@@ -66,6 +71,9 @@ class MachineUsageEntry(ScopedPiiModelMixin, models.Model):
     objects = MachineUsageEntryQuerySet.as_manager()
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "machine usage entry"
+        verbose_name_plural = "machine usage entries"
         ordering = ["-created_at"]
         indexes = [
             models.Index(

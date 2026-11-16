@@ -1,0 +1,182 @@
+/* The hub's public pages (/ and /docs). Built only from the app's tokens and brand fields
+   (index.css, styles/fields.css); colours are tokens, never new hexes. Fonts: Gilroy ExtraBold for
+   display and headings, Outfit for text (decision 299). */
+
+.sw-hub { min-height: 100dvh; background: rgb(var(--color-bg)); color: rgb(var(--color-ink)); }
+.sw-hub ::selection { background: rgb(var(--color-success)); color: rgb(var(--color-on-success)); }
+.sw-hub-wrap { width: 100%; max-width: 1280px; margin-inline: auto;
+  padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
+@media (min-width: 768px) { .sw-hub-wrap { padding-inline: 32px; } }
+@media (min-width: 1280px) { .sw-hub-wrap { padding-inline: 48px; } }
+
+/* Header: opaque canvas, a hairline under it, sticky so search and Sign in stay in reach. */
+.sw-hub-header { position: sticky; top: 0; z-index: 30; background: rgb(var(--color-bg)); border-bottom: 1px solid rgb(var(--color-line)); }
+.sw-hub-bar { position: relative; display: flex; align-items: center; gap: 12px; max-width: 1440px; margin-inline: auto;
+  min-height: 72px; padding: 8px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left)); }
+@media (min-width: 1024px) { .sw-hub-bar { gap: 24px; padding-inline: 32px; } }
+.sw-hub-logo { display: inline-flex; flex-shrink: 0; border-radius: 10px; }
+.sw-hub-logo:focus-visible, .sw-hub-nav-link:focus-visible, .sw-hub-footer-link:focus-visible, .sw-hub-door:focus-visible,
+.sw-hub-inline-link:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
+.sw-hub-nav-link { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px; border-radius: 10px;
+  font-weight: 600; color: rgb(var(--color-muted)); transition: color 120ms, background-color 120ms; }
+.sw-hub-nav-link:hover { color: rgb(var(--color-ink)); background: rgb(var(--color-hover)); }
+.sw-hub-nav-link[aria-current="page"] { color: rgb(var(--color-ink)); text-decoration: underline; text-decoration-thickness: 2px;
+  text-underline-offset: 8px; text-decoration-color: rgb(var(--color-accent-ink)); }
+.sw-hub-menu { position: absolute; top: calc(100% + 8px); right: 16px; left: 16px; z-index: 40; display: grid; gap: 12px; padding: 8px;
+  border: 1px solid rgb(var(--color-line)); border-radius: 16px; background: rgb(var(--color-panel)); box-shadow: var(--shadow-overlay, 0 12px 32px rgb(var(--shadow-color) / 0.18)); }
+@media (min-width: 640px) { .sw-hub-menu { left: auto; width: 20rem; } }
+
+/* Section rhythm and type. */
+.sw-hub-section { padding-block: 72px; }
+@media (min-width: 1024px) { .sw-hub-section { padding-block: 112px; } }
+/* One continuous page (owner, decision 423): no tinted bands and no hairlines between sections; spacing separates them. */
+.sw-hub-band { background: transparent; border-block: 0; }
+.sw-hub-h2 { font-family: "Gilroy", "Outfit", ui-sans-serif, system-ui, sans-serif; font-weight: 800; font-size: 2rem; line-height: 1.1;
+  letter-spacing: -0.025em; text-wrap: balance; }
+@media (min-width: 768px) { .sw-hub-h2 { font-size: 2.75rem; } }
+@media (min-width: 1280px) { .sw-hub-h2 { font-size: 3.25rem; } }
+.sw-hub-lede { font-size: 1.125rem; line-height: 1.7; color: rgb(var(--color-muted)); max-width: 40rem; text-wrap: pretty; }
+.sw-hub-inline-link { color: rgb(var(--color-accent-ink)); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; border-radius: 4px; }
+
+/* Hero copy (in the pinned sequence, landing/landing-scroll.css): Gilroy ExtraBold display, Outfit text,
+   on the page canvas. The one Workshop Orange moment is the install button (Ink on Orange 5.51:1). */
+.sw-hub .sw-hub-hero-title { max-width: 14ch; font-family: "Gilroy", "Outfit", ui-sans-serif, system-ui, sans-serif; font-weight: 800;
+  font-size: clamp(2.5rem, 1.35rem + 4.4vw, 5.25rem); line-height: 1.02; letter-spacing: -0.035em; color: rgb(var(--color-ink)); }
+.sw-hub-hero-lede { max-width: 44rem; font-size: 1.125rem; line-height: 1.65; color: rgb(var(--color-muted)); text-wrap: pretty; }
+@media (min-width: 768px) { .sw-hub-hero-lede { font-size: 1.25rem; } }
+.sw-hub-cta-primary, .sw-hub-cta-outline { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px;
+  border-radius: 10px; font-weight: 600; border: 1px solid transparent; transition: background-color 120ms, color 120ms; }
+.sw-hub-cta-primary { background: rgb(var(--color-emphasis)); color: rgb(var(--color-on-emphasis)); }
+.sw-hub-cta-primary:hover { background: rgb(var(--color-emphasis-hover)); }
+.sw-hub-cta-primary:active { background: rgb(var(--color-emphasis-active)); }
+.sw-hub-cta-outline { border-color: rgb(var(--color-outline)); color: rgb(var(--color-ink)); }
+.sw-hub-cta-outline:hover { background: rgb(var(--color-hover)); }
+.sw-hub-cta-primary:focus-visible, .sw-hub-cta-outline:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 3px; }
+.sw-hub-hero-more { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 8px; border-radius: 10px; font-weight: 600;
+  color: rgb(var(--color-ink)); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 6px; transition: text-decoration-color 120ms; }
+.sw-hub-hero-more:hover { text-decoration-color: rgb(var(--color-ink)); }
+.sw-hub-hero-more:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
+.sw-hub-hero-source { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; border-radius: 4px; color: rgb(var(--color-ink));
+  text-decoration: underline; text-decoration-color: rgb(var(--color-outline)); text-underline-offset: 4px; }
+.sw-hub-hero-source:hover { text-decoration-color: rgb(var(--color-ink)); }
+.sw-hub-hero-source:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
+
+/* The sample loan record, in the theme's own tokens. Unreached rows keep their height (proof held back)
+   so the pinned card never jumps. */
+.sw-hub-story { overflow: hidden; border: 1px solid rgb(var(--color-line)); border-radius: 16px; background: rgb(var(--color-panel)); color: rgb(var(--color-ink)); }
+.sw-hub-story-step { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 14px; padding: 16px 20px; }
+.sw-hub-story-step + .sw-hub-story-step { border-top: 1px solid rgb(var(--color-line)); }
+.sw-hub-story-dot { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 999px;
+  background: rgb(var(--color-accent-soft)); color: rgb(var(--color-accent-ink)); }
+.sw-hub-story-step[data-pending] .sw-hub-story-dot { background: none; border: 1px dashed rgb(var(--color-outline)); }
+.sw-hub-story-step[data-pending] p:first-child { color: rgb(var(--color-muted)); }
+.sw-hub-story-step[data-pending] .sw-hub-story-proof { visibility: hidden; }
+@keyframes sw-hub-step-in { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+@keyframes sw-hub-proof-in { from { opacity: 0; transform: translate3d(0, 6px, 0); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .sw-hub-story-step[data-new] .sw-hub-story-proof { animation: sw-hub-proof-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+
+/* Areas explorer. */
+.sw-hub-area-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+@media (min-width: 1024px) { .sw-hub-area-tabs { display: grid; overflow: visible; padding: 0; } }
+.sw-hub-area-tab { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 14px;
+  border: 1px solid rgb(var(--color-line)); background: rgb(var(--color-panel)); color: rgb(var(--color-ink)); transition: background-color 120ms, border-color 120ms; }
+.sw-hub-area-tab > span:last-child > span:last-child { display: none; }
+@media (min-width: 1024px) { .sw-hub-area-tab { border-color: transparent; background: transparent; }
+  .sw-hub-area-tab > span:last-child > span:last-child { display: block; } }
+.sw-hub-area-tab:hover { background: rgb(var(--color-hover)); }
+.sw-hub-area-tab[aria-selected="true"] { border-color: rgb(var(--color-accent-ink)); background: rgb(var(--color-accent-soft)); }
+.sw-hub-area-tab:focus-visible, .sw-hub-area-panel:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
+.sw-hub-area-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px;
+  background: rgb(var(--color-accent-soft)); color: rgb(var(--color-accent-ink)); }
+.sw-hub-area-icon-lg { width: 56px; height: 56px; border-radius: 16px; background: rgb(var(--color-accent)); color: rgb(var(--color-on-accent)); }
+.sw-hub-area-panel { display: grid; gap: 32px; padding: 24px; border: 1px solid rgb(var(--color-line)); border-radius: 20px; background: rgb(var(--color-panel)); }
+@media (min-width: 768px) { .sw-hub-area-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 40px; align-items: center; } }
+@media (prefers-reduced-motion: no-preference) { .sw-hub-area-panel { animation: sw-hub-step-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both; } }
+.sw-hub-record { overflow: hidden; border: 1px solid rgb(var(--color-line)); border-radius: 16px; background: rgb(var(--color-bg)); }
+
+/* Staff console glimpse: the console's own tokens (sidebar, panel, status pills), so it follows the theme. */
+.sw-hub-desk { overflow: hidden; border: 1px solid rgb(var(--color-line)); border-radius: 20px; background: rgb(var(--color-panel)); }
+.sw-hub-desk-bar { display: flex; align-items: center; gap: 16px; min-height: 48px; padding: 0 20px; font-size: 0.875rem;
+  border-bottom: 1px solid rgb(var(--color-line)); background: rgb(var(--color-surface)); }
+.sw-hub-desk-body { display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 768px) { .sw-hub-desk-body { grid-template-columns: 208px minmax(0, 1fr); } }
+@media (min-width: 1024px) { .sw-hub-desk-body { grid-template-columns: 224px minmax(0, 1fr) 300px; } }
+.sw-hub-desk-nav { display: none; }
+@media (min-width: 768px) { .sw-hub-desk-nav { display: grid; align-content: start; gap: 2px; padding: 12px; background: rgb(var(--color-sidebar)); } }
+.sw-hub-desk-nav li { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px;
+  font-size: 0.875rem; font-weight: 500; color: rgb(var(--color-ink)); }
+.sw-hub-desk-nav .sw-hub-desk-nav-active { background: rgb(var(--color-sidebar-active)); color: rgb(var(--color-on-accent)); font-weight: 600; }
+.sw-hub-desk-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 20px;
+  border-bottom: 1px solid rgb(var(--color-line)); }
+.sw-hub-desk-row:last-child { border-bottom: 0; }
+@media (max-width: 639px) { .sw-hub-desk-row { grid-template-columns: 36px minmax(0, 1fr); row-gap: 6px; }
+  .sw-hub-desk-row > :last-child { grid-column: 2; justify-self: start; } }
+.sw-hub-desk-row[data-selected] { background: rgb(var(--color-accent-soft)); }
+.sw-hub-desk-avatar { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+  border: 1px solid rgb(var(--color-line)); background: rgb(var(--color-surface)); color: rgb(var(--color-ink)); }
+.sw-hub-desk-detail { display: none; }
+@media (min-width: 1024px) { .sw-hub-desk-detail { display: block; padding: 20px; border-left: 1px solid rgb(var(--color-line)); background: rgb(var(--color-bg)); } }
+.sw-hub-desk-check { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid rgb(var(--color-line)); background: rgb(var(--color-panel)); color: rgb(var(--color-ink)); }
+.sw-hub-desk-check[data-done] { background: rgb(var(--color-success-soft)); }
+.sw-hub-desk-issue { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 20px; border-radius: 10px;
+  border: 1px solid rgb(var(--color-line)); background: rgb(var(--color-surface)); color: rgb(var(--color-muted)); font-weight: 600; }
+.sw-hub-desk-caption { padding: 10px 20px; font-size: 0.8125rem; color: rgb(var(--color-muted));
+  border-top: 1px solid rgb(var(--color-line)); background: rgb(var(--color-surface)); }
+
+/* Open source: the licence summary as a definition list, and the project's own pages. */
+.sw-hub-licence { overflow: hidden; border: 1px solid rgb(var(--color-line)); border-radius: 20px; background: rgb(var(--color-panel)); }
+.sw-hub-licence-row { display: grid; gap: 6px; padding: 20px; border-bottom: 1px solid rgb(var(--color-line)); }
+.sw-hub-licence-row:last-child { border-bottom: 0; }
+@media (min-width: 768px) { .sw-hub-licence-row { grid-template-columns: minmax(0, 14rem) minmax(0, 1fr); gap: 24px; padding: 24px; } }
+.sw-hub-licence-row dt { font-size: 1.0625rem; line-height: 1.5; }
+.sw-hub-spdx { display: inline-flex; align-items: center; min-height: 28px; padding: 0 12px; border-radius: 999px; font-size: 0.8125rem;
+  font-weight: 600; background: rgb(var(--color-info)); color: rgb(var(--color-on-info)); }
+.sw-hub-row-link { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 8px; border-radius: 8px; font-weight: 600;
+  color: rgb(var(--color-ink)); transition: background-color 120ms; }
+.sw-hub-row-link:hover { background: rgb(var(--color-hover)); }
+.sw-hub-row-link:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
+
+/* How it works. */
+.sw-hub-step { display: grid; align-content: start; gap: 12px; padding-top: 20px; border-top: 2px solid rgb(var(--color-ink)); }
+.sw-hub-step-number { font-family: "Gilroy", "Outfit", sans-serif; font-weight: 300; font-size: 4rem; line-height: 1; color: rgb(var(--color-accent-ink));
+  font-variant-numeric: tabular-nums; }
+
+/* Self-host on the Deep Ink field (pair with .sw-island-dark). */
+.sw-hub-selfhost { display: grid; gap: 40px; border-radius: 20px; padding: 32px 20px; }
+@media (min-width: 768px) { .sw-hub-selfhost { border-radius: 28px; padding: 56px 48px; } }
+@media (min-width: 1024px) { .sw-hub-selfhost { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 56px; padding: 72px 64px; } }
+.sw-hub-selfhost .sw-hub-lede { color: rgb(var(--color-muted)); }
+.sw-hub-terminal { overflow: hidden; border: 1px solid rgb(var(--color-line)); border-radius: 14px; background: rgb(var(--color-surface)); }
+
+/* Docs door on the Citron field. */
+.sw-hub-docs { display: grid; gap: 40px; border-radius: 20px; padding: 32px 20px; }
+@media (min-width: 768px) { .sw-hub-docs { border-radius: 28px; padding: 56px 48px; } }
+@media (min-width: 1024px) { .sw-hub-docs { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 56px; padding: 72px 64px; align-items: center; } }
+.sw-hub-docs .sw-hub-lede { color: rgb(var(--color-muted)); }
+.sw-hub-docs .desk-input { background: rgb(255 255 255); }
+.sw-hub-door { display: flex; align-items: flex-start; gap: 14px; height: 100%; padding: 20px; border-radius: 16px; border: 1px solid rgb(var(--color-outline));
+  background: rgb(255 255 255); color: rgb(var(--color-accent-ink)); transition: background-color 120ms; }
+.sw-hub-door:hover { background: rgb(var(--color-hover)); }
+
+/* FAQ. */
+.sw-hub-faq { border-top: 1px solid rgb(var(--color-line)); }
+.sw-hub-faq:last-child { border-bottom: 1px solid rgb(var(--color-line)); }
+.sw-hub-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding: 16px 0;
+  cursor: pointer; list-style: none; font-weight: 700; font-size: 1.125rem; }
+.sw-hub-faq summary::-webkit-details-marker { display: none; }
+.sw-hub-faq summary:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; border-radius: 6px; }
+.sw-hub-faq p { padding-bottom: 20px; max-width: 46rem; line-height: 1.7; color: rgb(var(--color-muted)); }
+
+/* Footer. */
+.sw-hub-footer { margin-top: 72px; border-top: 0; background: transparent; }
+.sw-hub-footer-link { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; width: fit-content; border-radius: 6px;
+  color: rgb(var(--color-muted)); transition: color 120ms; }
+.sw-hub-footer-link:hover { color: rgb(var(--color-ink)); }
+
+@media print {
+  .sw-hub-header, .sw-hub-footer { display: none; }
+  .sw-hub-faq[open] summary + p, .sw-hub-faq p { display: block; }
+}

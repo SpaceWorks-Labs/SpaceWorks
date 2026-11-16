@@ -1,64 +1,243 @@
-# Space Works Brand
+# Space Works brand v1
 
-The **Space Works — Open Source Makerspace Manager** visual identity. This folder is the single source of
-truth for the logo, colour, and type. The live app consumes the same values via
-`frontend/src/components/SpaceWorksLogo.tsx`, `frontend/public/spaceworks-logo.svg` (favicon), and the Tailwind
-theme tokens.
+The [brand guidelines v1.0](space-works-brand-guidelines-v1.pdf) are the source of truth.
+This reference summarises the PDF; the product font implementation follows the approved brand kit
+described under Typography below.
 
-## Concept — the "Parts-Crate"
+The design system lives in its own repository,
+[SpaceWorks-Design](https://github.com/SpaceWorks-Labs/SpaceWorks-Design) (published at
+[spaceworks-labs.github.io/SpaceWorks-Design](https://spaceworks-labs.github.io/SpaceWorks-Design/)):
+the PDF and its 17 pages as SVG/PNG, the logo masters, icons, fonts, `tokens/tokens.css` and
+`tokens.json`, the Patch mascot and the UI/UX specs (`docs/ui-brand-spec.md`, `docs/ux-spec.md`,
+`docs/ux-screens-longtail.md`). The files in this folder, `frontend/public/brand/`,
+`frontend/public/fonts/` and `frontend/src/index.css` are byte-for-byte copies or exact
+transcriptions of that kit. When the kit changes, copy the new files across; never redraw them here.
 
-The logomark is a **parts bin**: an open crate whose **four compartments** are the colour system and,
-in the lettered variant, spell **O-S-M-M** in pixel type. It says "a place for every part" — the
-whole point of the product.
+Space Works helps teams keep shared parts, tools and materials organised. The identity is clear,
+capable, curious and playful. The open box is an invitation: four flaps welcome the next project,
+a clear structure gives every part a place, teal grounds it and orange brings energy.
 
-- **Plain crate** — pair with the "Space Works" wordmark in horizontal/stacked lockups (headers, banners).
-- **Lettered crate** — stands alone where there's no wordmark: favicons, app icons, avatars.
+## Where the brand lives in the product
 
-## Assets in this folder
+| What | File | Kit source |
+| --- | --- | --- |
+| Colour tokens, light and dark | `frontend/src/index.css` (`:root` / `:root.dark` / `.sw-island-dark`), mapped one-to-one in `frontend/tailwind.config.ts` | `tokens/tokens.css` (dark surfaces: solid black family, decision 316) |
+| Brand colour fields (teal, citron, ink, tenant) | `frontend/src/styles/fields.css` | brand p.7, p.13 |
+| Radius, motion, chart marks | `frontend/src/styles/chrome.css`, `tailwind.config.ts` | `ui-brand-spec.md` §E |
+| Buttons, inputs, pills, nav, tabs | `frontend/src/styles/buttons.css`, `components.css` | `ui-brand-spec.md` §B–C |
+| Fonts and `@font-face` | `frontend/public/fonts/`, `frontend/src/index.css` | `fonts/` |
+| Logo | `frontend/src/components/SpaceWorksLogo.tsx` + `spaceWorksLogoPaths.ts` | `logo/*.svg` |
+| Favicon, app icons, social card | `frontend/public/brand/` | `icons/` |
+| Patch | `frontend/public/brand/patch/`, `components/delight/NotFoundPatch.tsx` | `mascot/walk*`, `mascot/dark/walk*` |
+| Tenant colour derivation | `frontend/src/lib/brandColours.ts` and `backend/apps/makerspaces/theme_contrast.py` | `ui-brand-spec.md` §H.5 |
+
+### Token summary
+
+Every token is a space-separated sRGB triplet used as `rgb(var(--color-x))`. Neutrals are mixes of
+Deep Ink with Warm Cream or white; fills are the seven brand hexes plus the one sampled danger red.
+No alpha tints: soft fills are opaque.
+
+| Role | Light | Dark |
+| --- | --- | --- |
+| `bg` / `surface` / `panel` / `hover` | Cream `#FFF4E8` / `#F6ECE0` / white / `#EFE6DB` | Black `#000000` / `#0B0B0B` / `#141414` / `#1C1C1C` |
+| `ink` / `muted` | Deep Ink / `#5B6863` | Cream / `#ACACAC` |
+| `line` (hairline) / `outline` (control boundary) | `#D5D0C6` / `#828A83` | `#2C2C2C` / `#787878` |
+| `accent` (staff action) · label | Maker Teal · Cream | Maker Teal · Cream |
+| `accent-ink` (links, focus in light; = `brand-ink`) | Maker Teal | `#80B1A6` |
+| `focus` ring | Maker Teal | Citron |
+| `brand` (stranger-facing action; **tenant-overridable**) | = accent | = accent |
+| `emphasis` (one bold moment, never tenant-overridable) | Workshop Orange · Ink label | same |
+| `success` / `warn` / `info` fills · Ink label | Citron / Warm Yellow / Sky Blue | same |
+| `success-ink` / `warn-ink` / `info-ink` (coloured text) | `#536D49` / `#696834` / `#51697B` | `#E9FCAA` / `#FFDE77` / `#CBD9F8` |
+| `danger` | `#B91C1C` · Cream label | `#FCA5A5` · Ink label |
+| `sidebar` / hover / active item | Citron / `#F2FFD2` / Maker Teal | `#0B0B0B` / `#1C1C1C` / Maker Teal |
+| soft fills (`accent`, `emphasis`, `success`, `warn`, `info`) | `#E0EEEC` / `#FFEEE9` / `#FBFFF2` / `#FFFAE9` / `#F6F9FF` | `#121D1C` / `#221A17` / `#20221B` / `#222017` / `#1E1F22` |
+| `scrim` (dims the page behind dialogs and the camera) | Deep Ink | Black |
+
+Text on a fill uses its `on-*` token; coloured text uses the `*-ink` token, never the fill
+(`text-success-ink`, not `text-success`). There is no orange text token. Shape: controls 10 px,
+cards 16 px (`rounded-xl` / `rounded-card`), pills fully round, no shadows except `shadow-overlay` on
+popovers, menus, dialogs and toasts. Motion: colour 120 ms, no translate or scale on hover,
+`prefers-reduced-motion` honoured.
+Motion tokens (`--sw-dur-fast/base/slow` 120/180/240 ms, `--sw-ease-standard/enter/exit`, plus the distance tokens) live in `frontend/src/index.css` and the rules in `frontend/src/styles/motion*.css`; route transitions, exit animations (`usePresence`), sliding indicators and `TransitionLink`/`useTransitionNavigate` are in `frontend/src/lib/motion/` -- use them rather than writing new keyframes, and transform/opacity only.
+
+**Loading animation.** The loading state for a page or panel is the Space Works box: it opens, holds, folds shut and
+repeats (`frontend/src/components/LogoLoader.tsx`, the same artwork as the cold-start splash). Under reduced motion it
+is the still, open logo. Buttons and table rows keep a small spinner and lists keep a skeleton.
+
+**Dark set: one solid black family** (owner decision 316, 11 November 2026, superseding the teal lift of
+decision 275: "single solid black everywhere, no mixing of pure black and green dark"). The page is pure black
+`#000` for OLED screens and every raised layer is a neutral grey with no green or teal tint: `surface` `#0B0B0B`,
+`panel` `#141414`, `hover` `#1C1C1C` (each steps 1.07:1 or more above the one below; cards are also drawn with the
+`line` hairline). Nothing in a dark surface is Deep Ink or teal, so a dark page never shows a green field next to
+black: the landing self-host block, the display screens and the sign-in showcase use the same neutral layers
+(`:root.dark .sw-island-dark`), and the landing symbol pattern is drawn in `muted` grey. The `sidebar` is the
+`surface` layer and `sidebar-hover` the `hover` layer; the active item stays Maker Teal. `muted` is neutral grey
+`#ACACAC` (9.3:1 on black, 7.5:1 on `hover`, 7.1:1 at worst on a soft), links and `brand-ink` are Teal + 50 % Cream
+(clearly teal, so a link never reads as muted text), the `line` hairline is a quiet divider `#2C2C2C` (1.5:1 on
+black, 1.3:1 on `panel`: decorative, never the only thing that identifies a control), and the `outline`
+control boundary is `#787878` (4.8:1 on black, 3.9:1 on `hover`, so inputs and buttons keep their 3:1 edge).
+Soft fills are the panel plus 10 % teal or 6 % of their accent hue, so status chips read without tinting the
+page. Status inks (`success-ink`, `warn-ink`, `info-ink`) are their brand colour + 30 % Cream. Brand colour lives
+only in accents: the Maker Teal fill, Citron focus ring, links, status, highlights and the landing illustration
+fields (the sign-in brand panel and the spaces header stay Maker Teal as deliberate brand blocks, not page
+backgrounds). Text is Cream. Elevation reads from the layer steps and the hairline, not from shadows, which are
+invisible on black (`--shadow-color` is black in dark). The browser chrome colour (`theme-color`) follows the
+theme: Cream in light, black in dark. `frontend/src/styles/darkTokens.test.ts` pins the recipe and the contrast
+floors (text 4.5:1 on every ground including the sidebar and softs; focus, control boundaries and chart marks
+3:1; the hairline kept between 1.3:1 and 3:1), and the tenant brand derivation in
+`frontend/src/lib/brandColours.ts` and `backend/apps/makerspaces/theme_contrast.py` validates against the same
+surfaces. `/control/` uses the same family (`control.css`, the Unfold `base` ramp in `config/unfold.py`).
+
+The earlier Deep Ink dark set (`#142C2A` / `#193935` / `#1F433F`) survives as the light-mode `.sw-island-dark`
+block: the sign-in brand panel (p.1 cover) uses it, and the dark illustrations in
+`frontend/src/assets/illustrations/` and the dark print artwork are drawn in it. The kit's
+`tokens/tokens.css` / `tokens.json` in SpaceWorks-Design still carry the older dark surfaces and
+need the solid-black values above synced. The kit's `docs/ui-brand-spec.md` §A.3 dark proposal (accent
+`#579C90` with an Ink label) is not used.
+
+**Tenant branding.** A makerspace may set `primary_color` (the `brand` fill) and optionally
+`accent_color` (the seed for `brand-ink`). They recolour only stranger-facing surfaces; staff screens,
+`accent`, `focus`, `emphasis`, status tones, neutrals and the sidebar always keep the Space Works
+palette, and the Space Works logo is never recoloured.
+
+## Logo masters
+
+These supplied outlined vectors are the approved logo masters. The lowercase wordmark is artwork,
+not live type. Scale each complete master as one object; never rebuild the lockup with text or CSS.
 
 | File | Use |
-|---|---|
-| `logomark.svg` | Plain crate, ink stroke — for light surfaces / documents |
-| `logomark-lettered.svg` | Crate with O-S-M-M pixels — standalone mark |
-| `app-icon.svg` | Dark rounded tile + lettered mark — app/store icon |
+| --- | --- |
+| [symbol.svg](symbol.svg) | Full-colour symbol on Warm Cream or white |
+| [symbol-reversed.svg](symbol-reversed.svg) | Separately drawn cream symbol on Deep Ink or Maker Teal |
+| [lockup-stacked.svg](lockup-stacked.svg) | Primary symbol and two-line wordmark on a light ground |
+| [lockup-stacked-reversed.svg](lockup-stacked-reversed.svg) | Reversed primary lockup on a dark ground |
+| [lockup-horizontal.svg](lockup-horizontal.svg) | Full-colour horizontal lockup for wide headers |
+| [lockup-horizontal-reversed.svg](lockup-horizontal-reversed.svg) | Official reversed horizontal lockup on a dark ground |
+| [lockup-horizontal-one-colour-ink.svg](lockup-horizontal-one-colour-ink.svg) | One-colour ink horizontal lockup on a light ground |
+| [symbol-one-colour-ink.svg](symbol-one-colour-ink.svg) | One-colour ink symbol on a light ground |
+| [lockup-stacked-one-colour-ink.svg](lockup-stacked-one-colour-ink.svg) | One-colour ink primary lockup on a light ground |
+| [app-icon.svg](app-icon.svg) | Symbol on a Warm Cream tile, nominally 62% of tile height |
 
-The banner lockup lives at `../banner.svg`; the browser favicon at `../../frontend/public/spaceworks-logo.svg`.
+Horizontal layouts have their own supplied reversed and one-colour ink masters. Use the reversed
+horizontal master on dark grounds, retaining its complete outlined wordmark and symbol; do not
+substitute a stacked lockup solely because the ground is dark. The reversed and ink drawings have
+their own notches and knocked-out interior: recolouring the full-colour symbol cannot reproduce them.
+
+The vector brand [banner](../banner.svg) uses the stacked master on Warm Cream.
+The README banners ([light](../readme/banner.svg), [dark](../readme/banner-dark.svg)) pair the
+horizontal master and the app icon (on a white tile) on Warm Cream, and the reversed horizontal master
+and the app icon on a Deep Ink card (the `.sw-island-dark` ground kept for dark artwork, decision
+227(h)). Gilroy ExtraBold and Outfit text is converted to outlines, because GitHub renders SVG without
+webfonts.
+The [social card](../spaceworks-logo.png) is 1200 by 630 with a centred 600 px stacked lockup.
+The [favicon](../../frontend/public/brand/favicon.svg) is the app-icon artwork. Prepared raster
+exports in `frontend/public/brand/` serve 16/32 px favicons, apple-touch 180 and PWA 192/512 icons.
+PWA tiles are safe for `any maskable` use.
 
 ## Colour
 
-The four bin colours are the heart of the palette. Each pastel **fill** has a dark **ink** companion
-for legible text/letters on top of it.
+Use these seven exact sRGB colours. Neutral first, accent second; give each layout one bold moment.
 
-| Role | Fill | Ink (text on fill) |
-|---|---|---|
-| Blue | `#7dd3fc` | `#00374a` |
-| Yellow | `#fcdf46` | `#3d3400` |
-| Mint | `#74dd9c` | `#00321b` |
-| Pink | `#f9a8d4` | `#5a1633` |
+| Colour | Hex | Role from the PDF |
+| --- | --- | --- |
+| Deep Ink | `#142C2A` | Text, structure, depth |
+| Maker Teal | `#006E63` | Primary brand, actions |
+| Workshop Orange | `#FF7447` | Energy, emphasis |
+| Citron | `#DFFF8F` | Fresh fields, short tags |
+| Sky Blue | `#B5CDFF` | Supporting information |
+| Warm Yellow | `#FFD447` | Small highlights, ink text |
+| Warm Cream | `#FFF4E8` | Canvas, breathing room |
 
-Neutrals:
+Use Cream on Teal (5.68:1), Ink on Cream (13.60:1), Ink on Orange (5.51:1),
+Ink on Yellow (10.37:1), Ink on Citron (13.23:1), or Ink on Sky (9.23:1).
+Avoid orange text on cream (2.47:1). Status always includes a word or icon alongside colour.
+Any product shades must be documented mixes of brand colours, never new logo fills.
+The control-plane primary ramp is derived from Teal toward Cream for lighter steps and Ink for darker
+steps; both 500 and 600 retain Maker Teal, per the design brief.
 
-| Role | Hex |
-|---|---|
-| Ink (near-black bg) | `#0c0d10` |
-| Charcoal (mark on light) | `#16181d` |
-| Cream (light page) | `#faf9f4` |
-| Surface (light panel) | `#efeee9` |
+## Typography
 
-## Type
+The PDF assigns Gilroy the primary role and Unbounded short geometric accents. The product follows
+the approved brand kit (SpaceWorks-Design, 15 October 2026) with one owner override (9 November 2026):
+the repository is AGPL, so only **Gilroy's free weights** ship and Outfit (OFL) carries running text.
 
-- **Clash Display** (700) — the "Space Works" wordmark, letter-spacing ≈ 0.04em.
-- **Space Grotesk** — supporting UI / marketing text.
-- **Press Start 2P** — the O-S-M-M pixels inside the bins (lettered mark only).
+- **Gilroy ExtraBold 800** for headings, titles, display numbers and other brand moments (every
+  `h1`–`h6` and `font-display` at 600+). **Gilroy Light 300** only for large light display text.
+- **Outfit** (variable, 400–700) for all body and UI text: body 400, labels and meta 500, emphasis
+  600–700. Machine strings use Outfit with tabular numerals and wider tracking. Preserve the original
+  outlined wordmark in all logos; the logo masters here are the kit's Figma exports.
+- **Unbounded** for one short accent phrase per layout. Never use it for long copy.
 
-## Usage
+PDF type scale (size / line height): display 72/76, heading 48/52, subheading 32/38, body 16/24,
+label 14/20, accent 48/56. Do not substitute other families or a monospace face: machine strings
+(IDs, secrets, URLs, pickup codes) use the `.code-text` utility, never `font-mono`.
 
-**Do**
-- Keep the four bin colours in **O-S-M-M order** (blue, yellow, mint, pink).
-- Use the **white** mark on dark, the **charcoal** mark on light.
-- Give it room — at least **one bin-height** of clear space on all sides.
+The faces are self-hosted from `frontend/public/fonts/` (`font-display: swap`, `font-synthesis:
+none`); `index.html` preloads Outfit and Gilroy ExtraBold. Outfit and Unbounded are under the SIL OFL
+(`frontend/public/fonts/LICENSES/OFL-*.txt`); Gilroy Light/ExtraBold are under the Radomir Tinkov Free
+Font EULA (`LICENSES/Gilroy-Free-Font-EULA.txt`). The commercial Gilroy 400–700 files are **not** in the
+repository. Print output (certificates, badges, cards) keeps the stored `"Gilroy"` design token but
+renders it in Outfit — see `backend/apps/events/certificates/fonts/README.md`. What the Gilroy EULA does
+and does not allow, and the redistribution risk, is recorded in `frontend/public/fonts/README.md`.
 
-**Don't**
-- Recolour the crate outline or stretch the mark.
-- Add shadows, gradients, or outlines to the bins.
-- Place the dark mark on a busy or low-contrast field.
+## Space, sizes and backgrounds
+
+Measure visible artwork. With H equal to symbol height, leave **H/4 clear space on every side**.
+Keep the supplied symbol-to-wordmark gap (H/6) and height relationship (1.25 times) intact;
+the master already contains these proportions. Clear space lies outside each SVG viewBox.
+
+- Screen minimum: **symbol height 48 px**, **primary lockup width 180 px**. Horizontal product
+  lockups also keep symbol height at least 48 px (about 288 px wide).
+- Sidebar: stacked 180 px wide with about 16 px clear space; mobile bar: symbol 48 with 12 px clear space.
+- Auth panel: stacked 240-320 px wide. Use the reversed master on dark grounds.
+- Print starting sizes: symbol 12 mm, primary lockup 40 mm. Proof at actual size.
+- Below 48 px, test a dedicated small-size asset. The product uses the supplied app-icon raster
+  exports for 16/32 px favicons; check legibility at the final size.
+
+Do not stretch, rotate, recolour panels, lose dark panels, add effects or change the type.
+Preserve every panel, internal gap and wordmark proportion. Do not use gradients, shadows or filters.
+Keep the artwork clear of neighbouring text and controls.
+
+## Icons and imagery
+
+Icons use a **24 px grid, 2 px stroke, rounded ends and consistent weight**. Lucide React implements
+that specification in the product, at a default rendered size of 20 px. Pair unfamiliar icons with
+labels; name icon-only buttons and hide decorative SVGs from assistive technology. Use typographic
+marks rather than emoji. Show real parts, hands and shared benches in soft daylight, with honest
+materials and the work in focus. Avoid staged tech cliches and busy backdrops.
+
+## Patch, the mascot
+
+Patch is an African painted wolf carrying a wrench: the friendly face, never the logo. The kit's
+`mascot/README.md` holds the full rules. In the product:
+
+- Use Patch for empty states, onboarding, loading, success moments and 404/error pages; use the logo
+  for headers, favicons, app icons and legal pages. Never put Patch inside or beside the box symbol.
+- Patch counts as the layout's one bold moment: no Unbounded phrase or orange flap on the same screen.
+- Use the files as supplied: no recolouring, filters, shadows, outlines, stretching or CSS mirroring
+  (heading left uses the approved `walk-left` art). Do not scale bitmaps past their size.
+- On dark surfaces use the `dark/` variants with the Warm Cream sticker border.
+- Honour reduced motion with a still frame. Patch is decorative (`aria-hidden`) beside real copy.
+- Patch appears on the 404 page (`NotFoundPatch`, light and dark walk sheets in
+  `frontend/public/brand/patch/`) and, since 0.12.0 (decision 306 addendum), as one still moment on
+  the public hub pages (`PatchMoment`): beside the native-apps copy on the landing page and beside the
+  closing call to action on `/features`. It trots on the spot once when it first scrolls into view and
+  is a still frame under reduced motion; it never sits over the tiled-symbol backgrounds, and nothing
+  orange shares its section. Kiosk surfaces never show Patch: the kiosk worker neither precaches
+  nor caches `/brand/patch/`. Empty states use the original programme illustrations in
+  `frontend/src/assets/illustrations/`.
+
+## Voice
+
+Sound like a helpful maker: clear, warm and specific. Make the next step easy. Use sentence case.
+The brand name in copy is **Space Works**; the outlined wordmark stays **space works**.
+
+| Say | Skip |
+| --- | --- |
+| Find the right part. | Optimize your asset ecosystem. |
+| No parts added yet. Add your first item. | Inventory database is empty. |
+| Couldn't save. Try again. | Oops! Something went horribly wrong. |
+
+Keep technical names accurate. On shelf labels, put the item name first and details second; test
+size and contrast at the intended viewing distance.

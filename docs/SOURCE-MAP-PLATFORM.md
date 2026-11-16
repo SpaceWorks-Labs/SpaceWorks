@@ -14,15 +14,19 @@
   host Python 3.10+ when available, otherwise in the backend image under the caller's UID/groups.
   Successful runs remove completed migration, orchestration and bucket-creation containers; failures
   preserve them for inspection. Database recovery remains a separate operation.
+  `scripts/setup-proxy-config.sh` writes the operator-managed nginx configuration for own-proxy
+  HTTPS and prints DNS, Certbot, install and reload steps. `scripts/setup-questions.sh` owns
+  the hosting-to-runner questionnaire, including control-plane, MFA and provider choices.
 - `scripts/install-host-bundle.sh` - stages an explicit host runtime bundle on installer upgrades,
   retaining replaced files in `backups/host-config-*`. The updater first verifies its database dump
   and pulls the new backend image, then replaces the bundle and refreshes Compose trust records.
   `scripts/retire-update-polling.sh` removes the former update cron without removing other jobs;
   `scripts/retire-update-tombstone.sh` removes only the retired app label from host configuration.
 
-- `backend/apps/backup/` — deployment backup + restore (Phase 5A/Lane E). `outer_manifest.py` owns the
-  signed readable manifest, `artifact_ledger.py` + `models_artifact_ledger.py` own durable component and
-  recipient custody, `activation.py` owns the access-switch/activation transition, and
+- `backend/apps/backup/` — deployment backup + restore (Phase 5A; one platform-readable component since
+  P1b). `age_recipients.py` owns canonical age keys and the platform recipient every archive uses;
+  `compound_archive.py` captures the single readable main; `outer_manifest.py` owns the signed v2
+  manifest, `artifact_ledger.py` + `models_artifact_ledger.py` own the durable artifact/component rows, and
   `artifact_protocol.py`/`promotion.py`/`reconciliation.py` own staged upload and the single availability
   transaction. `services.py` is the stable barrel over archive/access/lease/run lifecycle modules;
   `models_runs.py` + `runs.py` own scheduled-run cohort and coverage proofs, while `services_runs.py`
@@ -30,20 +34,26 @@
   upload journal), `offsite_client.py` (S3 byte primitives), `offsite_enqueue.py` (eligibility + journal rows), `offsite_push.py` (fan-out + read-back
   verification), `offsite_retention.py`, `offsite_reverify.py` (periodic re-read), `offsite_restore.py` (create-only rehydration),
   `tasks_offsite.py`, `views_offsite.py`, `services_offsite.py` (shared API/admin retirement and probes)
-  and the `fetch_offsite_archive` command. `views_recipients.py` explicitly re-exports enrollment and
-  lifecycle views; `views_recipients_common.py` owns their scoped lookups and error contracts. `module_gate.py` owns
-  the `backup` module key; `views_custody.py` is its read-only custody status.
+  and the `fetch_offsite_archive` command. `views_backup_status.py` is the read-only "Last backup" line
+  a makerspace's managers see (there is no `backup` module key any more).
   `archive_metadata.py` owns stable build/settings manifest facts;
-  `backup_control_preflight.py` remains the E9b restore validator behind the `restore_preflight.py`
-  compatibility surface. Archive builder, `restore_diff`, the global quarantine
+  `backup_control_preflight.py` is the restore validator behind the `restore_preflight.py`
+  compatibility surface and refuses a legacy partial archive. Archive builder, `restore_diff`, the global quarantine
   `middleware.py` + `route_policy.py`, `recovery.py`, `object_restore.py`,
   `operation_lock.py`, and the privileged host scripts (`scripts/restore.sh`, `scripts/import-backup.sh`)
   own verified archive recovery independently of release deployment. Project JWT classes (`accounts/tokens.py`, `token_guard.py`) stamp
-  `auth_generation`. `custody.py` is the makerspace-first/recipient-PK serialization boundary;
-  `tenant_exit_custody.py` derives Lane D's independent tenant-only floor, while
-  `tenant_exit_custody_alarms.py` reuses the decision-19b recipient selectors and parameterized durable
-  dispatcher for its retryable outbox. The `host_*` modules own H1's marker, consume-only capability socket,
+  `auth_generation`. The `host_*` modules own H1's marker, consume-only capability socket,
   signed grant, run ledger, supervisor and atomic pointer; `database_grants.py` is its independent
   PostgreSQL role boundary. `cloud_environment.py` captures host-rendered Cloud Compose interpolation into
   durable static configuration without consulting later ambient shells; only the root-only
-  `scripts/init-cloud-environment.py` renderer invokes Compose.
+  `scripts/init-cloud-environment.py` renderer invokes Compose. Per-space backup and restore (P1b B2:
+  nightly one-space archives, preview -> confirm -> apply, the `/control/` console and the one schedule
+  view) live in the `space_backup_*`/`space_restore_*` modules listed in
+  [SOURCE-MAP-RECOVERY.md](SOURCE-MAP-RECOVERY.md).
+
+- Lane F ops: `operations/route_metrics.py`, `config/gunicorn_metrics*.py` own
+  bounded multi-process HTTP instrumentation; `operations/control_storage.py` and
+  `templates/admin/storage.html` render existing storage totals. `config/web_analytics.py`
+  validates optional origins. `charts/spaceworks` supplies H1-preserving deployment,
+  migration-hook, service and ingress manifests. Operational contracts are in
+  `docs/monitoring-and-analytics.md` and `docs/helm.md`; installer paths are unchanged.

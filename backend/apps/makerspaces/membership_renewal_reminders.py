@@ -1,6 +1,8 @@
 """F1 renewal work and deduplicated local-calendar reminder steps."""
+from django.utils.translation import gettext
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import Exists, OuterRef
 
 from apps.accounts import rbac
@@ -84,14 +86,18 @@ def build(space, reminder, now, local_tz):
     event = "lapsed" if reminder.kind == "lapsed" else "renewal_due"
     if reminder.kind == "grace_started":
         event = "grace_started"
-    return ReminderMessage(title="Membership renewal", event=event)
+    return ReminderMessage(title=gettext("Membership renewal"), event=event)
 
 
+@transaction.atomic
 def dispatch(space, reminder, message, now, local_tz):
     from apps.makerspaces.membership_renewal_notifications import notify_term
     term = _current(space, reminder, now)
     if term:
-        notify_term(term, message.event)
+        result = notify_term(term, message.event, reminder=reminder)
+        from apps.operations.notifications_p2 import finish_reminder
+        finish_reminder(space, reminder, now, result)
+        return result
 
 
 MEMBERSHIP_RENEWAL_SOURCE = ReminderSource(

@@ -15,3 +15,6 @@ staticfiles
 htmlcov
 # Celery beat's schedule shelve — runtime state, never part of an image.
 celerybeat-schedule*
+
+# Local verification code is not part of the serving image or source fingerprint.
+tests/

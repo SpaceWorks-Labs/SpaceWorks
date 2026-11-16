@@ -119,10 +119,12 @@ class RawImportRepository:
         ]
         try:
             with connection.cursor() as cursor:
-                cursor.execute(
-                    f"INSERT INTO {table_sql} ({columns_sql}) VALUES {values_sql}",
-                    parameters,
-                )
+                from apps.payments.document_import import document_import_rows
+                with document_import_rows(cursor, model, [row[model._meta.pk.column] for row in rows]):
+                    cursor.execute(
+                        f"INSERT INTO {table_sql} ({columns_sql}) VALUES {values_sql}",
+                        parameters,
+                    )
         except DatabaseError as exc:
             if "pii write fence" in str(exc).lower():
                 raise TenantImportFenceRequired(

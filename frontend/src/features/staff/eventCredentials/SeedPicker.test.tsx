@@ -1,0 +1,21 @@
+import { afterEach, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { staffRequest } from "../../../lib/api";
+import { SeedPicker } from "./SeedPicker";
+vi.mock("../../../lib/api", () => ({ staffRequest: vi.fn(), staffRequestBlob: vi.fn(), memberRequest: vi.fn() }));
+afterEach(() => vi.clearAllMocks());
+it("installs event-owned artwork before handing a seed to the editor", async () => {
+  const document = { version: 2, page_width_mm: 85.6, page_height_mm: 53.98, layers: [] };
+  const installed = { id: 12, event_id: 42, event_version: 8, kind: "badge", document, stock: "cr80-landscape" };
+  vi.mocked(staffRequest).mockImplementation(async path => String(path).includes("/install/") ? installed as never : { results: [{ seed_id: "badge-maker", seed_version: 2, document }] } as never);
+  const onInstall = vi.fn(); const client = new QueryClient();
+  render(<QueryClientProvider client={client}><SeedPicker eventId={42} version={7} kind="badge" stock="cr80-landscape" onInstall={onInstall} /></QueryClientProvider>);
+  fireEvent.click(await screen.findByText("Install design"));
+  await waitFor(() => expect(onInstall.mock.calls[0]?.[0]).toEqual(installed));
+  const call = vi.mocked(staffRequest).mock.calls.find(([path]) => String(path).includes("/install/"))!;
+  const body = JSON.parse(String(call[1]?.body));
+  expect(body).toMatchObject({ expected_version: 7, seed_version: 2, stock: "cr80-landscape" });
+  expect(call[1]?.headers).toMatchObject({ "Idempotency-Key": body.operation_id });
+  client.clear();
+});

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -22,6 +23,7 @@ from apps.integrations.models import (
 )
 from apps.makerspaces.servability import servable_queryset
 from apps.openapi_errors import errors
+from config.locale_resolution import display
 
 
 @extend_schema(tags=["Makerspaces"], summary="List or update makerspace notification rules")
@@ -90,7 +92,7 @@ class NotificationRulesView(APIView):
         features = [
             {
                 "key": feature.value,
-                "label": feature.label,
+                "label": display(feature.label),
                 "events": list(notification_catalog.FEATURE_EVENTS[feature]),
             }
             for feature in NotificationFeature
@@ -180,7 +182,7 @@ class NotificationRulesView(APIView):
         for (_feature, channel), enabled in desired_preferences.items():
             if enabled and channel_module_blocks(makerspace, channel):
                 return Response(
-                    {"detail": f"The {channel} module is not installed."},
+                    {"detail": gettext('The {channel} module is not installed.').format(channel=channel)},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

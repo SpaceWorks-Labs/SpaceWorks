@@ -1,0 +1,15 @@
+{{- $root := . -}}
+{{- range list "backend" "live" "frontend" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ . }}
+spec:
+  type: {{ if eq . "frontend" }}{{ $root.Values.service.type }}{{ else }}ClusterIP{{ end }}
+  selector: {app: {{ include "spaceworks.name" $root }}-{{ . }}}
+  ports:
+    - name: http
+      port: {{ if eq . "frontend" }}{{ $root.Values.service.port }}{{ else }}8000{{ end }}
+      targetPort: http
+{{- end }}

@@ -16,7 +16,27 @@ def _default(reason, *, allow_superadmin_override=False):
 
 from .target_projection_w7_events import EVENT_FIELD_PROJECTION
 
+from .target_projection_events_programme import TARGET_FIELDS as PROGRAMME_TARGET_FIELDS
+from .target_projection_reimbursements import TARGET_FIELDS as REIMBURSEMENT_TARGET_FIELDS
+
 TARGET_FIELD_PROJECTION = {
+    ("inventory.EquipmentKitTemplate", "published_for_contexts"): TargetField(False, reason="Target staff must explicitly republish imported kits."),
+    ("makerspaces.Makerspace", "loan_context_generations"): _default("Target creates fresh context generations."),
+    ("accounts.User", "account_restored_at"): TargetField(None, reason="Target issues its own revocable sessions."),
+    ("accounts.User", "deletion_username"): TargetField("", reason="Target chooses its own random erasure pseudonym."),
+    ("accounts.User", "deletion_email_ciphertext"): TargetField("", reason="Source platform-encrypted erasure address never travels."),
+    ("makerspaces.MakerspacePublicPage", "published_revision"): TargetField(None, reason="Fresh target publication required."),
+    ("events.EventPage", "published_revision"): TargetField(None, reason="Fresh target release required."),
+    ("makerspaces.Makerspace", "email_provider"): TargetField("inherit", reason="Target operator configures mail transport."),
+    ("makerspaces.Makerspace", "email_provider_config"): TargetField("", reason="Source encrypted transport secrets never travel."),
+    **PROGRAMME_TARGET_FIELDS,
+    **REIMBURSEMENT_TARGET_FIELDS,
+    ("bookings.BookingResourcePage", "released"): TargetField(False, reason="Target staff explicitly release resource content."),
+    ("events.EventCertificateArtwork", "version_id"): TargetField(
+        "", reason="Source bucket version identity is replaced; SHA-256 pins imported bytes.",
+    ),
+    ("events.EventPage", "released"): TargetField(False, reason="Target staff explicitly release imported website content."),
+    ("makerspaces.Makerspace", "website_embed_origins"): TargetField([], reason="Target staff establish framing trust."),
     **EVENT_FIELD_PROJECTION,
     ("makerspaces.MembershipPlan", "auto_renew"): TargetField(False, reason="Target staff enable automatic renewal."),
     ("makerspaces.MembershipPlan", "reminder_days_before"): TargetField([], reason="Target staff choose mail offsets."),
@@ -55,10 +75,7 @@ TARGET_FIELD_PROJECTION = {
         None, reason="The cleared target domain has no target-side change timestamp."
     ),
     ("makerspaces.Makerspace", "hidden_from_central_directory"): TargetField(
-        False, reason="A hidden row without a domain violates ck_makerspace_hidden_requires_domain."
-    ),
-    ("makerspaces.Makerspace", "superadmin_access_enabled"): TargetField(
-        True, reason="Source policy cannot remove the tenant from target superadmin authority."
+        False, reason="Directory visibility on the target is its Space Manager's choice (#192)."
     ),
     ("makerspaces.Makerspace", "archived_at"): TargetField(
         None, reason="Source lifecycle state cannot make the new target tenant unreachable."
@@ -106,11 +123,12 @@ TARGET_FIELD_PROJECTION = {
         allow_superadmin_override=True,
         reason="Feature installation is target superadmin policy.",
     ),
-    ("makerspaces.MakerspaceMembership", "receives_notifications"): _default(
-        "Imported memberships start with the target notification default."
+    ("makerspaces.MakerspaceMembership", "receives_notifications"): TargetField(
+        use_model_default=True, condition=("_staff_account", False),
+        reason="Member memberships start with the target notification default."
     ),
     ("makerspaces.MakerspaceMembership", "role"): TargetField(
-        "custom",
+        "custom", condition=("_staff_account", False),
         reason="The target Member role has no legacy enum identity; its scalar fallback is CUSTOM.",
     ),
     ("makerspaces.MakerspaceMembership", "can_refer"): _default(
@@ -145,6 +163,9 @@ TARGET_FIELD_PROJECTION = {
     ),
 }
 
+from .catalog_profiles import projections as profile_projections
+TARGET_FIELD_PROJECTION.update(profile_projections(TargetField))
+
 from .target_projection_devices import DEVICE_FIELD_RESETS  # noqa: E402
 
 TARGET_FIELD_PROJECTION.update({
@@ -165,3 +186,10 @@ TARGET_FIELD_PROJECTION.update(wp3_projections(TargetField))
 
 from .projection_wp4 import FIELD_PROJECTION
 TARGET_FIELD_PROJECTION.update(FIELD_PROJECTION)
+from .catalog_broadcasts import projections as broadcast_projections
+TARGET_FIELD_PROJECTION.update(broadcast_projections(TargetField))
+
+from .catalog_messaging import projections as messaging_projections
+TARGET_FIELD_PROJECTION.update(messaging_projections(TargetField))
+from .catalog_r2_l1 import projections as r2_l1_projections  # noqa: E402
+TARGET_FIELD_PROJECTION.update(r2_l1_projections(TargetField))

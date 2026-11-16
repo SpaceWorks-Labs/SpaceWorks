@@ -1,0 +1,20 @@
+/* Motion tokens. Durations: fast = press/hover/exit, base = overlays and indicators, slow = route
+   settle (nothing on an interaction path runs longer). Curves: standard = most movement, enter =
+   arrivals (decelerate), exit = departures (accelerate). Distances are tokens too, so kiosk and TV
+   screens can zero them and keep only the fade. Mirrored in src/lib/motion/motion.ts. */
+:root {
+  --sw-dur-fast: 120ms;
+  --sw-dur-base: 180ms;
+  --sw-dur-slow: 240ms;
+  --sw-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sw-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --sw-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --sw-enter-y: 8px;
+  --sw-pop-scale: 0.98;
+  --sw-pop-offset: 4px;
+  --sw-slide-x: 100%;
+}
+.sw-kiosk, .sw-tv { --sw-enter-y: 0px; --sw-pop-scale: 1; --sw-pop-offset: 0px; --sw-slide-x: 0%; }
+@media (prefers-reduced-motion: reduce) {
+  :root { --sw-dur-fast: 0ms; --sw-dur-base: 0ms; --sw-dur-slow: 0ms; --sw-enter-y: 0px; --sw-pop-scale: 1; --sw-pop-offset: 0px; --sw-slide-x: 0%; }
+}

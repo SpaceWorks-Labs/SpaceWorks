@@ -5,6 +5,7 @@ from apps.events.views_checkin_station import (
     EventStationSessionView,
     EventStationSyncView,
 )
+from apps.events.views_station_badges import EventStationBadgeReceiptsView, EventStationBadgeView
 
 
 urlpatterns = [
@@ -22,5 +23,15 @@ urlpatterns = [
         "event-checkin-stations/<uuid:public_token>/sync/",
         EventStationSyncView.as_view(),
         name="event-check-in-station-sync",
+    ),
+    path(
+        "event-checkin-stations/<uuid:public_token>/badge/<int:registration_id>/",
+        EventStationBadgeView.as_view(),
+        name="event-check-in-station-badge",
+    ),
+    path(
+        "event-checkin-stations/<uuid:public_token>/badge-receipts/",
+        EventStationBadgeReceiptsView.as_view(),
+        name="event-check-in-station-badge-receipts",
     ),
 ]

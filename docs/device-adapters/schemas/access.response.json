@@ -1,0 +1,51 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/access.response.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed": {
+      "type": "boolean"
+    },
+    "decision": {
+      "enum": [
+        "allowed",
+        "denied"
+      ],
+      "type": "string"
+    },
+    "detail": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "expires_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "max_seconds": {
+      "maximum": 172800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "reason": {
+      "format": "code",
+      "maxLength": 48,
+      "type": "string"
+    },
+    "session_id": {
+      "maximum": 4611686018427387904,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "time_limit_seconds": {
+      "maximum": 172800,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "allowed",
+    "reason"
+  ],
+  "type": "object"
+}

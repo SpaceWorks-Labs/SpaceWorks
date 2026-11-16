@@ -12,7 +12,7 @@ export function getMachineUsage(machineId: number) {
   return staffRequest<MachineCollection<MachineUsageEntry>>(`/admin/machines/${machineId}/usage`);
 }
 
-export function addMachineUsage(machineId: number, payload: { hours: string; note: string }) {
+export function addMachineUsage(machineId: number, payload: { hours: string; note: string; member?: number; started_at?: string }) {
   return staffRequest<MachineUsageEntry>(`/admin/machines/${machineId}/usage`, {
     method: "POST", body: JSON.stringify(payload),
   });

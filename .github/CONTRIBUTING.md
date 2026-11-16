@@ -11,7 +11,7 @@ to get a change merged.
 3. Confirm the backend test suite is green before you start:
 
    ```bash
-   cd backend && pytest
+   ./scripts/dev.sh test
    ```
 
 ## Project layout
@@ -19,7 +19,7 @@ to get a change merged.
 - `backend/` — Django 6 + DRF API. Apps live under `backend/apps/` (accounts, makerspaces,
   inventory, hardware_requests, printing, operations, integrations, audit, evidence, …).
 - `frontend/` — React 19 + Vite + TypeScript (public catalog + staff console).
-- `docs/` — self-hosting guide, handover notes, and design specs.
+- `docs/` — user, operator and developer guides; [docs/README.md](../docs/README.md) indexes them.
 
 ## Architecture rules (please don't regress these)
 
@@ -42,7 +42,7 @@ to get a change merged.
 - **Document every API endpoint in OpenAPI** (drf-spectacular `@extend_schema`). An undocumented
   endpoint is incomplete.
 - **Production-quality code:** validate inputs at the boundary, handle external-service failure
-  explicitly (the Check-In API must fail safe), use structured logging, return typed errors, and
+  explicitly (Telegram alerts must fail safe), use structured logging, return typed errors, and
   emit an audit-log entry from every state-changing endpoint.
 - **Tests:** add/extend pytest coverage under `backend/tests/` for behavior changes (test external
   behavior, not implementation). Keep the suite green.
@@ -64,13 +64,19 @@ to get a change merged.
 
 ## Pull requests
 
-1. Make sure `cd backend && pytest` passes and the frontend builds (`cd frontend && npm run build`).
+1. Run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally before pushing, and build the frontend
+   (`cd frontend && npm run build`). Actions builds/releases backend/frontend images, promotes rolling
+   tags and optionally deploys through the self-hosted runner; `pip-audit` runs on PRs. Tests are local only.
 2. Update docs (`README.md`, `docs/`, and `CLAUDE.md` if you change tooling/architecture) alongside
    the code.
 3. Open the PR against `dev`—not `main`—describing **what** changed and **why**, and call out any
-   required env vars, migrations, or manual steps. Maintainers promote tested changes from `dev`
-   to `main` through the release process.
-4. Be responsive to review feedback — verify suggestions technically rather than applying blindly.
+   required env vars, migrations, or manual steps.
+4. **Only the maintainer, [@Shaan-Shoukath](https://github.com/Shaan-Shoukath), merges into
+   `main`.** Every merge to `main` publishes a release, so `main` is protected: nobody else can push
+   to it or merge a PR into it, and a PR targeting `main` from anyone else will be retargeted to
+   `dev` or closed. The maintainer promotes tested changes from `dev` to `main` through the release
+   process.
+5. Be responsive to review feedback — verify suggestions technically rather than applying blindly.
 
 ## Reporting issues
 

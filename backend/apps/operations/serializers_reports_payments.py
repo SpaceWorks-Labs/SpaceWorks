@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.operations.serializers_reports_base import (
     ReportRowsFieldMixin,
@@ -19,10 +20,10 @@ class PaymentReconciliationReportRowSerializer(TypedReportBaseSerializer):
     subject_type = serializers.CharField()
     status = serializers.CharField()
     payment_count = serializers.IntegerField()
-    amount_total = serializers.DecimalField(max_digits=20, decimal_places=2)
-    outstanding_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
+    amount_total = MoneyField(max_digits=21, decimal_places=3)
+    outstanding_amount = MoneyField(max_digits=21, decimal_places=3)
     settlement_method = serializers.CharField(allow_blank=True)
-    refunded_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
+    refunded_amount = MoneyField(max_digits=21, decimal_places=3)
 
 
 class PaymentReconciliationReportSerializer(ReportRowsFieldMixin):
@@ -32,9 +33,9 @@ class PaymentReconciliationReportSerializer(ReportRowsFieldMixin):
 class PaymentCashBookRowSerializer(TypedReportBaseSerializer):
     currency = serializers.CharField()
     method = serializers.CharField()
-    collected_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
-    refunded_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
-    net_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
+    collected_amount = MoneyField(max_digits=21, decimal_places=3)
+    refunded_amount = MoneyField(max_digits=21, decimal_places=3)
+    net_amount = MoneyField(max_digits=21, decimal_places=3)
 
 
 class PaymentCashBookSerializer(ReportRowsFieldMixin):

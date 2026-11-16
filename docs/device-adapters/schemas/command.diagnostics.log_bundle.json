@@ -1,0 +1,27 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/command.diagnostics.log_bundle.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "command_ref": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "max_bytes": {
+      "maximum": 10485760,
+      "minimum": 1024,
+      "type": "integer"
+    },
+    "since_seconds": {
+      "maximum": 604800,
+      "minimum": 60,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "max_bytes"
+  ],
+  "type": "object"
+}

@@ -2,13 +2,13 @@
 
 Each route requires a normally authenticated User, the path-bound Station cookie with
 the exact-origin/CSRF check, and the ``X-Kiosk-Operator-Lease`` header naming a lease
-of that same User. Authority is re-checked on every call; capability-off answers 400,
+of that same User. Authority is re-checked on every call; capability-off answers 404,
 missing authority 403. The tenant always comes from the Station token.
 """
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -39,10 +39,10 @@ from apps.tenant_migration.gate_runtime import assert_write_allowed
 
 
 ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Invalid payload or capability disabled."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid payload."),
     401: OpenApiResponse(ErrorSerializer, description="Operator is not signed in."),
     403: OpenApiResponse(ErrorSerializer, description="Invalid Station session, lease or authority."),
-    404: OpenApiResponse(ErrorSerializer, description="Target not found in this makerspace."),
+    404: OpenApiResponse(ErrorSerializer, description="Target not found in this makerspace, or the capability is turned off."),
     429: OpenApiResponse(ErrorSerializer, description="Request rate limit exceeded."),
 }
 TAGS = ["Kiosk stations"]
@@ -62,7 +62,8 @@ def _authorize(request, public_token, operations):
         credential=credential, session_id=session_id, user=request.user,
     )
     if not any(capabilities_live(station.makerspace, op) for op in operations):
-        raise ValidationError({"feature": "This kiosk operation is disabled for this makerspace."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off("kiosk_operation", "This kiosk operation is turned off for this makerspace.")
     actions = leases.current_actions(lease, request.user, station)
     if not any(
         operation_permitted(station.makerspace, station.kind, op, actions)

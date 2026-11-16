@@ -8,10 +8,16 @@ one online lives in `apps.payments_rail.urls_member`.
 from django.urls import path
 
 from apps.payments.views_member import MemberPaymentHistoryView
+from apps.payments.views_offline import MemberPaidClaimView
+from apps.payments.views_refund_member import MemberRefundRequestView, MemberRefundWithdrawView
 from apps.payments.views_documents import MemberDocumentListView, MemberDocumentGrantView
 
 
 urlpatterns = [
+    path("makerspaces/<int:makerspace_id>/payments/<int:payment_id>/paid-claim", MemberPaidClaimView.as_view(),
+         name="member-paid-claim"),
+    path("makerspaces/<int:makerspace_id>/payments/<int:payment_id>/refund-request", MemberRefundRequestView.as_view(), name="member-refund-request"),
+    path("makerspaces/<int:makerspace_id>/refund-requests/<int:case_id>/withdraw", MemberRefundWithdrawView.as_view(), name="member-refund-withdraw"),
     path("makerspaces/<int:makerspace_id>/payment-documents", MemberDocumentListView.as_view(), name="member-payment-documents"),
     path("makerspaces/<int:makerspace_id>/payment-documents/<int:document_id>/download-url", MemberDocumentGrantView.as_view(), name="member-payment-document-url"),
     path(
@@ -20,3 +26,8 @@ urlpatterns = [
         name="member-payment-history",
     ),
 ]
+
+# Release 2 L18: a giver's own gifts, 80G receipts and pledges.
+from apps.payments.donations.urls import MEMBER_PATTERNS as _DONATION_MEMBER_PATTERNS  # noqa: E402
+
+urlpatterns += _DONATION_MEMBER_PATTERNS

@@ -1,30 +1,63 @@
 """Atomically establish command ownership and its immutable evidence identity."""
 
+from datetime import timedelta
+
+from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from apps.audit import services as audit
-from apps.evidence.models import EvidenceObjectRetentionState, EvidenceUploadFinalization
-from apps.evidence.services_upload import issue_upload
+from apps.evidence.models import EvidencePhoto, EvidenceObjectRetentionState, EvidenceUploadFinalization
+from apps.evidence.services_upload import issue_upload, upload_maximum
 from apps.evidence.storage import presigned_upload
 from apps.hardware_requests.models_replay import ReplayCommand
 from apps.hardware_requests.kiosk_online_commands import channel_meta
 from apps.hardware_requests.replay_failures import ReplayFailure
 from apps.hardware_requests.replay_fingerprint import fingerprint
 from apps.hardware_requests.replay_records import age, audit_meta, ownership, result, scoped_targets
+from apps.makerspaces.models import Makerspace, StorageQuotaReservation
+from apps.makerspaces.storage_reservations import reserve
+from apps.storage_capabilities.presigning import renewal_authorization
 from apps.tenant_migration.gate_runtime import assert_write_allowed
 
 
 def _upload_again(command, envelope):
     if command.evidence_id is None or command.state != ReplayCommand.State.PREPARED:
         return None
+    # Cleanup and attachment acquire the space before the photo and receipt.
+    # Keep that order while deciding whether this authorization is still live.
+    space = Makerspace.objects.select_for_update(no_key=True).get(pk=command.makerspace_id)
+    photo = EvidencePhoto.objects.select_for_update().get(pk=command.evidence_id)
     if EvidenceObjectRetentionState.objects.filter(evidence_id=command.evidence_id).exists():
         raise ReplayFailure("evidence_invalid")
     if EvidenceUploadFinalization.objects.filter(
         evidence_id=command.evidence_id, status=EvidenceUploadFinalization.Status.FINALIZED,
     ).exists():
         return None
-    photo = command.evidence
-    upload = presigned_upload(photo.object_key, envelope["evidence"]["content_type"])
+    if photo.consumption_state == EvidencePhoto.ConsumptionState.CONSUMED:
+        raise ReplayFailure("evidence_invalid")
+    row = StorageQuotaReservation.objects.select_for_update().filter(object_key=photo.object_key).first()
+    if row is None:
+        # Pre-reservation commands need fresh admission for the SAME photo/key;
+        # they must not obtain a database-free renewal of the old signature.
+        maximum = upload_maximum(space, photo.size_bytes)
+        row = reserve(space.pk, photo.object_key, maximum, bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                      staging_key="staging/" + photo.object_key, ttl=settings.EVIDENCE_URL_TTL_SECONDS,
+                      kind="evidence")
+    if (row.makerspace_id != space.pk or row.kind != "evidence" or row.converted
+            or row.cleaning or row.released or row.expires_at <= timezone.now()
+            or row.storage_endpoint != (settings.AWS_S3_ENDPOINT_URL or "")
+            or row.bucket != settings.AWS_STORAGE_BUCKET_NAME
+            or row.final_bucket != settings.AWS_STORAGE_BUCKET_NAME
+            or row.staging_key != "staging/" + photo.object_key):
+        raise ReplayFailure("evidence_invalid")
+    with renewal_authorization(bucket=row.bucket, key=row.staging_key, max_bytes=row.size_bytes):
+        upload = presigned_upload(photo.object_key, photo.content_type, max_bytes=row.size_bytes,
+                                  exact_bytes=photo.size_bytes)
+    # Signing can take time. Retain the unchanged byte debt until at least one
+    # whole URL TTL AFTER signing, atomically, before returning the authorization.
+    row.expires_at = max(row.expires_at, timezone.now() + timedelta(seconds=settings.EVIDENCE_URL_TTL_SECONDS))
+    row.save(update_fields=["expires_at"])
     return {"evidence_id": photo.pk, "object_key": photo.object_key,
             "upload_url": upload["url"], "fields": upload.get("fields", {}),
             **({"method": upload["method"], "headers": upload.get("headers", {})} if "method" in upload else {})}

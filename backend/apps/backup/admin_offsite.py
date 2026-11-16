@@ -11,6 +11,7 @@ from apps.backup.models import BackupDestination, BackupDestinationUpload
 from apps.backup.serializers_offsite import BackupDestinationSerializer
 from apps.backup.services_offsite import probe_destination, retire_destination
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class BackupDestinationForm(forms.ModelForm):
@@ -60,7 +61,7 @@ class BackupDestinationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         # Retirement wipes secrets while preserving the protected journal.
         return False
 
-    @admin.action(description="Test selected destinations", permissions=["change"])
+    @admin.action(description=gettext_lazy("Test selected destinations"), permissions=["change"])
     def test_destinations(self, request, queryset):
         for destination in queryset:
             if destination.retired_at is not None:
@@ -73,7 +74,7 @@ class BackupDestinationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
                 messages.SUCCESS if result["ok"] else messages.ERROR,
             )
 
-    @admin.action(description="Retire selected destinations and wipe credentials", permissions=["change"])
+    @admin.action(description=gettext_lazy("Retire selected destinations and wipe credentials"), permissions=["change"])
     def retire_destinations(self, request, queryset):
         for destination in queryset:
             try:

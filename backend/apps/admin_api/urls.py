@@ -8,24 +8,42 @@ from .urls_machine_service import urlpatterns as machine_service_urlpatterns
 from .urls_machines import urlpatterns as machine_urlpatterns
 from .urls_makerspaces import urlpatterns as makerspace_urlpatterns
 from .urls_membership_plans import urlpatterns as membership_plan_urlpatterns
+from .urls_membership_lifecycle import urlpatterns as membership_lifecycle_urlpatterns
+from .urls_guest_passes import urlpatterns as guest_pass_urlpatterns
+from .urls_member_units import urlpatterns as member_unit_urlpatterns
+from .urls_community import urlpatterns as community_urlpatterns
+from .urls_completeness import urlpatterns as completeness_urlpatterns  # decision 242
 from .urls_memberships import management_urlpatterns, roster_urlpatterns
 from .urls_notifications import urlpatterns as notification_urlpatterns
 from .urls_platform import settings_urlpatterns, urlpatterns as platform_urlpatterns
+from .urls_platform_parity import urlpatterns as platform_parity_urlpatterns
 from .urls_staff import urlpatterns as staff_urlpatterns
+from .urls_staff_roles import urlpatterns as staff_role_urlpatterns
+from .urls_security import urlpatterns as space_security_urlpatterns
+from .urls_space_restore import urlpatterns as space_restore_urlpatterns
 from .urls_utils import _separable as _separable
 
 
 from apps.accounts.urls_security import admin_urlpatterns as security_urlpatterns
 
 urlpatterns = [
+    *staff_role_urlpatterns,
     *security_urlpatterns,
+    *space_security_urlpatterns,
     *platform_urlpatterns,
+    *platform_parity_urlpatterns,
+    *space_restore_urlpatterns,
     *roster_urlpatterns,
     *machine_service_urlpatterns,
     *management_urlpatterns,
     *machine_urlpatterns,
     *certification_urlpatterns,
     *membership_plan_urlpatterns,
+    *membership_lifecycle_urlpatterns,
+    *guest_pass_urlpatterns,
+    *member_unit_urlpatterns,
+    *community_urlpatterns,
+    *completeness_urlpatterns,
     *settings_urlpatterns,
     *makerspace_urlpatterns,
     *inventory_urlpatterns,

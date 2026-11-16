@@ -16,6 +16,10 @@ import re
 VERSION = "v1"
 REQUEST_DOMAIN = b"spaceworks-device-request"
 ENROLLMENT_DOMAIN = b"spaceworks-device-enrollment"
+# Release 2 L10 extension (docs/device-printer-protocol.md, "Machine integrations"): the
+# signature protocol is unchanged (still v1); the heartbeat's optional status snapshot and
+# the integration job reports carry their own payload schema version.
+INTEGRATION_SCHEMA_VERSION = 1
 MIN_NONCE_BYTES = 16
 MAX_NONCE_BYTES = 64
 

@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.http import Http404
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,16 +12,22 @@ from apps.makerspaces.models_loan_policy import MakerspaceLoanPolicy
 from apps.makerspaces.servability import servable_queryset
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 423, 503)}
+# The loan policy is a lending decision, so the Inventory Manager (EDIT_INVENTORY) owns it
+# beside the Space Manager -- mirrored by `loan_policy_settings.update_loan_policy`.
+POLICY_ACTIONS = (rbac.Action.MANAGE_MAKERSPACE, rbac.Action.EDIT_INVENTORY)
 
 
 class ReturnPolicyView(APIView):
     permission_classes = [IsActiveStaff]
 
     def _makerspace(self, request, makerspace_id):
-        makerspace = get_object_or_404(rbac.scope_by_action(
-            request.user, rbac.Action.MANAGE_MAKERSPACE, servable_queryset(), field="pk",
-        ), pk=makerspace_id)
-        return require_module(makerspace, "request_workflow")
+        for action in POLICY_ACTIONS:
+            makerspace = rbac.scope_by_action(
+                request.user, action, servable_queryset(), field="pk",
+            ).filter(pk=makerspace_id).first()
+            if makerspace is not None:
+                return require_module(makerspace, "request_workflow")
+        raise Http404
 
     @extend_schema(tags=["Admin makerspaces"], request=None,
                    responses={200: ReturnPolicySerializer, **ERRORS})
@@ -30,7 +36,13 @@ class ReturnPolicyView(APIView):
         return Response(ReturnPolicySerializer(MakerspaceLoanPolicy.for_makerspace(makerspace)).data)
 
     @extend_schema(tags=["Admin makerspaces"], request=ReturnPolicySerializer,
-                   responses={200: ReturnPolicySerializer, **ERRORS})
+                   responses={200: ReturnPolicySerializer, **ERRORS},
+                   description=(
+                       "Every changed field is authorized by the settings-authority layer (#101): "
+                       "the Space Manager always; the Inventory Manager changes loan length and "
+                       "renewals without a grant (#128 C-11d) and the other loan limits with the "
+                       "inventory settings grant. 403 `setting_not_delegated` / `setting_locked`. "
+                       "Audited as settings.changed per field."))
     def patch(self, request, makerspace_id):
         makerspace = self._makerspace(request, makerspace_id)
         from apps.makerspaces.loan_policy_settings import update_loan_policy

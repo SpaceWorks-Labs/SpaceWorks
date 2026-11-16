@@ -5,7 +5,6 @@ import type {
   CardMembershipRow,
   CardResolveResult,
   CardStatus,
-  CardTemplate,
   MemberCard,
   MemberCardPage,
   ReissueReason,
@@ -14,7 +13,6 @@ import type {
 export const memberCardKeys = {
   list: (makerspaceId: number, status: CardStatus) =>
     ["member-cards", makerspaceId, status] as const,
-  template: (makerspaceId: number) => ["member-card-template", makerspaceId] as const,
 };
 
 const base = (makerspaceId: number) => `/admin/makerspaces/${makerspaceId}/member-cards`;
@@ -87,10 +85,10 @@ export function useReissueCard(makerspaceId: number) {
 export function useRevokeCard(makerspaceId: number) {
   return useCardMutation(
     makerspaceId,
-    ({ cardId, reason }: { cardId: number; reason?: string }) =>
+    ({ cardId, reason, note }: { cardId: number; reason?: string; note: string }) =>
       staffRequest<MemberCard>(`/admin/member-cards/${cardId}/revoke`, {
         method: "POST",
-        body: JSON.stringify(reason ? { reason } : {}),
+        body: JSON.stringify(reason ? { reason, note } : { note }),
       }),
   );
 }
@@ -101,7 +99,7 @@ export function usePrintCard() {
       const blob = await staffRequestBlob(`/admin/member-cards/${card.id}/print.pdf`, {
         method: "POST",
       });
-      downloadPdf(blob, `member-card-${card.card_number}.pdf`);
+      downloadPdf(blob, `member-card-${card.number_display || card.card_number}.pdf`);
     },
   });
 }
@@ -127,26 +125,5 @@ export function useResolveCard(makerspaceId: number) {
         method: "POST",
         body: JSON.stringify({ payload: payload.trim() }),
       }),
-  });
-}
-
-export function useCardTemplate(makerspaceId: number) {
-  return useQuery({
-    queryKey: memberCardKeys.template(makerspaceId),
-    queryFn: () =>
-      staffRequest<CardTemplate>(`/admin/makerspaces/${makerspaceId}/member-card-template`),
-  });
-}
-
-export function useSaveCardTemplate(makerspaceId: number) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (template: CardTemplate) =>
-      staffRequest<CardTemplate>(`/admin/makerspaces/${makerspaceId}/member-card-template`, {
-        method: "PUT",
-        body: JSON.stringify(template),
-      }),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: memberCardKeys.template(makerspaceId) }),
   });
 }

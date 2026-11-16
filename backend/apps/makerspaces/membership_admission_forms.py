@@ -20,4 +20,6 @@ def answers_for(row):
     except (ValueError, TypeError):
         logger.warning("membership_application_snapshot_invalid", extra={"request_id": row.pk})
         return None
-    return snapshot if isinstance(snapshot, dict) and isinstance(snapshot.get("answers"), list) else None
+    if not isinstance(snapshot, dict) or not isinstance(snapshot.get("answers"), list):
+        return None
+    return {key: value for key, value in snapshot.items() if key != "join_fields"}  # O-B2: private extras

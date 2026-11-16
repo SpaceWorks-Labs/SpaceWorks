@@ -76,7 +76,7 @@ def _sanitize_meta(value, *, key=None):
     return _fingerprint(*sensitive) if sensitive else value
 
 
-def record(actor, action, *, makerspace=None, target=None, target_type="", meta=None):
+def record(actor, action, *, makerspace=None, target=None, target_type="", meta=None, using="default"):
     target_id = ""
     if isinstance(target, models.Model):
         target_type = target._meta.label_lower
@@ -129,7 +129,7 @@ def record(actor, action, *, makerspace=None, target=None, target_type="", meta=
                 created_at=created_at,
             )
 
-    row = AuditLog.objects.create(
+    row = AuditLog.objects.using(using).create(
         actor_id=actor_id,
         action=action,
         target_type=target_type,

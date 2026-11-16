@@ -7,7 +7,7 @@ from apps.admin_api.serializers_payments import (
     PlatformStripeConnectSettingsSerializer,
 )
 from apps.audit import services as audit
-from apps.makerspaces.domain_verification import is_self_host
+from apps.makerspaces.domain_verification import hosts_other_spaces
 from apps.openapi_errors import errors
 from apps.payments.models import PlatformStripeConnectSettings
 
@@ -38,7 +38,7 @@ class PlatformStripeConnectSettingsView(generics.RetrieveUpdateAPIView):
     http_method_names = ["get", "patch", "head", "options"]
 
     def get_object(self):
-        if is_self_host():
+        if not hosts_other_spaces():
             raise Http404
         return PlatformStripeConnectSettings.load()
 

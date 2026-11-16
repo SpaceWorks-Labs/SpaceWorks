@@ -167,6 +167,23 @@ class TransactionPkMap:
             return self._unused_uuids(model, count)
         raise UnsupportedPrimaryKey(unsupported_primary_key_reason(model))
 
+    def discard_unmaterialized(self, model, source_pk):
+        """Drop a reserved leaf identity when target namespace collision drops its row.
+
+        Only unreferenced models qualify: discarding a parent would leave dangling
+        mappings in dependent rows. Never remove a mapping for an inserted row.
+        """
+        require_import_transaction(self.using)
+        if model._meta.related_objects:
+            raise ValueError("Only an unreferenced import leaf may discard its mapping.")
+        target_pk = self.lookup(model, source_pk)
+        if model._base_manager.using(self.using).filter(pk=target_pk).exists():
+            raise ValueError("A materialized identity cannot be discarded.")
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                f"DELETE FROM {TABLE_NAME} WHERE model_label = %s AND source_pk = %s",
+                [model._meta.label, str(source_pk)],
+            )
     def _unused_uuids(self, model, count):
         pk_field = model._meta.pk
         values = [pk_field.get_default() for _index in range(count)]

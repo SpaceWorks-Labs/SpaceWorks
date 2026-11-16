@@ -20,6 +20,7 @@ from apps.accounts.transition_services import register_walk_in_revocation_hook
 from apps.audit import services as audit
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.staff_authority import lock_and_validate_staff_authority
+from apps.accounts.staff_identity import is_person
 
 MAX_FAILED_ATTEMPTS = 5
 _CODE_PATTERN = re.compile(r"^MC1-(?P<id>[1-9][0-9]*)-(?P<secret>[A-Z2-9]{4}(?:-[A-Z2-9]{4}){3})$")
@@ -75,7 +76,8 @@ def _locked_target(makerspace_id: int, membership_id: int):
 
 def _credential_free_walk_in(user: User) -> bool:
     return bool(
-        not user.is_tenant_dump_stub
+        is_person(user)
+        and not user.is_tenant_dump_stub
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
         and user.is_walk_in

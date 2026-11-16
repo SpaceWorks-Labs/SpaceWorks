@@ -1,8 +1,8 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-
 import { staffRequest } from "../../lib/api";
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
+import { CenteredCardLayout } from "../../components/layouts";
 
 export type RecoveryState = {
   mode: "normal" | "quiesced" | "quarantined";
@@ -20,27 +20,18 @@ export function RecoveryQuarantinePanel({ state, onAcknowledged }: { state: Reco
     }),
     onSuccess: onAcknowledged,
   });
-  return (
-    <main className="desk-shell grid place-items-center px-5">
-      <section className="desk-panel w-full max-w-2xl p-6">
-        <SpaceWorksBadge className="mb-5" />
-        <p className="eyebrow text-danger">Recovery quarantine</p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">Authority is suspended</h1>
-        <p className="mt-3 text-sm text-muted">{state.quarantine_reason}</p>
-        <div className="mt-5 rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-ink">
-          <p className="font-semibold">Residual risk</p>
-          <p className="mt-2">{state.residual_risk}</p>
-        </div>
-        <label className="mt-5 flex items-start gap-3 text-sm text-ink">
-          <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-          I reviewed the restore report where one exists and accept this exact residual risk.
-        </label>
-        <button className="desk-button-danger mt-5" type="button" disabled={!confirmed || acknowledge.isPending} onClick={() => acknowledge.mutate()}>
-          {acknowledge.isPending ? "Acknowledging…" : "Lift quarantine"}
-        </button>
-        {acknowledge.error ? <p className="mt-3 text-sm text-danger" role="alert">{acknowledge.error.message}</p> : null}
-      </section>
-    </main>
-  );
+  return <CenteredCardLayout state={{ status: "ready" }} width={480}
+    media={{ icon: "TriangleAlert", tone: "danger" }} eyebrow={t`Recovery quarantine`}
+    title={t`Staff access is paused`} body={state.quarantine_reason}
+    primary={{ label: t`Lift quarantine`, tone: "danger", pending: acknowledge.isPending, pendingLabel: t`Acknowledging…`,
+      disabled: !confirmed, disabledReason: t`Review and accept the residual risk first.`, onClick: () => acknowledge.mutate() }}
+    content={<div className="grid gap-4">
+      <div className="rounded-xl border border-danger-line bg-panel p-4 text-sm text-danger">
+        <p className="font-semibold">{t`Residual risk`}</p><p className="mt-2">{state.residual_risk}</p>
+      </div>
+      <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-ink">
+        <input className="mt-1" type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
+        {t`I reviewed the restore report where one exists and accept this exact residual risk.`}</label>
+      {acknowledge.error ? <p className="text-sm text-danger" role="alert">{acknowledge.error.message}</p> : null}
+    </div>} />;
 }
-

@@ -20,12 +20,7 @@ export function invalidatePublicInventory(queryClient: QueryClient, slug?: strin
   }
 }
 
-export function invalidatePrintingViews(queryClient: QueryClient, makerspaceId: number | "all") {
-  if (makerspaceId !== "all") {
-    queryClient.invalidateQueries({ queryKey: ["print-printers", makerspaceId] });
-    queryClient.invalidateQueries({ queryKey: ["print-spools", makerspaceId] });
-    queryClient.invalidateQueries({ queryKey: ["print-requests", makerspaceId] });
-  }
+export function invalidatePrintingViews(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ["printer-service-report"] });
   queryClient.invalidateQueries({ queryKey: ["operations-report"] });
 }

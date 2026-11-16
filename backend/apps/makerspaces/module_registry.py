@@ -3,8 +3,9 @@
 Single source of truth for module keys, their defaults, frontend exposure and
 inter-module dependencies. The parallel hand-kept lists that used to drift apart
 -- ``models.DEFAULT_ENABLED_MODULES``, ``platform.MODULE_WORKFLOWS``,
-``capabilities.FEATURE_MODULES`` and the hardcoded ``printing -> machine_service``
-rule -- all derive from here now.
+``capabilities.FEATURE_MODULES`` and the old hardcoded ``printing -> machine_service``
+rule -- all derive from here now. Retired keys (``printing``, decision 340b) are not
+registered; ``module_aliases`` maps them to the live key they are read as.
 
 This module must NOT import ``apps.makerspaces.models``. ``models`` imports the
 derived helpers from here, so the reverse edge would be a circular import.
@@ -12,7 +13,6 @@ derived helpers from here, so the reverse edge would be a circular import.
 
 from apps.makerspaces.module_registry_definitions import (
     FEATURE_PARENT,
-    GROUP_BACKUP,
     GROUP_BOOKINGS,
     GROUP_DEVICES,
     GROUP_EVENTS,

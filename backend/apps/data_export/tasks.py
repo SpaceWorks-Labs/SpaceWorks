@@ -1,3 +1,4 @@
+from apps.operations.cloud_jobs import bounded
 from celery import shared_task
 from django.utils import timezone
 
@@ -18,7 +19,7 @@ def purge_expired_exports_task(self):
         DataExportJob.objects.filter(expires_at__lte=timezone.now()).order_by("pk")[:100]
     )
     counts = {"deleted": 0, "skipped": 0}
-    for job in expired:
+    for job in bounded.items(expired):
         with fanout_tenant_write(
             job.makerspace_id,
             operation="expired_data_export_purge",

@@ -1,7 +1,8 @@
-from dataclasses import dataclass
+from django.utils.translation import gettext
 import hashlib
 import json
 from zoneinfo import ZoneInfo
+from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
@@ -12,19 +13,17 @@ from apps.events.badge_templates import (
     MAX_BADGES,
     MAX_PAGES,
     MAX_TEXT_LENGTH,
+    SAFE_FIELDS,
     normalize_badge_template,
     page_layout,
 )
 from apps.events.exceptions import EventInvalidTransition
 from apps.events.models import Event, EventRegistration
+from apps.events import event_authority
+from apps.events.event_permissions import MANAGE_REGISTRATIONS, CHECK_IN, EDIT_DETAILS
+from rest_framework.exceptions import PermissionDenied
 from apps.makerspaces.guards import require_module_locked
-
-
-@dataclass(frozen=True)
-class BadgeSnapshot:
-    registration_id: int
-    checkin_token: str
-    fields: tuple[tuple[str, str], ...]
+from apps.events.certificates.print_snapshot import BadgeSnapshot
 
 
 def _answer_values(registration):
@@ -47,12 +46,12 @@ def _text(value):
     value = str(value)
     if len(value) > MAX_TEXT_LENGTH:
         raise serializers.ValidationError(
-            {"fields": f"Selected badge text exceeds {MAX_TEXT_LENGTH} characters."}
+            {"fields": gettext('Selected badge text exceeds {MAX_TEXT_LENGTH} characters.').format(MAX_TEXT_LENGTH=MAX_TEXT_LENGTH)}
         )
     return value
 
 
-def _field_values(event, registration, selectors):
+def _field_values(event, registration, selectors, crew=None):
     labels = {str(row["id"]): row["label"] for row in (event.custom_form or [])}
     answers = _answer_values(registration)
     date_time = timezone.localtime(event.starts_at, timezone=ZoneInfo(event.timezone_name))
@@ -64,6 +63,7 @@ def _field_values(event, registration, selectors):
         "registration_number": ("Registration", str(registration.pk)),
         "email": ("Email", registration.email),
         "phone": ("Phone", registration.phone),
+        "crew_role": ("Crew", (crew or {}).get(registration.pk, "")),
     }
     output = []
     for selector in selectors:
@@ -78,8 +78,13 @@ def _field_values(event, registration, selectors):
 
 @transaction.atomic
 def save_badge_template(event, template, *, actor):
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+    assert_write_allowed(event.makerspace_id)
     locked = Event.objects.select_for_update().get(pk=event.pk)
     require_module_locked(locked.makerspace_id, "events")
+    from apps.events.staff_grant_locks import lock_authority
+    actor = lock_authority(actor, locked)
+    event_authority.require(actor, locked, EDIT_DETAILS)
     if locked.status == Event.Status.CANCELLED:
         raise EventInvalidTransition("Cancelled events cannot change badge templates.")
     normalized = normalize_badge_template(template, locked)
@@ -97,22 +102,34 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
                    include_attended=False):
     if not registration_ids or len(registration_ids) > MAX_BADGES:
         raise serializers.ValidationError(
-            {"registration_ids": f"Choose between 1 and {MAX_BADGES} registrations."}
+            {"registration_ids": gettext('Choose between 1 and {MAX_BADGES} registrations.').format(MAX_BADGES=MAX_BADGES)}
         )
     if len(registration_ids) != len(set(registration_ids)):
-        raise serializers.ValidationError({"registration_ids": "Duplicate IDs are not allowed."})
+        raise serializers.ValidationError({"registration_ids": gettext("Duplicate IDs are not allowed.")})
     locked = Event.objects.select_for_update().get(pk=event.pk)
     require_module_locked(locked.makerspace_id, "events")
+    from apps.events.staff_grant_locks import lock_authority
+    actor = lock_authority(actor, locked)
+    event_authority.require(actor, locked, CHECK_IN)
+    manager = event_authority.can_manage_grants(actor, locked)
+    if not manager and template_override is not None:
+        raise PermissionDenied()
     if locked.status not in (Event.Status.PUBLISHED, Event.Status.COMPLETED):
         raise EventInvalidTransition("Badges require a published or completed event.")
     normalized = normalize_badge_template(
         template_override if template_override is not None else locked.badge_template,
         locked,
     )
+    # Check the effective, locked template before reading any registration PII.
+    # Event-scoped: the tenant Event Manager (MANAGE_EVENTS) or this event's
+    # manage_registrations grant -- the same people who already read these answers on
+    # the roster. Tenant VIEW_AUDIT is no longer required; the render stays audited below.
+    if set(normalized["fields"]) - SAFE_FIELDS:
+        event_authority.require(actor, locked, MANAGE_REGISTRATIONS)
     _width, _height, columns, rows = page_layout(normalized)
     pages = (len(registration_ids) + columns * rows - 1) // (columns * rows)
     if pages > MAX_PAGES:
-        raise serializers.ValidationError({"registration_ids": "The badge PDF is too large."})
+        raise serializers.ValidationError({"registration_ids": gettext("The badge PDF is too large.")})
     registrations = list(EventRegistration.objects.select_for_update().filter(
         event=locked, pk__in=registration_ids,
     ).order_by("pk"))
@@ -123,10 +140,19 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
         allowed.add(EventRegistration.Status.ATTENDED)
     if any(registration.status not in allowed for registration in registrations):
         raise EventInvalidTransition("A selected registration is not eligible for a badge.")
+    if not manager and any(row.status != EventRegistration.Status.ATTENDED for row in registrations):
+        raise PermissionDenied()
+    from apps.events.contributions.crew_reads import crew_labels
+    crew = crew_labels(locked, [row.pk for row in registrations]) if "crew_role" in normalized["fields"] else {}
     snapshots = tuple(BadgeSnapshot(
         registration_id=registration.pk,
-        checkin_token=str(registration.checkin_token),
-        fields=_field_values(locked, registration, normalized["fields"]),
+        event_id=locked.pk, member_id=registration.member_id,
+        authorized_fields=_field_values(locked, registration, normalized["fields"], crew),
+        template_revision=hashlib.sha256(json.dumps(normalized, sort_keys=True).encode()).hexdigest(),
+        stock="legacy-sheet", logo_artwork_revision=None, credential_generation=None,
+        credential_render_handle=None, presentation_id=None, presentation_version=None,
+        source_profile_id=None, source_avatar_revision=None, photo_sha256=None, photo_render_handle=None,
+        created_at=timezone.now(), expires_at=timezone.now() + timedelta(minutes=5),
     ) for registration in registrations)
     selected_digest = hashlib.sha256(json.dumps(
         sorted(registration_ids), separators=(",", ":")

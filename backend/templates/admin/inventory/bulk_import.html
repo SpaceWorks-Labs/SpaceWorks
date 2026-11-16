@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
   <form method="post" enctype="multipart/form-data" novalidate>
@@ -10,17 +11,17 @@
   </form>
 
   {% if preview %}
-    <h2>Preview</h2>
+    <h2>{% translate "Preview" %}</h2>
     <p>
-      Total: {{ preview.summary.total }},
-      create: {{ preview.summary.create }},
-      update: {{ preview.summary.update }},
-      errors: {{ preview.summary.errors }}
+      {% blocktranslate trimmed with total=preview.summary.total create=preview.summary.create update=preview.summary.update errors=preview.summary.errors %}Total: {{ total }},
+      create: {{ create }},
+      update: {{ update }},
+      errors: {{ errors }}{% endblocktranslate %}
     </p>
     {% if preview.errors %}
       <ul>
         {% for row in preview.errors %}
-          <li>Row {{ row.row }}: {{ row.errors }}</li>
+          <li>{% blocktranslate trimmed with row=row.row errors=row.errors %}Row {{ row }}: {{ errors }}{% endblocktranslate %}</li>
         {% endfor %}
       </ul>
     {% endif %}

@@ -58,6 +58,10 @@ class NotificationDestination(models.Model):
     # Fernet ciphertext. Only the `webhook` channel carries one: the receiver verifies
     # `X-SpaceWorks-Signature` with it. Never echoed; the API exposes `signing_secret_set`.
     signing_secret = models.TextField(blank=True, default="")
+    # Parity E-B8: the secret being replaced by a rotation keeps verifying until this moment, so a receiver can
+    # deploy the new secret without dropping events. Fernet ciphertext; never echoed.
+    previous_signing_secret = models.TextField(blank=True, default="")
+    previous_secret_valid_until = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     payload_version = models.PositiveSmallIntegerField(default=1, choices=[(1, "Legacy"), (2, "Structured")])
     created_at = models.DateTimeField(auto_now_add=True)
@@ -98,6 +102,12 @@ class NotificationDestination(models.Model):
 
     def set_signing_secret(self, raw):
         self.signing_secret = encrypt_value(raw)
+
+    def set_previous_signing_secret(self, raw):
+        self.previous_signing_secret = encrypt_value(raw) if raw else ""
+
+    def get_previous_signing_secret(self):
+        return decrypt_value(self.previous_signing_secret) if self.previous_signing_secret else ""
 
     def get_signing_secret(self):
         return decrypt_value(self.signing_secret) if self.signing_secret else ""

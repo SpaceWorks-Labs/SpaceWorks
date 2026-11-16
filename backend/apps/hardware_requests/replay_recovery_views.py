@@ -16,9 +16,9 @@ from apps.hardware_requests.replay_recovery_service import failed_replay, resolv
 from apps.makerspaces.station_views_public import no_store
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer, description=detail) for code, detail in (
-    (400, "Invalid filter/resolution or disabled required module."),
+    (400, "Invalid filter/resolution."),
     (401, "Authentication required."), (403, "Account, current action or origin refused."),
-    (404, "Failure is unavailable in your scope."), (409, "Resolution/replacement conflict."),
+    (404, "Failure is unavailable in your scope, or a required module is turned off."), (409, "Resolution/replacement conflict."),
     (423, "Tenant source gate closed."),
 )}
 TAGS = ["Admin kiosk recovery"]

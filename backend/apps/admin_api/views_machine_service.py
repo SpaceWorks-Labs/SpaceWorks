@@ -2,6 +2,7 @@
 
 from apps.admin_api.views_machine_service_actions import (
     MachineServiceAcceptView,
+    MachineServiceCancelView,
     MachineServiceCollectView,
     MachineServiceCompleteView,
     MachineServiceFailView,
@@ -21,6 +22,7 @@ from apps.admin_api.views_machine_service_requests import (
 
 __all__ = [
     "MachineServiceAcceptView",
+    "MachineServiceCancelView",
     "MachineServiceCollectView",
     "MachineServiceCompleteView",
     "MachineServiceFailView",

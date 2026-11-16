@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -27,9 +28,9 @@ def add_qr_to_batch(batch, qr, label_text="", sort_order=None):
     # Serialize additions and relabels against the first send/print transition.
     batch = QrPrintBatch.objects.select_for_update().get(pk=batch.pk)
     if batch.status != QrPrintBatch.Status.DRAFT:
-        raise ValidationError("Only draft QR print batches can be modified.")
+        raise ValidationError(gettext("Only draft QR print batches can be modified."))
     if qr.makerspace_id != batch.makerspace_id:
-        raise ValidationError("QR code belongs to a different makerspace.")
+        raise ValidationError(gettext("QR code belongs to a different makerspace."))
     resolved_label = label_text or _target_label(qr)
     explicit_sort_order = sort_order is not None
     if sort_order is None:
@@ -143,7 +144,7 @@ def mark_batch_printed(actor, batch):
         # archived batch from being silently unarchived back to printed.
         if locked.status != QrPrintBatch.Status.DRAFT:
             raise ValidationError(
-                f"Only draft QR print batches can be marked printed (status: {locked.status})."
+                gettext('Only draft QR print batches can be marked printed (status: {status}).').format(status=locked.status)
             )
         locked.status = QrPrintBatch.Status.PRINTED
         locked.printed_at = timezone.now()

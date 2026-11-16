@@ -1,5 +1,6 @@
 """Durable Phase S capture and publication lineage for Lane D."""
 
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -12,9 +13,9 @@ class TenantDumpCapture(models.Model):
         CAPTURING = "capturing", "Capturing"
         CAPTURED = "captured", "Captured"
         DERIVING = "deriving", "Deriving"
-        PENDING_PUBLICATION = "pending_publication", "Pending publication"
+        PENDING_PUBLICATION = "pending_publication", gettext_noop("Pending publication")
         PUBLISHED = "published", "Published"
-        REFUSED = "refused", "Publication refused"
+        REFUSED = "refused", gettext_noop("Publication refused")
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -39,8 +40,10 @@ class TenantDumpCapture(models.Model):
     source_deployment_identity = models.JSONField(default=dict)
     source_makerspace_id = models.BigIntegerField()
     source_makerspace_slug = models.SlugField(max_length=100)
-    superadmin_access_at_decision = models.BooleanField()
-    frozen_tenant_recipients = models.JSONField(default=list)
+    # One-shot tenant recipients supplied with this export only (#111 Q7): canonical
+    # {public_recipient, fingerprint} rows sealing the DEK envelope and, with the
+    # platform key, the outer envelope. They confer no standing custody.
+    tenant_recipients = models.JSONField(default=list)
     gate_owner_id = models.UUIDField(null=True, blank=True)
     gate_fencing_token = models.PositiveBigIntegerField(default=0)
     database_snapshot_at = models.DateTimeField(null=True, blank=True)

@@ -2,22 +2,20 @@ from django import forms
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from rest_framework.exceptions import APIException
 
-from apps.accounts import rbac
 from apps.admin_api import bulk_import
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.admin_limits import form_limit_error
+from apps.makerspaces.guards import SurfaceOff, require_module
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
-from rest_framework.exceptions import ValidationError as DRFValidationError
 
 
 SESSION_KEY = "admin_inventory_bulk_import_preview"
 
 
 def visible_makerspaces():
-    qs = servable_queryset()
-    hidden = rbac.superadmin_hidden_makerspace_ids()
-    return qs.exclude(id__in=hidden) if hidden else qs
+    return servable_queryset()
 
 
 class BulkImportUploadForm(forms.Form):
@@ -44,16 +42,22 @@ def bulk_import_view(model_admin, request):
             else:
                 try:
                     require_module(makerspace, "bulk_import")
-                except DRFValidationError as exc:
-                    form.add_error(None, exc.detail)
+                except SurfaceOff as exc:
+                    form.add_error(None, exc.message)
                     result = None
                 else:
-                    result = bulk_import.apply_import(
-                        request.user,
-                        makerspace,
-                        stored["rows"],
-                        stored["mapping"],
-                    )
+                    try:
+                        result = bulk_import.apply_import(
+                            request.user,
+                            makerspace,
+                            stored["rows"],
+                            stored["mapping"],
+                        )
+                    except APIException as exc:
+                        if not isinstance(exc.detail, dict) or "code" not in exc.detail:
+                            raise
+                        form.add_error(None, form_limit_error(exc))
+                        result = None
                 if result is None:
                     preview = None
                     return _render(model_admin, request, form, preview, stored)
@@ -75,8 +79,8 @@ def bulk_import_view(model_admin, request):
             makerspace = form.cleaned_data["makerspace"]
             try:
                 require_module(makerspace, "bulk_import")
-            except DRFValidationError as exc:
-                form.add_error(None, exc.detail)
+            except SurfaceOff as exc:
+                form.add_error(None, exc.message)
             else:
                 preview = bulk_import.preview_import(makerspace, rows, {})
                 request.session[SESSION_KEY] = {

@@ -5,6 +5,7 @@ Split out of `membership_services` (which re-exports both names) when that file 
 membership or request row.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -16,6 +17,10 @@ from apps.makerspaces.models import Makerspace, MakerspaceMembership, Membership
 
 
 def revoke_membership(actor, membership, reason=""):
+    # One account per person: this is the COMMUNITY revocation (cards, terms, presence,
+    # admission cleanup). A staff-track row is revoked by the staff-roles service.
+    if membership.track == MakerspaceMembership.Track.STAFF:
+        raise PermissionDenied(gettext("Revoke staff roles from the staff roles screen."))
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=membership.makerspace_id)
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
@@ -23,10 +28,10 @@ def revoke_membership(actor, membership, reason=""):
             raise PermissionDenied()
         if (not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)
                 and rbac.actions_for_membership(membership)):
-            raise PermissionDenied("Managing staff memberships requires makerspace administration.")
+            raise PermissionDenied(gettext("Managing staff memberships requires makerspace administration."))
         actor_is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
         if not actor_is_superadmin and rbac.Action.MANAGE_MAKERSPACE in rbac.actions_for_membership(membership):
-            raise PermissionDenied("Only a superadmin can revoke a makerspace manager.")
+            raise PermissionDenied(gettext("Only a superadmin can revoke a makerspace manager."))
         return _revoke_locked(actor, membership, makerspace, reason)
 
 
@@ -41,6 +46,11 @@ def _revoke_locked(actor, membership, makerspace, reason, *, self_leave=False):
     membership.can_refer = False
     membership.can_verify = False
     membership.save()
+    from apps.integrations.models_push import PushDevice
+
+    PushDevice.objects.filter(user_id=membership.user_id, makerspace=makerspace, active=True).update(
+        active=False, invalidated_at=timezone.now(),
+    )
     if changed:
         audit.record(actor, "membership.left" if self_leave else "membership.revoked",
                      makerspace=makerspace, target=membership,
@@ -62,7 +72,7 @@ def _revoke_locked(actor, membership, makerspace, reason, *, self_leave=False):
     end_sessions_for_membership(actor, membership)
     for row in MembershipRequest.objects.select_for_update().filter(
         makerspace=makerspace, user=membership.user,
-        state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment"],
+        state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested"],
     ):
         from apps.makerspaces.membership_admission_payments import close_admission
         close_admission(actor, row, "revoked")
@@ -78,14 +88,14 @@ def revoke_request(actor, request, reason=""):
             raise PermissionDenied()
         if (request.assigned_role_id and request.assigned_role.granted_actions
                 and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)):
-            raise PermissionDenied("Managing staff invitations requires makerspace administration.")
+            raise PermissionDenied(gettext("Managing staff invitations requires makerspace administration."))
         if request.state == MembershipRequest.State.ACTIVE and request.user_id:
             membership = MakerspaceMembership.objects.filter(makerspace=makerspace, user=request.user).first()
             if membership:
                 return revoke_membership(actor, membership, reason)
-        was_requested = request.state in ("requested", "awaiting_vouches", "awaiting_payment")
+        was_requested = request.state in ("requested", "awaiting_vouches", "awaiting_payment", "changes_requested")
         from apps.makerspaces.membership_admission_payments import close_admission
-        if request.state in ("requested", "invited", "awaiting_vouches", "awaiting_payment"):
+        if request.state in ("requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested"):
             close_admission(actor, request, "revoked")
         request.state = MembershipRequest.State.REVOKED
         request.decided_by = actor

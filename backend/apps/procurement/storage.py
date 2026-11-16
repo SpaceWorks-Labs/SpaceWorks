@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.storage_clients import s3_client
 from dataclasses import dataclass
 import logging
 import uuid
@@ -30,7 +32,7 @@ class ReceiptObjectValidationResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -63,7 +65,7 @@ def staging_key(final_key):
 def assert_receipt_object_key_for_makerspace(object_key, makerspace_id):
     if not str(object_key).startswith(f"procurement/{makerspace_id}/"):
         raise ValidationError(
-            {"object_key": "Receipt key does not belong to this makerspace."}
+            {"object_key": gettext("Receipt key does not belong to this makerspace.")}
         )
 
 
@@ -72,26 +74,30 @@ def assert_receipt_object_key_for_item(item, object_key):
 
     assert_receipt_object_key_for_makerspace(object_key, item.makerspace_id)
     if ToBuyReceipt.objects.filter(object_key=object_key).exists():
-        raise ValidationError({"object_key": "This receipt is already attached."})
+        raise ValidationError({"object_key": gettext("This receipt is already attached.")})
 
 
 def ext_for(content_type, filename):
     allowed_mime = set(settings.PROCUREMENT_RECEIPT_ALLOWED_MIME)
     allowed_exts = ALLOWED_EXTENSIONS_BY_MIME.get(content_type)
     if content_type not in allowed_mime or not allowed_exts:
-        raise ValidationError({"content_type": "Unsupported receipt document type."})
+        raise ValidationError({"content_type": gettext("Unsupported receipt document type.")})
 
     safe_name = (filename or "").replace("\\", "/").rsplit("/", 1)[-1]
     ext = safe_name.rsplit(".", 1)[-1].lower() if "." in safe_name else ""
     if ext not in allowed_exts:
         raise ValidationError(
-            {"filename": "Filename extension does not match the content type."}
+            {"filename": gettext("Filename extension does not match the content type.")}
         )
     return ext
 
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            import sys
+            from apps.private_uploads import presign
+            return presign(sys.modules[__name__], object_key, content_type, settings.PROCUREMENT_RECEIPT_MAX_BYTES)
         if settings.STORAGE_PRESIGN_METHOD == "put":
             url = _public_client().generate_presigned_url(
                 "put_object",
@@ -155,6 +161,10 @@ def object_size(object_key):
 
 
 def finalize_upload(object_key, max_bytes):
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        import sys
+        from apps.private_uploads import finalize
+        return finalize(sys.modules[__name__], object_key, max_bytes)
     if settings.STORAGE_PRESIGN_METHOD != "put":
         return object_size(object_key)
 
@@ -198,11 +208,11 @@ def presigned_get_url(object_key):
 def validate_receipt_object(object_key):
     size = object_size(object_key)
     if size is None:
-        raise ValidationError({"object_key": "Receipt document was not found."})
+        raise ValidationError({"object_key": gettext("Receipt document was not found.")})
     if size == 0:
-        raise ValidationError({"object_key": "Receipt document is empty."})
+        raise ValidationError({"object_key": gettext("Receipt document is empty.")})
     if size > settings.PROCUREMENT_RECEIPT_MAX_BYTES:
-        raise ValidationError({"object_key": "Receipt document exceeds the size limit."})
+        raise ValidationError({"object_key": gettext("Receipt document exceeds the size limit.")})
 
     try:
         response = _client().get_object(
@@ -220,7 +230,7 @@ def validate_receipt_object(object_key):
             content_type = image_type
     if content_type not in set(settings.PROCUREMENT_RECEIPT_ALLOWED_MIME):
         raise ValidationError(
-            {"object_key": "Receipt document is not a valid PDF or image."},
+            {"object_key": gettext("Receipt document is not a valid PDF or image.")},
             code="invalid_document",
         )
     return ReceiptObjectValidationResult(size=size, content_type=content_type)

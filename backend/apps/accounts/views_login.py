@@ -9,12 +9,11 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, device_memory
 from apps.accounts.auth_cookies import (
     clear_refresh_cookies,
     set_refresh_cookies,
 )
-from apps.accounts.login_methods import password_login_enabled
 from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from apps.accounts.schemas_auth import (
     LoginRequestSerializer,
@@ -27,6 +26,7 @@ from apps.openapi import LOGIN_EXAMPLE
 
 class LoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "login"
     serializer_class = LoginSerializer
@@ -50,11 +50,6 @@ class LoginView(TokenObtainPairView):
         examples=[LOGIN_EXAMPLE],
     )
     def post(self, request, *args, **kwargs):
-        if not password_login_enabled():
-            return Response(
-                {"detail": "Password sign-in is not available on this deployment."},
-                status=403,
-            )
         username = request.data.get("username", "") if isinstance(request.data, Mapping) else ""
         serializer = self.get_serializer(data=request.data)
         try:
@@ -69,7 +64,6 @@ class LoginView(TokenObtainPairView):
         data = serializer.validated_data
         if data.get("mfa_required"):
             response = Response(data)
-            clear_refresh_cookies(response)
             response["Cache-Control"] = "no-store"
             return response
         refresh = data.pop("refresh")
@@ -81,6 +75,7 @@ class LoginView(TokenObtainPairView):
         )
         response = Response({"access": data["access"], "surface": data["surface"], "user": data["user"]})
         set_refresh_cookies(response, refresh, request)
+        device_memory.attach(response, request)  # S-B: the remembered-device cookie
         return response
 
 

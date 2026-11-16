@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.models_social import (
@@ -7,6 +8,8 @@ from apps.accounts.models_social import (
     SocialSurface,
 )
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
+from apps.accounts.serializers_attestation import AttestationPayloadField
+from apps.accounts.serializers_device import APP_VERSION_HELP
 
 
 class SocialProviderKeyField(serializers.CharField):
@@ -35,22 +38,26 @@ class SocialNonceSerializer(serializers.Serializer):
     def validate(self, attrs):
         if (attrs["delivery"] == "web") != (attrs["client_platform"] == "web"):
             raise serializers.ValidationError(
-                "Web delivery requires the web client platform."
+                gettext("Web delivery requires the web client platform.")
             )
         grant = getattr(self.context.get("request"), "device_grant", None)
         has_challenge = bool(attrs.get("challenge"))
         if attrs["delivery"] == SocialDelivery.WEB and has_challenge:
-            raise serializers.ValidationError("Web social login cannot use attestation.")
+            raise serializers.ValidationError(gettext("Web social login cannot use attestation."))
         if attrs["delivery"] == SocialDelivery.DEVICE and (
             (grant is None) != has_challenge
         ):
             raise serializers.ValidationError(
-                "A first device login requires an attestation challenge."
+                gettext("A first device login requires an attestation challenge.")
             )
         return attrs
 
 
 class SocialLoginSerializer(serializers.Serializer):
+    authorization_code = serializers.CharField(max_length=4096, required=False, write_only=True, trim_whitespace=False,
+                                               help_text="Optional Apple authorization code for later token revocation. Exchange failures never fail sign-in.")
+    redirect_uri = serializers.URLField(max_length=2048, required=False, default="", allow_blank=True,
+                                       help_text="Original same-origin Apple web authorization redirect URI; required when exchanging a web code.")
     id_token = serializers.CharField(max_length=16384, write_only=True)
     nonce = serializers.CharField(max_length=512, write_only=True)
     surface = serializers.ChoiceField(choices=SocialSurface.choices)
@@ -62,31 +69,37 @@ class SocialLoginSerializer(serializers.Serializer):
     challenge = serializers.CharField(
         max_length=512, required=False, write_only=True, trim_whitespace=False
     )
-    attestation = serializers.JSONField(required=False, write_only=True)
+    attestation = AttestationPayloadField(required=False, write_only=True)
+    app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
-            raise serializers.ValidationError("Invalid attestation payload.")
+            raise serializers.ValidationError(gettext("Invalid attestation payload."))
         return value
 
     def validate(self, attrs):
         if (attrs["delivery"] == "web") != (attrs["client_platform"] == "web"):
-            raise serializers.ValidationError("Invalid social delivery platform.")
+            raise serializers.ValidationError(gettext("Invalid social delivery platform."))
+        if attrs.get("authorization_code") and attrs["delivery"] == "web":
+            from apps.accounts.oidc_browser_attempts import _valid_redirect
+            from apps.accounts.social_nonces import request_origin
+            if not _valid_redirect(attrs["redirect_uri"], request_origin(self.context["request"])):
+                raise serializers.ValidationError(gettext("Apple code exchange must use this site's redirect URI."))
         grant = getattr(self.context.get("request"), "device_grant", None)
         has_attestation = bool(attrs.get("challenge")) and bool(
             attrs.get("attestation")
         )
         if bool(attrs.get("challenge")) != bool(attrs.get("attestation")):
             raise serializers.ValidationError(
-                "The challenge and attestation must be presented together."
+                gettext("The challenge and attestation must be presented together.")
             )
         if attrs["delivery"] == SocialDelivery.WEB and has_attestation:
-            raise serializers.ValidationError("Web social login cannot use attestation.")
+            raise serializers.ValidationError(gettext("Web social login cannot use attestation."))
         if attrs["delivery"] == SocialDelivery.DEVICE and (
             (grant is None) != has_attestation
         ):
             raise serializers.ValidationError(
-                "A first device login requires attestation."
+                gettext("A first device login requires attestation.")
             )
         return attrs
 
@@ -103,8 +116,12 @@ class SocialLinkSerializer(serializers.Serializer):
     )
 
     def validate_client_platform(self, value):
-        if value != SocialClientPlatform.WEB:
-            raise serializers.ValidationError("Browser linking requires the web client.")
+        # A device session links with its own platform; a browser session links as web.
+        native = getattr(self.context.get("request"), "device_grant", None) is not None
+        if native and value == SocialClientPlatform.WEB:
+            raise serializers.ValidationError(gettext("Device linking requires the android or ios client."))
+        if not native and value != SocialClientPlatform.WEB:
+            raise serializers.ValidationError(gettext("Browser linking requires the web client."))
         return value
 
 
@@ -125,3 +142,6 @@ class SocialLoginResponseSerializer(serializers.Serializer):
     device_grant = serializers.DictField(required=False)
     user = serializers.DictField()
     outcome = serializers.CharField()
+    device_trust = serializers.CharField(
+        required=False, help_text="Device delivery only: send it back in the `X-Device-Trust` header on later "
+                                  "sign-ins (the unusual-sign-in check).")

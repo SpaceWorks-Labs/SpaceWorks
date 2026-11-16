@@ -1,7 +1,16 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import Q
+from .models_leave import OrganizationLeaveReceipt  # noqa: F401
+from .models_review import OrganizationReview  # noqa: F401
+
+from .models_public_pages import (
+    OrganizationPublicPage, OrganizationPublicPageRevision, OrganizationPublicPageAsset,
+    OrganizationPublicPageRevisionAsset, OrganizationPublicPageRevisionMember,
+    OrganizationPublicPageStorage,
+)
 
 
 class Organization(models.Model):
@@ -15,7 +24,23 @@ class Organization(models.Model):
     website = models.URLField(blank=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    # Review standing (O-B5). Existing and superadmin-created organizations are approved.
+    # `suspended` is distinct from `is_active`: members keep their data rights.
+    class ReviewStatus(models.TextChoices):
+        PENDING_REVIEW = "pending_review", gettext_noop("Pending review")
+        CHANGES_REQUESTED = "changes_requested", gettext_noop("Changes requested")
+        APPROVED = "approved", "Approved"
+        DECLINED = "declined", "Declined"
+        SUSPENDED = "suspended", "Suspended"
+
+    review_status = models.CharField(
+        max_length=24, choices=ReviewStatus.choices, default=ReviewStatus.APPROVED, db_index=True,
+    )
     public_profile_enabled = models.BooleanField(default=False)
+    # Opt-in listing in the staff-only organization directory that event organizers
+    # search when choosing an event's audience. Off by default: an organization that
+    # never asked to be findable must not appear in another tenant's picker.
+    is_discoverable = models.BooleanField(default=False)
     makerspaces = models.ManyToManyField(
         "makerspaces.Makerspace",
         through="OrganizationMakerspace",
@@ -146,6 +171,8 @@ class OrganizationInvitation(models.Model):
         related_name="invitations",
     )
     token_digest = models.CharField(max_length=64, unique=True, editable=False)
+    # Decision #145: an optional invitee email is never stored, only its HMAC digest.
+    invitee_email_digest = models.CharField(max_length=64, blank=True, default="", editable=False)
     granted_actions = models.JSONField(default=list, blank=True)
     governance_actions = models.JSONField(default=list, blank=True)
     expires_at = models.DateTimeField()

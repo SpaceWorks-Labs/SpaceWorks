@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError
 from django.db.models import Count
 from drf_spectacular.utils import extend_schema
@@ -19,7 +20,7 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         makerspace_id = self.kwargs["makerspace_id"]
-        require_module(makerspace_id, "staff_admin")
+        require_module(makerspace_id, "public_inventory")
         require_action(self.request.user, rbac.Action.VIEW_INVENTORY, makerspace_id)
         return (
             Category.objects.filter(makerspace_id=makerspace_id)
@@ -34,14 +35,14 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         makerspace_id = self.kwargs["makerspace_id"]
-        require_module(makerspace_id, "staff_admin")
+        require_module(makerspace_id, "public_inventory")
         require_action(self.request.user, rbac.Action.EDIT_INVENTORY, makerspace_id)
         try:
             instance = serializer.save(makerspace_id=makerspace_id)
         except IntegrityError:
             raise ValidationError(
                 {
-                    "slug": "A category with this slug already exists in this makerspace."
+                    "slug": gettext("A category with this slug already exists in this makerspace.")
                 }
             )
         audit.record(
@@ -72,7 +73,7 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         category = super().get_object()
-        require_module(category.makerspace_id, "staff_admin")
+        require_module(category.makerspace_id, "public_inventory")
         return category
 
     def perform_update(self, serializer):
@@ -86,7 +87,7 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         except IntegrityError:
             raise ValidationError(
                 {
-                    "slug": "A category with this slug already exists in this makerspace."
+                    "slug": gettext("A category with this slug already exists in this makerspace.")
                 }
             )
         audit.record(

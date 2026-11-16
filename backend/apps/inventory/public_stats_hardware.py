@@ -36,11 +36,11 @@ def public_display_name(*, request=None, requester=None) -> str:
     return 'Member'
 
 
-def hardware_stats(makerspace):
+def hardware_stats(makerspace, *, include_loan_history=True):
     products = _public_products(makerspace)
     exact_count_products = _public_exact_count_products(products)
     return {
-        'most_popular': _most_popular(makerspace),
+        'most_popular': _most_popular(makerspace) if include_loan_history else [],
         'tools_out': [
             {'name': product.name, 'quantity_out': product.issued_quantity}
             for product in exact_count_products.filter(issued_quantity__gt=0).order_by(

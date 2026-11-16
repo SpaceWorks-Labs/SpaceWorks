@@ -1,0 +1,34 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/pose.galvo_xy.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "enum": [
+        "galvo_xy"
+      ],
+      "type": "string"
+    },
+    "laser_power_pct": {
+      "maximum": 100,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "x": {
+      "maximum": 1,
+      "minimum": -1,
+      "type": "number"
+    },
+    "y": {
+      "maximum": 1,
+      "minimum": -1,
+      "type": "number"
+    }
+  },
+  "required": [
+    "kind",
+    "x",
+    "y"
+  ],
+  "type": "object"
+}

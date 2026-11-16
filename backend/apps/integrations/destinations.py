@@ -82,6 +82,9 @@ def _matches(destination, scope) -> bool:
     machine_ids = {row.machine_id for row in destination.machine_scopes.all()}
     type_ids = {row.machine_type_id for row in destination.machine_type_scopes.all()}
     category_ids = {row.category_id for row in destination.category_scopes.all()}
+    from .notification_cloud_fanout import free, UnsupportedFanout
+    if free() and any(len(values) > 25 for values in (machine_ids, type_ids, category_ids)):
+        raise UnsupportedFanout("Legacy room scope exceeds the free profile limit.")
 
     if not (machine_ids or type_ids or category_ids):
         return True
@@ -103,16 +106,27 @@ def resolve_destinations(makerspace, channel, scope=None):
     """
     if channel not in ChatNotificationChannel.values:
         return [None]
+    from .notification_cloud_fanout import free, UnsupportedFanout
     try:
         # Deliberately NOT filtered on `is_active` in the query. A space whose only room
         # is deactivated has *chosen* to stop posting there; if the filter happened here,
         # the empty result would read as "this space has no destinations" and fall back to
         # the legacy column, so switching a room off would keep sending.
-        rows = list(
-            NotificationDestination.objects.filter(
-                makerspace=makerspace, channel=channel
-            ).prefetch_related("machine_scopes", "machine_type_scopes", "category_scopes")
-        )
+        query = NotificationDestination.objects.filter(makerspace=makerspace, channel=channel)
+        if free():
+            from django.db.models import Prefetch
+            from .models_destinations import DestinationMachineScope, DestinationMachineTypeScope, DestinationCategoryScope
+            query = query.prefetch_related(
+                Prefetch("machine_scopes", queryset=DestinationMachineScope.objects.all()[:26]),
+                Prefetch("machine_type_scopes", queryset=DestinationMachineTypeScope.objects.all()[:26]),
+                Prefetch("category_scopes", queryset=DestinationCategoryScope.objects.all()[:26]))[:3]
+            rows = list(query)
+            if len(rows) > 2:
+                raise UnsupportedFanout("Legacy room fanout exceeds the free profile limit.")
+        else:
+            rows = list(query.prefetch_related("machine_scopes", "machine_type_scopes", "category_scopes"))
+    except UnsupportedFanout:
+        raise
     except Exception:
         logger.warning(
             "notification_destination_lookup_failed",

@@ -55,6 +55,14 @@ Ingress remains available for configured, servable tenants when channels are off
 so an in-flight provider complaint cannot be lost after disabling notifications.
 No provider-specific SDK or automatic provider webhook registration is introduced.
 
+This record is canonical. The optional native callback
+`POST /api/v1/integrations/makerspace/{id}/email-provider-webhook/{resend|mailgun}`
+(`EMAIL_PROVIDER_WEBHOOKS_ENABLED`, off by default) verifies the provider's own signature,
+updates the log's delivery status, and forwards every hard bounce or complaint into the same
+`record_provider_event` (`apps/integrations/email_provider_events.py`): one `EmailProviderEvent`
+per `provider:sha256(event id)`, the log's `bounced_at`/`complained_at` stamp, the suppression and
+the same audit entries. A replay through either route changes nothing.
+
 ## Broadcasts
 
 `membership.broadcasts` defaults off and requires membership plus notifications.

@@ -22,11 +22,6 @@ class CloudEnvironmentError(RuntimeError):
     pass
 
 
-def referenced_variables(compose_path):
-    text = Path(compose_path).read_text(encoding="utf-8")
-    return tuple(sorted({match.group(1) for match in REFERENCE.finditer(text)}))
-
-
 def _resolve(match, environ):
     name, operator, argument = match.groups()
     present = name in environ

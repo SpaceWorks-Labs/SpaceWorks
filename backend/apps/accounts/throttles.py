@@ -1,4 +1,6 @@
-from rest_framework.throttling import SimpleRateThrottle
+from collections.abc import Mapping
+
+from rest_framework.throttling import ScopedRateThrottle, SimpleRateThrottle
 
 
 class PasswordResetEmailThrottle(SimpleRateThrottle):
@@ -7,9 +9,19 @@ class PasswordResetEmailThrottle(SimpleRateThrottle):
     def get_cache_key(self, request, view):
         from apps.accounts.audit_events import fingerprint
 
-        email = (request.data.get("email") or "").strip().lower()
+        raw = request.data.get("email") if isinstance(request.data, Mapping) else None
+        email = (str(raw).strip().lower()
+                 if isinstance(raw, (str, int, float)) and not isinstance(raw, bool) else "")
         if not email:
             return None
+        context = request.data.get("context", "member")
+        if isinstance(context, str) and context in {"staff", "platform"}:
+            from apps.accounts.password_reset_context import resolve_account
+            slug = request.data.get("makerspace")
+            if slug is not None and not isinstance(slug, str):
+                return None
+            account = resolve_account(str(raw).strip(), context=context, makerspace=slug)
+            email = f"{context}:{slug or ''}:{account.pk if account else email}"
         return self.cache_format % {
             "scope": self.scope,
             "ident": fingerprint(email),
@@ -26,11 +38,15 @@ class MemberVerificationEmailThrottle(SimpleRateThrottle):
     scope = "member_verification_email"
 
     def get_cache_key(self, request, view):
-        email = request.data.get("email") or getattr(request.user, "email", "")
-        email = email.strip().lower()
+        from apps.accounts.audit_events import fingerprint
+
+        raw = request.data.get("email") if isinstance(request.data, Mapping) else None
+        email = raw if isinstance(raw, str) and raw.strip() else getattr(request.user, "email", "")
+        email = str(email or "").strip().lower()
         if not email:
             return None
-        return self.cache_format % {"scope": self.scope, "ident": email}
+        # A fingerprint, never the address: cache keys are visible to anyone with Redis access (decision 339).
+        return self.cache_format % {"scope": self.scope, "ident": fingerprint(email)}
 
 
 MemberSignUpEmailThrottle = MemberVerificationEmailThrottle
@@ -113,3 +129,16 @@ class DeviceLoginUserThrottle(SimpleRateThrottle):
         return None if not username else self.cache_format % {
             "scope": self.scope, "ident": fingerprint(username)
         }
+
+
+class NativeSocialLinkThrottle(ScopedRateThrottle):
+    """The view's ``social_link`` budget, spent only by native (device-grant) linking.
+
+    Returning no cache key exempts browser linking and every non-POST request, exactly
+    as the former view-level ``get_throttles()`` selection did.
+    """
+
+    def get_cache_key(self, request, view):
+        if request.method != "POST" or getattr(request, "device_grant", None) is None:
+            return None
+        return super().get_cache_key(request, view)

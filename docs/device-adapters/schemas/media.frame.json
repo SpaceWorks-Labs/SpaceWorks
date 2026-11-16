@@ -1,0 +1,23 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/media.frame.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "content_type": {
+      "enum": [
+        "image/jpeg"
+      ],
+      "type": "string"
+    },
+    "data": {
+      "maxLength": 700000,
+      "minLength": 4,
+      "type": "string"
+    }
+  },
+  "required": [
+    "content_type",
+    "data"
+  ],
+  "type": "object"
+}

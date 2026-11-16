@@ -9,7 +9,7 @@ import type {
   DeploymentIdentity,
   ImportCreate,
   ImportDecisionList,
-  ImportJob,
+  ImportJob as GeneratedImportJob,
   ImportRun,
   MigrationExportCreate,
   MigrationExportJob,
@@ -25,13 +25,19 @@ export type {
   CutoverOutcome,
   DeploymentIdentity,
   ImportIdentityDecision,
-  ImportJob,
   MigrationExportJob,
   Pairing,
   PendingClosure,
   ReceiptEnvelope,
   VerificationReport,
 } from "../../generated/api";
+
+// Compatible both before and after the upload fields/status are regenerated.
+export type ImportJob = Omit<GeneratedImportJob, "status" | "upload_total_bytes" | "upload_received_bytes"> & {
+  status?: GeneratedImportJob["status"] | "uploading";
+  upload_total_bytes: number | null;
+  upload_received_bytes: number;
+};
 
 export const tenantMigrationKeys = {
   all: ["tenant-migration"] as const,
@@ -68,6 +74,17 @@ export function createImport(payload: Omit<ImportCreate, "archive"> & { archive:
 }
 export const getImport = (jobId: string) =>
   staffRequest<ImportJob>(`${platformBase}/imports/${jobId}`);
+export const startImportUpload = (payload: { source_archive_digest: string; archive_bytes: number }) =>
+  staffRequest<ImportJob>(`${platformBase}/imports/uploads`, {
+    method: "POST", body: JSON.stringify(payload),
+  });
+export const uploadImportChunk = (jobId: string, offset: number, chunk: Blob) =>
+  staffRequest<ImportJob>(`${platformBase}/imports/${jobId}/archive`, {
+    method: "PATCH", body: chunk,
+    headers: { "Content-Type": "application/offset+octet-stream", "Upload-Offset": String(offset) },
+  });
+export const completeImportUpload = (jobId: string) =>
+  staffRequest<ImportJob>(`${platformBase}/imports/${jobId}/archive/complete`, { method: "POST" });
 export const listImportIdentities = (jobId: string) =>
   staffRequest<ClosureIdentity[]>(`${platformBase}/imports/${jobId}/identity-decisions`);
 export const submitIdentityDecisions = (jobId: string, payload: ImportDecisionList) =>

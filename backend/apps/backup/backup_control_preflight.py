@@ -1,4 +1,4 @@
-"""Preflight routing for legacy and compound deployment restore paths."""
+"""Preflight for the deployment restore path driven by scripts/restore.sh."""
 
 import json
 import os
@@ -15,10 +15,6 @@ from apps.backup.digests import (
     ArchiveDigestError,
     SUPPORTED_ARCHIVE_FORMATS,
     verify_content_ledger,
-)
-from apps.backup.import_preflight import (
-    ImportPreflightError,
-    validate_import_preflight,
 )
 from apps.backup.models import BackupArchive, RestoreOperation
 from apps.backup.restore_services import set_stage
@@ -77,13 +73,10 @@ def run_restore_preflight(
             "The authenticated archive manifest does not match the restore intent."
         )
     if partial:
-        return _compound_handoff(
-            archive,
-            manifest,
-            encrypted_file=encrypted_file,
-            decrypted_bundle=decrypted_bundle,
-            manifest_path=manifest_path,
-            continuity_secrets=continuity_secrets,
+        # Partial archives carried opaque sovereign slices. Superadmin is always on
+        # (owner decision #110), so nothing can restore one; refuse before any effect.
+        raise CommandError(
+            "This archive excludes makerspaces from its readable main and cannot be restored."
         )
     _validate_legacy(
         restore,
@@ -96,30 +89,6 @@ def run_restore_preflight(
     if restore.stage == RestoreOperation.Stage.CLAIMED:
         set_stage(restore_id, RestoreOperation.Stage.PREFLIGHT)
     return "preflight-ok"
-
-
-def _compound_handoff(
-    archive, manifest, *, encrypted_file, decrypted_bundle, manifest_path,
-    continuity_secrets,
-):
-    if not all((encrypted_file, decrypted_bundle, continuity_secrets)):
-        raise CommandError(
-            "The scripts/restore.sh legacy path cannot hand off this compound archive: "
-            "encrypted artifact, decrypted bundle, and continuity-secret inputs are required."
-        )
-    try:
-        result = validate_import_preflight(
-            encrypted_file=encrypted_file,
-            bundle=decrypted_bundle,
-            manifest_file=manifest_path,
-            continuity_secrets_file=continuity_secrets,
-            expected_sha256=archive.archive_sha256 or None,
-        )
-    except ImportPreflightError as exc:
-        raise CommandError(str(exc)) from exc
-    if result.manifest != manifest:
-        raise CommandError("The compound coordinator received a different manifest.")
-    return "compound-coordinator-ready"
 
 
 def _validate_legacy(

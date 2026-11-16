@@ -1,5 +1,5 @@
-import { Badge } from "../../../components/ui";
-
+import { t } from "@lingui/core/macro";
+import { SegmentedControl } from "../../../components/ui";
 export type MachineTypeOption = {
   id: number;
   name: string;
@@ -18,46 +18,7 @@ export function EmailTemplateTypeSelector({
   selectedTypeId: number | null;
   onSelect: (machineType: MachineTypeOption | null) => void;
 }) {
-  return (
-    <div className="grid gap-2 rounded-md border border-line bg-bg p-3">
-      <p className="eyebrow">Machine type</p>
-      <div className="flex flex-wrap gap-2">
-        {canEditSpaceDefault ? (
-          <AxisButton selected={selectedTypeId === null} label="Space default" onClick={() => onSelect(null)} />
-        ) : null}
-        {types.map((machineType) => (
-          <AxisButton
-            key={machineType.id}
-            selected={selectedTypeId === machineType.id}
-            label={machineType.name}
-            edited={machineType.is_overridden}
-            onClick={() => onSelect(machineType)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AxisButton({
-  selected,
-  label,
-  edited = false,
-  onClick,
-}: {
-  selected: boolean;
-  label: string;
-  edited?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className={selected ? "desk-button-primary" : "desk-button-ghost"}
-      type="button"
-      onClick={onClick}
-    >
-      {label}
-      {edited ? <Badge tone="warn">Edited</Badge> : null}
-    </button>
-  );
+  return <SegmentedControl label={t`Machine type`} value={selectedTypeId === null ? "space" : String(selectedTypeId)}
+    options={[...(canEditSpaceDefault ? [{ value: "space", label: t`Space default` }] : []), ...types.map(type => ({ value: String(type.id), label: `${type.name}${type.is_overridden ? " · Edited" : ""}` }))]}
+    onChange={value => onSelect(value === "space" ? null : types.find(type => String(type.id) === value) ?? null)} />;
 }

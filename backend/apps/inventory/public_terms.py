@@ -17,8 +17,13 @@ def borrowing_terms(product, *, cache=None):
     days = loan_days(space, (product,), policy=policy)
     terms = [f"Loan period: {days} days."]
     if settings:
-        amount = settings.loan_deposit_amount if settings.loan_deposit_mode == "fixed" else (
-            product.deposit_amount if settings.loan_deposit_mode == "per_product" else None)
+        # Lane L15: the deposit comes from the pricing kernel, so a per-item override, a
+        # Free item or a free lending default reads here exactly as it will be charged.
+        from apps.payments.pricing import quote
+        from apps.payments.pricing.resolver import rate_card
+        card = cache.get(("pricing", space.pk)) or cache.setdefault(("pricing", space.pk), rate_card(space, "loans"))
+        amount = quote(space, "loans", params={"items": [(product, 1)], "components": ("deposit",)},
+                       discounts=False, card=card).total
         if amount and amount > 0:
             basis = "per loan" if settings.loan_deposit_mode == "fixed" else "per item"
             terms.append(f"Deposit: {settings.default_currency.upper()} {amount:.2f} {basis}.")

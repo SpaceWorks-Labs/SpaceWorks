@@ -6,19 +6,20 @@ from .tenant_dump_types import ModelDisposition, ModelRule, TableRule
 
 
 FIRST_PARTY_APP_LABELS = frozenset(
-    """accounts admin_api apiclients audit backup bookings boxes data_export devices
-    encryption events evidence hardware_requests integrations inventory machines
+    """accounts admin_api analytics apiclients audit backup bookings boxes card_designs data_export devices
+    encryption event_reimbursements events evidence hardware_requests hosting_requests id_programmes integrations
+    inventory machines managed_hosting
     maintenance makerspaces notifications operations organizations payments payments_rail
     presence
-    printing procurement roadmap separability tenant_migration warranty""".split()
+    printing procurement roadmap separability shop space_controls tenant_migration tenant_rls warranty""".split()
 )
 THIRD_PARTY_MODEL_APP_LABELS = frozenset(
-    {"admin", "auth", "axes", "contenttypes", "sessions", "token_blacklist"}
+    {"admin", "auth", "axes", "contenttypes", "sessions", "token_blacklist", "oauth2_provider"}
 )
 THIRD_PARTY_INSTALLED_APP_LABELS = frozenset(
     """unfold unfold_filters admin auth axes contenttypes postgres sessions messages
     staticfiles rest_framework drf_spectacular rest_framework_simplejwt token_blacklist
-    corsheaders storages""".split()
+    corsheaders storages oauth2_provider""".split()
 )
 
 # These labels are literal. A new exported model must be placed here deliberately;
@@ -26,11 +27,14 @@ THIRD_PARTY_INSTALLED_APP_LABELS = frozenset(
 # Lane-D-specific review.
 PROJECTED_MODEL_LABELS = frozenset(
     """operations.SavedView accounts.User apiclients.ApiKeyRequest audit.AuditLog
-    backup.MakerspaceArchiveRecipient bookings.BookableSpace bookings.Booking boxes.Box
+    makerspaces.MembershipAdditionalRole machines.MembershipMachineTypeScope machines.MembershipMachineScope
+    notifications.MemberNotificationPreference notifications.NotificationPreference
+    bookings.BookableSpace bookings.Booking boxes.Box
     boxes.BoxScan boxes.QrCode boxes.QrScanEvent devices.Device devices.DeviceEvent
     events.EventSeries events.Event events.EventRegistration
     events.EventCheckInEvent events.EventStationBinding events.EventFeedbackSurvey events.EventFeedbackResponse
     events.EventAttendanceCertificate
+    events.EventCertificateArtwork events.EventCertificateTemplateRevision
     evidence.EvidencePhoto evidence.EvidenceObjectRetentionState
     evidence.EvidenceRetentionPolicy hardware_requests.HardwareRequest
     hardware_requests.HardwareRequestItem hardware_requests.HardwareRequestItemAsset
@@ -59,7 +63,8 @@ PROJECTED_MODEL_LABELS = frozenset(
     operations.StockTransferLine
     operations.StocktakeLedgerEntry operations.StocktakeLine operations.StocktakeSession
     payments.MakerspacePaymentSettings payments.MakerspaceBillingSettings payments.ManualSettlement payments.Payment
-    payments.Refund payments.PaymentDocument presence.PresenceSession
+    payments.Refund payments.RefundCase payments.RefundPolicy payments.PaymentDocument presence.PresenceSession
+    makerspaces.ModuleSettingsGrant makerspaces.ModuleSettingLock
     procurement.ToBuyItem procurement.ToBuyReceipt
     tenant_migration.ExternalTenantReference warranty.Warranty
     warranty.WarrantyDocument""".split()
@@ -77,15 +82,84 @@ PROJECTED_MODEL_LABELS |= WP4_PROJECTED_LABELS
 
 from .catalog_w7_events import EVENT_PROJECTED_MODELS
 PROJECTED_MODEL_LABELS |= EVENT_PROJECTED_MODELS
+from .catalog_broadcasts import FIELD_NAMES as BROADCAST_FIELDS
+PROJECTED_MODEL_LABELS |= BROADCAST_FIELDS.keys()
+from .catalog_website import FIELD_NAMES as WEBSITE_FIELDS
+PROJECTED_MODEL_LABELS |= WEBSITE_FIELDS.keys()
 
 from .catalog_wp3 import WP3_PROJECTED_LABELS
 PROJECTED_MODEL_LABELS |= WP3_PROJECTED_LABELS
 
+from .catalog_booking_arrival import FIELD_NAMES as BOOKING_ARRIVAL_FIELDS
+PROJECTED_MODEL_LABELS |= BOOKING_ARRIVAL_FIELDS.keys()
+from .catalog_p2_bookings import FIELD_NAMES as P2_BOOKING_FIELDS
+PROJECTED_MODEL_LABELS |= P2_BOOKING_FIELDS.keys()
+from .catalog_r2_l1 import FIELD_NAMES as R2_L1_FIELDS  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L1_FIELDS.keys()
+from .catalog_r2_l4 import PROJECTED_LABELS as R2_L4_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L4_PROJECTED
+from .catalog_r2_l5 import PROJECTED_LABELS as R2_L5_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L5_PROJECTED
+from .catalog_login_security import PROJECTED_LABELS as S0_PROJECTED_LABELS  # noqa: E402
+PROJECTED_MODEL_LABELS |= S0_PROJECTED_LABELS
+from .catalog_r2_l15 import PROJECTED_LABELS as R2_L15_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L15_PROJECTED
+from .catalog_l12 import PROJECTED_LABELS as L12_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L12_PROJECTED
+from .catalog_l23 import PROJECTED_LABELS as L23_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L23_PROJECTED
+from .catalog_l16 import PROJECTED_LABELS as L16_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L16_PROJECTED
+from .catalog_l3a import PROJECTED_LABELS as L3A_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L3A_PROJECTED
+from .catalog_l3 import PROJECTED_LABELS as L3_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L3_PROJECTED
+from .catalog_r2_l6 import PROJECTED_LABELS as R2_L6_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L6_PROJECTED
+from .catalog_r2_l18 import PROJECTED_LABELS as R2_L18_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L18_PROJECTED
+from .catalog_r2_l21a import PROJECTED_LABELS as R2_L21A_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L21A_PROJECTED
+from .catalog_r3_events_badges import PROJECTED_LABELS as E_B2_PROJECTED  # noqa: E402  (parity E-B2)
+PROJECTED_MODEL_LABELS |= E_B2_PROJECTED
+from .catalog_r2_l22 import PROJECTED_LABELS as R2_L22_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L22_PROJECTED
+from .catalog_hackmoney_payments import PROJECTED_LABELS as HACKMONEY_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= HACKMONEY_PROJECTED
+
+from .catalog_profiles import EXPORTED_FIELDS as PROFILE_FIELDS
+PROJECTED_MODEL_LABELS |= PROFILE_FIELDS.keys()
+from .catalog_public_pages import EXPORTED_FIELDS as PAGE_EXPORTED_FIELDS
+PROJECTED_MODEL_LABELS |= PAGE_EXPORTED_FIELDS.keys()
+
+PROJECTED_MODEL_LABELS |= frozenset({"inventory.InventoryStockSnapshot", "machines.MachineStatusEvent", "machines.ConsumableCostRecord"})
+
+from .catalog_loan_context import PROJECTED_LABELS as LOAN_CONTEXT_PROJECTED
+PROJECTED_MODEL_LABELS |= LOAN_CONTEXT_PROJECTED
+from .catalog_equipment_proposals import PROJECTED_LABELS as EQUIPMENT_PROPOSAL_PROJECTED
+PROJECTED_MODEL_LABELS |= EQUIPMENT_PROPOSAL_PROJECTED
+from .catalog_guest_passes import PROJECTED_LABELS as GUEST_PASS_PROJECTED
+PROJECTED_MODEL_LABELS |= GUEST_PASS_PROJECTED
+from .catalog_r3_org_units import PROJECTED_LABELS as R3_ORG_UNIT_PROJECTED
+PROJECTED_MODEL_LABELS |= R3_ORG_UNIT_PROJECTED
+from .catalog_r3_org_b4 import PROJECTED_LABELS as R3_ORG_B4_PROJECTED
+PROJECTED_MODEL_LABELS |= R3_ORG_B4_PROJECTED
+from .catalog_studio import PROJECTED_LABELS as STUDIO_PROJECTED
+PROJECTED_MODEL_LABELS |= STUDIO_PROJECTED
+from .catalog_l3b import PROJECTED_LABELS as L3B_PROJECTED
+PROJECTED_MODEL_LABELS |= L3B_PROJECTED
+from .catalog_adapter import PROJECTED_LABELS as ADAPTER_PROJECTED
+PROJECTED_MODEL_LABELS |= ADAPTER_PROJECTED
+
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
+from .catalog_messaging import PROJECTED_LABELS as MESSAGING_PROJECTED_LABELS
+PROJECTED_MODEL_LABELS |= MESSAGING_PROJECTED_LABELS
+
 EXPLICIT_DROP_MODEL_REASONS = {
-    "notifications.MemberNotificationPreference": "Target users re-establish personal communication preferences; no source disclosure controls become live.",
     "apiclients.ApiClient": "Source clients and their bearer secrets never become target authority.",
+    # #196: PersonalAccessToken, OAuthAppRegistration and OAuthConsent drop through
+    # data_export's platform OMITTED_MODELS; listing them here too made the rule set refuse to build.
     "events.EventCollaborator": "Cross-tenant collaboration grants have no target counterpart.",
     "events.EventSeriesCollaborator": "Cross-tenant series collaboration grants have no target counterpart.",
     "integrations.EmailNotificationMute": "Source delivery suppression does not control target mail.",
@@ -95,11 +169,14 @@ EXPLICIT_DROP_MODEL_REASONS = {
     "integrations.RecipientCategoryScope": "The owning disclosure recipient is dropped.",
     "integrations.RecipientMachineScope": "The owning disclosure recipient is dropped.",
     "integrations.RecipientMachineTypeScope": "The owning disclosure recipient is dropped.",
-    "machines.RoleMachineScope": "Source role scopes must not grant target machine authority.",
-    "machines.RoleMachineTypeScope": "Source role scopes must not grant target type authority.",
     "makerspaces.MakerspaceRole": "Source roles are replaced by target-seeded protected defaults.",
     "organizations.Organization": "Organizations are deployment-global and do not travel.",
 }
+
+
+from .catalog_p2_presence import model_catalog, DROP_MODELS as PRESENCE_DROPS
+PROJECTED_MODEL_LABELS = model_catalog(PROJECTED_MODEL_LABELS)
+EXPLICIT_DROP_MODEL_REASONS.update(PRESENCE_DROPS)
 
 
 def _model_rules():
@@ -128,6 +205,12 @@ def _model_rules():
     return rules
 
 
+from .catalog_events_programme import EXPORTED_FIELDS as PROGRAMME_PROJECTED_FIELDS
+PROJECTED_MODEL_LABELS |= PROGRAMME_PROJECTED_FIELDS.keys()
+from .catalog_reimbursements import EXPORTED_FIELDS as REIMBURSEMENT_PROJECTED_FIELDS
+PROJECTED_MODEL_LABELS |= REIMBURSEMENT_PROJECTED_FIELDS.keys()
+from .catalog_booking_decision import PROJECTED_LABELS as BOOKING_DECISION_PROJECTED
+PROJECTED_MODEL_LABELS |= BOOKING_DECISION_PROJECTED
 FIRST_PARTY_MODEL_RULES = _model_rules()
 
 AUTO_CREATED_TABLE_RULES = {
@@ -143,6 +226,10 @@ AUTO_CREATED_TABLE_RULES = {
         ModelDisposition.EMPTY,
         "Imported users receive no source-global direct permissions.",
     ),
+    "presence.DisplayScreen_players": TableRule(
+        ModelDisposition.EMPTY,
+        "Links a source display to its Anthias players; both models are omitted, the target pairs its own.",
+    ),
 }
 
 THIRD_PARTY_MODEL_RULES = {
@@ -157,6 +244,9 @@ THIRD_PARTY_MODEL_RULES = {
     "sessions.Session": TableRule(ModelDisposition.EMPTY, "Source bearer sessions never travel."),
     "token_blacklist.OutstandingToken": TableRule(ModelDisposition.EMPTY, "Source bearer tokens never travel."),
     "token_blacklist.BlacklistedToken": TableRule(ModelDisposition.EMPTY, "Source bearer-token state never travels."),
+    # #196 app connections: OAuth clients, codes and tokens are source bearer authority.
+    **{f"oauth2_provider.{name}": TableRule(ModelDisposition.EMPTY, "Source OAuth clients and tokens never travel.")
+       for name in ("Application", "AccessToken", "RefreshToken", "Grant", "IDToken", "DeviceGrant")},
 }
 
 UNMANAGED_MODEL_RULES = {}

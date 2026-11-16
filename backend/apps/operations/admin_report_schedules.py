@@ -31,6 +31,7 @@ class ReportScheduleAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         "id", "makerspace", "report_key", "cadence", "format", "is_active", "next_run_at", "last_run_at",
     )
     list_filter = ("cadence", "format", "is_active", "makerspace")
+    search_fields = ("report_key", "makerspace__name")
     readonly_fields = (
         "makerspace", "report_key", "filters", "grain", "format", "cadence", "next_run_at",
         "last_run_at", "is_active", "destination", "recipient_emails", "created_by",

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.inventory import public_image_storage
@@ -17,6 +18,7 @@ from apps.machines.printer_capabilities import validate_machine_payload
 from apps.warranty.models import Warranty
 from apps.warranty.status import STATUS_UNKNOWN, warranty_status
 from apps.machines.serializers_machine_types import MachineTypeSerializer
+from apps.machines.service_queue_eta_serializers import MachineQueueSummarySerializer
 
 
 class MachineOperatorSerializer(serializers.ModelSerializer):
@@ -53,6 +55,8 @@ class MachineUsageEntrySerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'hours',
+            'member',
+            'started_at',
             'source',
             'note',
             'logged_by_username',
@@ -111,6 +115,7 @@ class MachineSerializer(serializers.ModelSerializer):
     can_unretire = serializers.SerializerMethodField()
     # Retained through Phase 0A because the current frontend still reads it.
     can_manage = serializers.SerializerMethodField()
+    service_queue_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Machine
@@ -132,6 +137,7 @@ class MachineSerializer(serializers.ModelSerializer):
             'warranty_status',
             'is_public',
             'is_active',
+            'open_to_all_members',
             'usage_hours',
             'can_operate',
             'can_edit',
@@ -139,6 +145,7 @@ class MachineSerializer(serializers.ModelSerializer):
             'can_retire',
             'can_unretire',
             'can_manage',
+            'service_queue_summary',
             'created_at',
             'updated_at',
         ]
@@ -148,6 +155,7 @@ class MachineSerializer(serializers.ModelSerializer):
             'status',
             'is_public',
             'is_active',
+            'open_to_all_members',
             'created_at',
             'updated_at',
         ]
@@ -178,11 +186,16 @@ class MachineSerializer(serializers.ModelSerializer):
         return public_image_storage.public_url(obj.image_key) or None
 
     def get_warranty_status(self, obj) -> str:
+        from apps.makerspaces.capability_eligibility import configuration_feature_enabled
+        # The machines parent's own warranty switch (#97): off shows nothing about warranties.
+        if not configuration_feature_enabled(obj.makerspace, "machines.warranty"):
+            return STATUS_UNKNOWN
         try:
             warranty = obj.warranty
         except Warranty.DoesNotExist:
             return STATUS_UNKNOWN
-        return warranty_status(warranty, timezone.localdate())
+        from apps.makerspaces.local_time import to_local
+        return warranty_status(warranty, to_local(obj.makerspace, timezone.now()).date())  # the space's own day
 
     def _capabilities(self, obj):
         from apps.machines import access
@@ -223,3 +236,8 @@ class MachineSerializer(serializers.ModelSerializer):
 
     def get_can_manage(self, obj) -> bool:
         return self._capabilities(obj)['can_edit']
+
+    @extend_schema_field(MachineQueueSummarySerializer(allow_null=True))
+    def get_service_queue_summary(self, obj):
+        # Context-only and permission-filtered by the view; absent means not authorized.
+        return (self.context.get('service_queue_summaries') or {}).get(obj.pk)

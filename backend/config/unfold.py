@@ -1,9 +1,11 @@
 import os
 
+from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
 from apps.separability.tombstones import tombstoned_app_labels
+from config.unfold_sidebar import build_navigation
 
 SITE_NAME = os.environ.get("ADMIN_SITE_NAME", "Space Works")
 
@@ -64,142 +66,89 @@ def _managed_item(title, icon, route, app_label=None):
     return item
 
 
+def _plans_active_superuser(request):
+    # The managed-hosting limiter's lists show only while it is on (#187A), exactly as their
+    # admin's own has_module_permission says; read at request time, never at import.
+    from apps.managed_hosting.availability import plans_enabled
+
+    return plans_enabled() and _is_active_superuser(request)
+
+
+def _plans_item(title, icon, route, app_label=None):
+    item = _item(title, icon, route, app_label=app_label)
+    if item is not None:
+        item["permission"] = _plans_active_superuser
+    return item
+
+
 UNFOLD = {
     "SITE_TITLE": SITE_NAME,
     "SITE_HEADER": SITE_NAME,
-    "SITE_SYMBOL": "inventory_2",
+    "SITE_SUBHEADER": _("Control plane"),
+    "SITE_ICON": {
+        "light": lambda request: static("brand/symbol.svg"),
+        "dark": lambda request: static("brand/symbol-reversed.svg"),
+    },
+    "SITE_LOGO": {
+        "light": lambda request: static("brand/lockup-horizontal.svg"),
+        "dark": lambda request: static("brand/lockup-horizontal-reversed.svg"),
+    },
+    # The app's favicon set (frontend/public/brand), so a /control/ tab reads as Space Works.
+    "SITE_FAVICONS": [
+        {"rel": "icon", "type": "image/svg+xml", "href": lambda request: static("brand/favicon.svg")},
+        {"rel": "icon", "sizes": "32x32", "type": "image/png", "href": lambda request: static("brand/icon-32.png")},
+        {"rel": "apple-touch-icon", "sizes": "180x180", "href": lambda request: static("brand/icon-180.png")},
+    ],
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
-    "THEME": "dark",
+    # No forced THEME: the operator's light/dark choice (or the system's) is kept, and both sets
+    # are on brand -- light on Warm Cream, dark on one solid black family, neutral greys (decision 316).
+    "BORDER_RADIUS": "10px",
+    # Fonts (free Gilroy ExtraBold + Outfit), the true-black page, links, focus and badges.
+    "STYLES": [lambda request: static("control/control.css")],
     "COLORS": {
+        # Neutrals are brand mixes, light end to dark end: Warm Cream, the light surface/hover/
+        # line/outline/muted tokens, then the dark set's neutral hairline, hover and surface greys (44, 28, 11), and black (decision 316).
+        # Unfold reads 50-500 in light mode and 300-950 in dark mode.
+        "base": {
+            "50": "255 244 232",
+            "100": "246 236 224",
+            "200": "239 230 219",
+            "300": "213 208 198",
+            "400": "130 138 131",
+            "500": "91 104 99",
+            "600": "61 78 74",
+            "700": "44 44 44",
+            "800": "28 28 28",
+            "900": "11 11 11",
+            "950": "0 0 0",
+        },
+        # Derived sRGB mixes: Teal toward Cream (50-400), Teal at 500/600,
+        # then toward Deep Ink by 30/45/60/75 percent (700-950).
         "primary": {
-            "50": "245 243 255",
-            "100": "237 233 254",
-            "200": "221 214 254",
-            "300": "196 181 253",
-            "400": "167 139 250",
-            "500": "139 92 246",
-            "600": "124 58 237",
-            "700": "109 40 217",
-            "800": "91 33 182",
-            "900": "76 29 149",
-            "950": "46 16 101",
-        }
+            "50": "230 231 219",
+            "100": "191 210 199",
+            "200": "140 184 172",
+            "300": "89 157 146",
+            "400": "38 130 119",
+            "500": "0 110 99",
+            "600": "0 110 99",
+            "700": "6 90 82",
+            "800": "9 80 73",
+            "900": "12 70 65",
+            "950": "15 60 56",
+        },
     },
+    # The /control/ home: platform counts, what needs attention, backups, limits near quota,
+    # the group map and links into the web platform console (config.control_dashboard).
+    "DASHBOARD_CALLBACK": "config.control_dashboard.dashboard_callback",
     "SIDEBAR": {
         "show_search": True,
-        "navigation": [
-            {
-                "title": _("Inventory"),
-                "separator": True,
-                "items": [
-                    _item(
-                        "Organizations",
-                        "corporate_fare",
-                        "admin:organizations_organization_changelist",
-                    ),
-                    _item(
-                        "Organization memberships",
-                        "group",
-                        "admin:organizations_organizationmembership_changelist",
-                    ),
-                    _item("Makerspaces", "store", "admin:makerspaces_makerspace_changelist"),
-                    _item("Archive requests", "archive", "admin:makerspaces_makerspacearchiverequest_changelist"),
-                    _item("Inventory", "inventory_2", "admin:inventory_inventoryproduct_changelist"),
-                    _item("Categories", "category", "admin:inventory_category_changelist"),
-                    _item("Asset units", "qr_code_2", "admin:inventory_inventoryasset_changelist"),
-                    _item("Containers", "package_2", "admin:boxes_box_changelist"),
-                    _item("Inventory adjustments", "tune", "admin:operations_inventoryadjustment_changelist"),
-                    _item("Warranties", "verified", "admin:warranty_warranty_changelist", app_label="warranty"),
-                    _item("Warranty documents", "description", "admin:warranty_warrantydocument_changelist", app_label="warranty"),
-                ],
-            },
-            {
-                "title": _("Requests & loans"),
-                "separator": True,
-                "items": [
-                    _item("Hardware requests", "assignment", "admin:hardware_requests_hardwarerequest_changelist"),
-                    _item("Tool loans", "outbound", "admin:hardware_requests_publictoolloan_changelist"),
-                    _item("Return events", "assignment_return", "admin:hardware_requests_returnevent_changelist"),
-                    _item("Accountability", "gavel", "admin:hardware_requests_requesteraccountability_changelist"),
-                    _item("Issued asset links", "link", "admin:hardware_requests_hardwarerequestitemasset_changelist"),
-                ],
-            },
-            {
-                "title": _("Operations"),
-                "separator": True,
-                "items": [
-                    _item("Stock transfers", "swap_horiz", "admin:operations_stocktransfer_changelist"),
-                    _item("Stocktakes", "fact_check", "admin:operations_stocktakesession_changelist"),
-                    _item("QR print batches", "print", "admin:operations_qrprintbatch_changelist"),
-                    _item("QR codes", "qr_code", "admin:boxes_qrcode_changelist"),
-                    _item("QR scans", "barcode_reader", "admin:boxes_qrscanevent_changelist"),
-                    _item("Box scans", "qr_code_scanner", "admin:boxes_boxscan_changelist"),
-                ],
-            },
-            {
-                "title": _("Procurement"),
-                "separator": True,
-                "items": [
-                    _item("To-buy list", "shopping_cart", "admin:procurement_tobuyitem_changelist", app_label="procurement"),
-                ],
-            },
-            {
-                "title": _("Machines"),
-                "separator": True,
-                "items": [
-                    _item("Machines", "precision_manufacturing", "admin:machines_machine_changelist"),
-                    _item("Machine types", "category", "admin:machines_machinetype_changelist"),
-                    _item("Machine operators", "engineering", "admin:machines_machineoperator_changelist"),
-                    _item("Usage entries", "timelapse", "admin:machines_machineusageentry_changelist"),
-                    _item("Machine consumables", "deployed_code", "admin:machines_machineconsumable_changelist"),
-                    _item("Machine documents", "description", "admin:machines_machinedocument_changelist"),
-                    _item("Machine error logs", "error", "admin:machines_machineerrorlog_changelist"),
-                    _item("Service buckets", "folder", "admin:machines_servicebucket_changelist"),
-                    _item("Service requests", "build", "admin:machines_machineservicerequest_changelist"),
-                    _item("Service request files", "attach_file", "admin:machines_servicerequestfile_changelist"),
-                    _item("Service consumption", "receipt_long", "admin:machines_servicerequestconsumption_changelist"),
-                ],
-            },
-            {
-                "title": _("Accounts & access"),
-                "separator": True,
-                "items": [
-                    _item("Users", "person", "admin:accounts_user_changelist"),
-                    _item("Staff memberships", "badge", "admin:makerspaces_makerspacemembership_changelist"),
-                    _item("Groups", "groups", "admin:auth_group_changelist"),
-                ],
-            },
-            {
-                "title": _("Integrations"),
-                "separator": True,
-                "items": [
-                    _item("API clients", "vpn_key", "admin:apiclients_apiclient_changelist"),
-                    _item("API key requests", "approval", "admin:apiclients_apikeyrequest_changelist"),
-                    _item("Subdomain requests", "dns", "admin:makerspaces_subdomainrequest_changelist"),
-                    _item("Platform email", "mail", "admin:integrations_platformemailsettings_changelist"),
-                    _item("Platform SMS", "sms", "admin:integrations_platformsmssettings_changelist"),
-                    _item("Platform push", "notifications", "admin:integrations_platformpushsettings_changelist"),
-                    _item("Login methods", "login", "admin:accounts_platformloginmethods_changelist"),
-                    _item("Social sign-in", "account_circle", "admin:accounts_platformsocialauthsettings_changelist"),
-                    _item("OIDC providers", "key", "admin:accounts_oidcprovider_changelist"),
-                    _item("Scheduled task runs", "schedule", "admin:operations_periodictaskrun_changelist"),
-                    _item("Payments", "payments", "admin:payments_makerspacepaymentsettings_changelist", app_label="payments_rail"),
-                    _managed_item("Stripe Connect", "account_balance", "admin:payments_platformstripeconnectsettings_changelist", app_label="payments_rail"),
-                    _item("Email templates", "mail", "admin:integrations_emailtemplate_changelist"),
-                    _item("Email logs", "mark_email_read", "admin:integrations_emaillog_changelist"),
-                    _item("Email mutes", "notifications_off", "admin:integrations_emailnotificationmute_changelist"),
-                ],
-            },
-            {
-                "title": _("Audit & evidence"),
-                "separator": True,
-                "items": [
-                    _item("Audit log", "history", "admin:audit_auditlog_changelist"),
-                    _item("Evidence photos", "photo_library", "admin:evidence_evidencephoto_changelist"),
-                ],
-            },
-        ],
+        # Every registered model, including the internal records kept out of the groups below.
+        "show_all_applications": True,
+        # Fourteen ordered groups built from the one catalogue (config.control_catalog);
+        # every registered admin model appears in exactly one of them or in its internal list.
+        "navigation": build_navigation(_item, _managed_item, _plans_item),
     },
 }
 

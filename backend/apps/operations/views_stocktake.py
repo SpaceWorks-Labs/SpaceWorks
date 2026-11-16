@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework.exceptions import ValidationError
@@ -49,7 +50,7 @@ class StocktakeListCreateView(generics.ListCreateAPIView):
         status_value = self.request.query_params.get("status", "")
         if status_value:
             if status_value not in StocktakeSession.Status.values:
-                raise ValidationError({"status": "Unknown stocktake status."})
+                raise ValidationError({"status": gettext("Unknown stocktake status.")})
             queryset = queryset.filter(status=status_value)
         return queryset.prefetch_related("lines").order_by("-started_at")
 

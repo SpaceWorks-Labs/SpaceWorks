@@ -1,0 +1,3 @@
+[submodule "design-system"]
+	path = design-system
+	url = https://github.com/SpaceWorks-Labs/SpaceWorks-Design-System.git

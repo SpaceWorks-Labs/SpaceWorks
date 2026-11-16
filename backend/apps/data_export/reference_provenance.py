@@ -14,6 +14,7 @@ from .datasets import DATASETS
 from .deleted_audit_targets import cleaned_evidence_targets
 from .errors import ExportIntegrityError
 from .types import Fidelity
+from apps.backup.capture_managers import every_row
 
 
 class ReferenceProvenanceWriter:
@@ -205,7 +206,7 @@ class ReferenceProvenanceWriter:
                 if item.fidelity is Fidelity.PORTABLE and item.model == target_label
             )
             model = apps.get_model(target_label)
-            found = model.objects.filter(
+            found = every_row(model).filter(
                 dataset.predicate.as_q(self.makerspace_id), pk__in=ids
             ).values_list("pk", flat=True)
             present.update((target_label, value) for value in found)

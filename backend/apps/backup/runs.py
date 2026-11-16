@@ -31,7 +31,7 @@ def open_run():
     cohort = list(
         servable_queryset()
         .order_by("id")
-        .values_list("id", "superadmin_access_enabled")
+        .values_list("id", flat=True)
     )
     if not cohort:
         raise EmptyBackupCohortError(
@@ -40,7 +40,9 @@ def open_run():
 
     return BackupRun.objects.create(
         cohort_at=cohort_at,
-        flag_snapshot={str(makerspace_id): enabled for makerspace_id, enabled in cohort},
+        # The shape predates "superadmin always on" (#110); every member is now
+        # covered by the platform-readable deployment archive, so each value is True.
+        flag_snapshot={str(makerspace_id): True for makerspace_id in cohort},
         holder=uuid.uuid4(),
     )
 

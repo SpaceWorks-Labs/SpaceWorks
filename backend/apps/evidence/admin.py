@@ -5,6 +5,7 @@ from unfold.admin import ModelAdmin
 from apps.evidence.models import EvidenceObjectRetentionState, EvidencePhoto
 from apps.evidence.storage import object_exists, presigned_get_url, staging_key
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(EvidencePhoto)
@@ -77,7 +78,7 @@ class EvidencePhotoAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             url,
         )
 
-    photo_preview.short_description = "Photo"
+    photo_preview.short_description = gettext_lazy("Photo")
 
     def thumb(self, obj):
         if not obj or not getattr(obj, "object_key", ""):
@@ -92,7 +93,7 @@ class EvidencePhotoAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             return "—"
         return format_html('<img src="{}" style="max-height:48px"/>', url)
 
-    thumb.short_description = "Preview"
+    thumb.short_description = gettext_lazy("Preview")
 
     def has_add_permission(self, request):
         return False

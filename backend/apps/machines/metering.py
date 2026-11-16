@@ -1,5 +1,6 @@
 """Canonical machine metering units and type-config validation."""
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
@@ -41,25 +42,25 @@ def metering_unit_for_pool(unit):
 def validate_type_config(config, *, is_custom=False):
     """Validate structural type config; pricing never belongs in this JSON."""
     if not isinstance(config, dict):
-        raise ValidationError("Machine type capability_config must be an object.")
+        raise ValidationError(gettext("Machine type capability_config must be an object."))
     forbidden = {"rate_per_unit", "flat_fee", "currency", "payment_enabled", "payment_authorized", "authorization"}
     present = forbidden & set(config)
     if present:
-        raise ValidationError(f"capability_config cannot contain {sorted(present)[0]}.")
+        raise ValidationError(gettext('capability_config cannot contain {value}.').format(value=sorted(present)[0]))
     if is_custom:
         missing = {"metering_unit", "requires_booking"} - set(config)
         if missing:
-            raise ValidationError(f"Custom machine types require {sorted(missing)[0]}.")
+            raise ValidationError(gettext('Custom machine types require {value}.').format(value=sorted(missing)[0]))
     if "metering_unit" in config and config["metering_unit"] not in MeteringUnit.values:
-        raise ValidationError("metering_unit must be a supported metering unit.")
+        raise ValidationError(gettext("metering_unit must be a supported metering unit."))
     if "requires_booking" in config and type(config["requires_booking"]) is not bool:
-        raise ValidationError("requires_booking must be true or false.")
+        raise ValidationError(gettext("requires_booking must be true or false."))
     if is_custom:
         for key in ("accepted_materials", "accepted_colours"):
             if key not in config:
                 continue
             value = config[key]
             if not isinstance(value, list) or not value or any(not isinstance(item, str) or not item.strip() for item in value):
-                raise ValidationError(f"Machine type {key} must be a non-empty list of names.")
+                raise ValidationError(gettext('Machine type {key} must be a non-empty list of names.').format(key=key))
             if len({item.casefold() for item in value}) != len(value):
-                raise ValidationError(f"Machine type {key} cannot contain duplicates.")
+                raise ValidationError(gettext('Machine type {key} cannot contain duplicates.').format(key=key))

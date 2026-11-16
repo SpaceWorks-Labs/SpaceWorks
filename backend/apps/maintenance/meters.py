@@ -1,5 +1,6 @@
 """Meter due state is derived from immutable usage since the last completion."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 from django.db.models import Sum, Count, OuterRef, Subquery, Q, DecimalField, Value, IntegerField, F
 from django.db.models.functions import Coalesce
@@ -64,21 +65,22 @@ def due_queryset(queryset, today):
         Q(job_count__isnull=False, meter_jobs__gte=F("job_count"))
     )
     # Archived feature-off spaces retain calendar schedules but no meter behavior.
-    return queryset.filter(calendar | (usage & Q(machine__makerspace__enabled_features__contains=["maintenance.meters"])))
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    return queryset.filter(calendar | (usage & Q(machine__makerspace_id__in=live_space_ids("maintenance.meters"))))
 
 
 def validate_meter(schedule):
     if schedule.trigger not in ("days", "usage", "both"):
-        raise ValidationError({"trigger": "Choose days, usage or both."})
+        raise ValidationError({"trigger": gettext("Choose days, usage or both.")})
     if schedule.trigger != "days":
         if not feature_enabled(schedule.machine.makerspace, "maintenance.meters"):
-            raise ValidationError({"trigger": "Usage-based maintenance is disabled."})
+            raise ValidationError({"trigger": gettext("Usage-based maintenance is disabled.")})
         if schedule.usage_hours is None and schedule.job_count is None:
-            raise ValidationError({"trigger": "A positive hours or jobs threshold is required."})
+            raise ValidationError({"trigger": gettext("A positive hours or jobs threshold is required.")})
     for field in ("usage_hours", "job_count"):
         value = getattr(schedule, field)
         if value is not None and (isinstance(value, bool) or value <= 0):
-            raise ValidationError({field: "Enter a positive threshold."})
+            raise ValidationError({field: gettext("Enter a positive threshold.")})
 
 
 def completed_meter(schedule, performed_at):

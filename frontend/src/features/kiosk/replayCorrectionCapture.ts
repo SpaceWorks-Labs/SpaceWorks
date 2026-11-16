@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { API_V1_URL } from "../../lib/api";
 import { loadWorkPackage, takeOperatorLease, type KioskBootstrap } from "./kioskApi";
 import { normalizeEvidence } from "./offlineEvidence";
@@ -7,15 +8,15 @@ import type { ReplayEnvelope } from "./kioskReplayApi";
 
 export async function loadCorrectiveWork(token: string, session: KioskBootstrap, row: RecoveryReplay) {
   if (session.makerspace.id !== row.makerspace_id || session.station.kind !== "handover") {
-    throw new Error("Use a handover Station in this failure's makerspace.");
+    throw new Error(t`Use a handover Station in this failure's makerspace.`);
   }
   // A new current lease creates a separate encrypted scope; original failed work
   // and evidence remain untouched, including on browsers holding that old shift.
   const lease = await takeOperatorLease(token);
-  if (!lease.permitted_operations.includes(row.operation_kind)) throw new Error("This operator cannot perform the correction.");
+  if (!lease.permitted_operations.includes(row.operation_kind)) throw new Error(t`This operator cannot perform the correction.`);
   const direct = row.operation_kind === "direct_return";
   const id = direct ? row.recovery_loan_id : row.recovery_request_id;
-  if (!id || row.operation_kind === "direct_handout") throw new Error("No retained subject can prove replacement compatibility.");
+  if (!id || row.operation_kind === "direct_handout") throw new Error(t`No retained subject can prove replacement compatibility.`);
   const work = await loadWorkPackage(token, lease.lease_token, direct ? "direct_loan" : "reviewed_request", id);
   return saveWorkPackage(token, API_V1_URL, session, lease, work);
 }

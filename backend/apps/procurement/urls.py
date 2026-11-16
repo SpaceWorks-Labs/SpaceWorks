@@ -7,11 +7,14 @@ from apps.procurement.views import (
     ToBuyMachineTypeOptionsView,
     ToBuyMoveToInventoryView,
     ToBuyMoveToPrintingView,
+    ToBuyRefillConsumableView,
     ToBuyReceiptDeleteView,
     ToBuyReceiptListCreateView,
     ToBuyReceiptPresignView,
     ToBuyReceiptUrlView,
 )
+
+from apps.procurement.views_vendors import ToBuyMarkBoughtView, VendorDetailView, VendorListCreateView
 
 app_name = "procurement"
 
@@ -61,5 +64,14 @@ urlpatterns = [
         ToBuyMoveToPrintingView.as_view(),
         name="to-buy-move-to-printing",
     ),
+    path(
+        "to-buy/<int:pk>/refill-consumable",
+        ToBuyRefillConsumableView.as_view(),
+        name="to-buy-refill-consumable",
+    ),
+    path("to-buy/<int:pk>/mark-bought", ToBuyMarkBoughtView.as_view(), name="to-buy-mark-bought"),
+    path("makerspace/<int:makerspace_id>/vendors", VendorListCreateView.as_view(), name="procurement-vendors"),
+    path("makerspace/<int:makerspace_id>/vendors/<int:pk>", VendorDetailView.as_view(),
+         name="procurement-vendor-detail"),
     path("to-buy/<int:pk>", ToBuyDetailView.as_view(), name="to-buy-detail"),
 ]

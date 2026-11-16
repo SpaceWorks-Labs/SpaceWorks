@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post" action="{{ request.path }}">
@@ -10,23 +11,23 @@
 
   <fieldset class="module aligned">
     <div class="form-row">
-      <label>Product:</label>
+      <label>{% translate "Product:" %}</label>
       <div class="readonly">{{ product }}</div>
     </div>
     <div class="form-row">
-      <label for="id_delta_available">Available delta:</label>
+      <label for="id_delta_available">{% translate "Available delta:" %}</label>
       <input id="id_delta_available" type="number" name="delta_available" value="0" required>
     </div>
     <div class="form-row">
-      <label for="id_delta_damaged">Damaged delta:</label>
+      <label for="id_delta_damaged">{% translate "Damaged delta:" %}</label>
       <input id="id_delta_damaged" type="number" name="delta_damaged" value="0" required>
     </div>
     <div class="form-row">
-      <label for="id_delta_lost">Lost delta:</label>
+      <label for="id_delta_lost">{% translate "Lost delta:" %}</label>
       <input id="id_delta_lost" type="number" name="delta_lost" value="0" required>
     </div>
     <div class="form-row">
-      <label for="id_reason">Reason:</label>
+      <label for="id_reason">{% translate "Reason:" %}</label>
       <textarea id="id_reason" name="reason" rows="5" required></textarea>
     </div>
   </fieldset>

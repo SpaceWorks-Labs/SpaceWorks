@@ -18,6 +18,7 @@ def verify_google_token(raw_token, *, nonce, audience):
     if not token_nonce or not hmac.compare_digest(token_nonce, nonce) or not subject:
         raise SocialTokenError("Invalid social identity token.")
     return {
+        "auth_time": claims.get("auth_time"),
         "sub": subject,
         "email": str(claims.get("email") or "").strip().lower(),
         "email_verified": claims.get("email_verified") is True

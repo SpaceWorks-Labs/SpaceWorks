@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% comment %}
+  {% blocktranslate trimmed %}#188: the one confirmation page for a dangerous /control/ list action (config.admin_confirm).
+  Confirming re-posts the original selection unchanged, plus control_confirmed=yes.{% endblocktranslate %}
+{% endcomment %}
+{% block content %}
+<div data-testid="control-confirm-action">
+    <h2 class="font-semibold mb-2">{{ action_label }}</h2>
+    <p class="mb-4"{% if irreversible %} role="alert"{% endif %}>{{ warning }}{% if irreversible %} <strong>{% translate "This cannot be undone." %}</strong>{% endif %}</p>
+    <p class="text-sm mb-2">{% blocktranslate trimmed with row_count=row_count verbose_name_plural=opts.verbose_name_plural %}{{ row_count }} selected {{ verbose_name_plural }}:{% endblocktranslate %}</p>
+    <ul class="text-sm mb-4">
+        {% for row in rows %}<li>{{ row }}</li>{% endfor %}
+        {% if row_count > rows|length %}<li>{% blocktranslate trimmed with row_count=row_count|add:"-50" %}and {{ row_count }} more{% endblocktranslate %}</li>{% endif %}
+    </ul>
+    <form method="post">{% csrf_token %}
+        {% for key, value in posted %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+        <input type="hidden" name="{{ confirmed_field }}" value="yes">
+        <button type="submit" class="bg-red-600 text-white font-semibold px-3 py-2 rounded-default">{% translate "Yes, go ahead" %}</button>
+        <a class="underline ml-4" href="">{% translate "No, go back" %}</a>
+    </form>
+</div>
+{% endblock %}

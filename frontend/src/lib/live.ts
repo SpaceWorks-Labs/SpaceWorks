@@ -1,3 +1,4 @@
+import { currentSessionContext } from "./api/sessionContext";
 // Live-update client for /api/v1/live/ (Server-Sent Events).
 //
 // The stream carries hints, not data: `{kind, makerspace_id, target_type, target_id, ...}`
@@ -77,6 +78,7 @@ export type LiveOptions = {
 };
 
 export function connectLiveUpdates(queryClient: QueryClient, options: LiveOptions = {}): () => void {
+  const context = currentSessionContext();
   const fetchImpl = options.fetchImpl ?? ((input, init) => fetch(input, init));
   const debounceMs = options.debounceMs ?? 300;
   const maxBackoffMs = options.maxBackoffMs ?? 30_000;
@@ -117,11 +119,11 @@ export function connectLiveUpdates(queryClient: QueryClient, options: LiveOption
   };
 
   const connect = async () => {
-    if (stopped || !getAccessToken()) return;
+    if (stopped || !getAccessToken(context)) return;
     controller = new AbortController();
     try {
       const response = await fetchImpl(url, {
-        headers: { ...authHeaders(), Accept: "text/event-stream" },
+        headers: { ...authHeaders(context), Accept: "text/event-stream" },
         signal: controller.signal,
         credentials: "include",
       });

@@ -8,6 +8,7 @@ import { invalidateInventoryViews } from "./queryInvalidation";
 import type { Makerspace } from "./StaffPanels";
 import type { ReturnLoanPayload } from "./DirectLoansTypes";
 import type { KitCount } from "../inventory/KitChecklist";
+import { needsDamageCharges } from "./loanCharges/DamageChargeStep";
 
 // The return half of the direct-handout panel: its own modal state, mutation and the
 // guard that refuses to submit without evidence, a remark, and (when the loan demands
@@ -18,6 +19,8 @@ export function useDirectLoanReturn(makerspace: Makerspace) {
   const [returnEvidenceId, setReturnEvidenceId] = useState<number | null>(null);
   const [returnNotes, setReturnNotes] = useState("");
   const [returnQrPayload, setReturnQrPayload] = useState("");
+  // Set after a return that recorded damage or loss: the request whose charges staff decide next.
+  const [chargeRequestId, setChargeRequestId] = useState<number | null>(null);
   useEffect(() => {
     setReturningLoan(null);
     setReturnEvidenceId(null);
@@ -26,11 +29,12 @@ export function useDirectLoanReturn(makerspace: Makerspace) {
   }, [makerspace.id]);
   const returnLoan = useMutation({
     mutationFn: ({ loanId, evidenceId, notes, qrPayload, resolutions, kitChecklist }: ReturnLoanPayload) =>
-      staffRequest(`/admin/direct-loans/${loanId}/return`, {
+      staffRequest<DirectLoan>(`/admin/direct-loans/${loanId}/return`, {
         method: "POST",
         body: JSON.stringify({ evidence_id: evidenceId, notes, qr_payload: qrPayload.trim(), resolutions, kit_checklist: kitChecklist ?? [] }),
       }),
-    onSuccess: () => {
+    onSuccess: (returned, { resolutions }) => {
+      if (returned?.request_id && needsDamageCharges(makerspace, resolutions)) setChargeRequestId(returned.request_id);
       queryClient.invalidateQueries({ queryKey: ["direct-loans", makerspace.id] });
       invalidateInventoryViews(queryClient, makerspace.id, makerspace.slug);
       resetReturnState();
@@ -79,5 +83,7 @@ export function useDirectLoanReturn(makerspace: Makerspace) {
     openReturnModal,
     closeReturnModal,
     submitReturn,
+    chargeRequestId,
+    closeChargeStep: () => setChargeRequestId(null),
   };
 }

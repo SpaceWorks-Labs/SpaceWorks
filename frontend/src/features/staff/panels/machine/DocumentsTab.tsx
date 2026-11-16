@@ -1,3 +1,6 @@
+import { t } from "@lingui/core/macro";
+import { ListRow, OverflowMenu } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -9,6 +12,7 @@ import {
   machineKeys,
   uploadMachineDocument,
 } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdit: boolean }) {
   const queryClient = useQueryClient();
@@ -22,7 +26,7 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
   const items = collectionResults(documents.data);
   const upload = useMutation({
     mutationFn: () => {
-      if (!file) throw new Error("Choose a document to upload");
+      if (!file) throw new Error(t`Choose a document to upload`);
       return uploadMachineDocument(machineId, file, docType.trim());
     },
     onSuccess: async () => {
@@ -43,49 +47,37 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
 
   return (
     <section>
-      <h3 className="title-section mb-3">Documents</h3>
-      {documents.isLoading ? <p className="text-sm text-muted">Loading documents...</p> : null}
-      {documents.error instanceof Error ? <p className="text-sm text-danger">{documents.error.message}</p> : null}
-      {!documents.isLoading && !documents.error && !items.length ? (
-        <p className="text-sm text-muted">No machine documents uploaded.</p>
-      ) : null}
+      <h3 className="title-section mb-3">{t`Documents`}</h3>
+      <MachineTabContent query={documents} resource={t`documents`} empty={!items.length} message={t`No machine documents uploaded. Upload the first document.`}>
       <div className="grid gap-2">
         {items.map((document) => (
-          <div key={document.id} className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-bg p-2 text-sm">
-            <span className="min-w-0 flex-1">
-              <strong className="block truncate text-ink">{document.original_filename}</strong>
-              <span className="text-xs text-muted">{document.doc_type} · {formatBytes(document.size_bytes)}</span>
-            </span>
-            <button className="desk-button-ghost" type="button" disabled={view.isPending}
-              onClick={() => view.mutate(document.id)}>View</button>
-            {canEdit ? (
-              <button className="desk-button-danger" type="button" disabled={remove.isPending}
-                onClick={() => remove.mutate(document.id)}>Delete</button>
-            ) : null}
-          </div>
+          <ListRow key={document.id} title={document.original_filename} identity={{ kind: "icon", icon: "Wrench", tone: "neutral" }}
+            meta={`${document.doc_type} · ${formatBytes(document.size_bytes)}`} right={<div className="flex flex-wrap gap-2">
+              <button className="desk-button" type="button" disabled={view.isPending} onClick={() => view.mutate(document.id)}>{t`View`}</button>
+              {canEdit ? <OverflowMenu actions={[{ label: t`Delete`, tone: "danger", disabled: remove.isPending, disabledReason: t`Wait for the current change to finish.`, onClick: () => remove.mutate(document.id) }]} /> : null}
+            </div>} />
         ))}
       </div>
+      </MachineTabContent>
       {canEdit ? (
         <form className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto] sm:items-end"
           onSubmit={(event) => { event.preventDefault(); upload.mutate(); }}>
-          <label className="eyebrow grid gap-1">File
-            <input ref={fileInput} className="desk-input" type="file"
+          <label className="eyebrow grid gap-1">{t`File`}<input ref={fileInput} className="desk-input" type="file"
               accept=".pdf,.jpg,.jpeg,.png,.webp,.stl,.3mf,.step,.stp,.obj,.amf,.ply,.gcode,.gco,.iges,.igs,.dxf"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)} required />
           </label>
-          <label className="eyebrow grid gap-1">Document type
-            <input className="desk-input" maxLength={16} value={docType}
+          <label className="eyebrow grid gap-1">{t`Document type`}<input className="desk-input" maxLength={16} value={docType}
               onChange={(event) => setDocType(event.target.value)} required />
           </label>
           <button className="desk-button-primary" type="submit"
             disabled={upload.isPending || !file || !docType.trim()}>
-            {upload.isPending ? "Uploading..." : "Upload"}
+            {upload.isPending ? <><BoxArt size={16} mono />{t`Uploading...`}</> : t`Upload`}
           </button>
         </form>
       ) : null}
-      {upload.error instanceof Error ? <p className="mt-2 text-sm text-danger">{upload.error.message}</p> : null}
-      {view.error instanceof Error ? <p className="mt-2 text-sm text-danger">{view.error.message}</p> : null}
-      {remove.error instanceof Error ? <p className="mt-2 text-sm text-danger">{remove.error.message}</p> : null}
+      {upload.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{upload.error.message}</p> : null}
+      {view.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{view.error.message}</p> : null}
+      {remove.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{remove.error.message}</p> : null}
     </section>
   );
 }

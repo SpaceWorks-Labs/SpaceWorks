@@ -1,0 +1,19 @@
+@keyframes sw-pass-tear { from { transform: translateY(-8px); } to { transform: translateY(0); } }
+@keyframes sw-result-arrive { from { transform: scale(.96); } to { transform: scale(1); } }
+@keyframes sw-companion-walk { 50% { transform: translateX(16px); } }
+@keyframes sw-logbook-open { from { transform: perspective(600px) rotateY(-8deg); } to { transform: perspective(600px) rotateY(0); } }
+.sw-delight-pass { animation: sw-pass-tear 360ms ease-out; }
+.sw-delight-result { animation: sw-result-arrive 360ms ease-out; }
+.sw-delight-walk { animation: sw-companion-walk 4s ease-in-out infinite; }
+.sw-delight-logbook { animation: sw-logbook-open 360ms ease-out; }
+.sw-blueprint-decoration { background-image: linear-gradient(rgb(var(--color-line)) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--color-line)) 1px, transparent 1px); background-size: 32px 32px; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .sw-delight-glyph:hover { transform: rotate(-3deg); transition: transform 120ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sw-delight-pass, .sw-delight-result, .sw-delight-walk, .sw-delight-logbook { animation: none; }
+}
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}

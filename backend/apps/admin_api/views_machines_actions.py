@@ -46,6 +46,8 @@ class MachineSetStatusView(APIView):
             machine,
             request.user,
             serializer.validated_data['status'],
+            reason=serializer.validated_data['reason'],
+            expected_back_at=serializer.validated_data['expected_back_at'],
         )
         return Response(MachineSerializer(machine, context={'request': request}).data)
 
@@ -117,6 +119,7 @@ class MachineUsageView(APIView):
             request.user,
             data['hours'],
             data.get('note', ''),
+            member=data.get('member'), started_at=data.get('started_at'),
         )
         return Response(
             MachineUsageEntrySerializer(entry).data,

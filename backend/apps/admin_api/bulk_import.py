@@ -25,3 +25,7 @@ from .bulk_import_rows import (
     _normalize_row,
     _row_action,
 )
+# Release 2 L4 (G18): member import shares the server-side parsers above; its planning and
+# writes live in their own modules, dispatched from the membership import routes.
+from .bulk_import_members import plan_rows as plan_member_rows  # noqa: E402,F401
+from .bulk_import_members_apply import apply_members  # noqa: E402,F401

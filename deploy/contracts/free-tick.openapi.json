@@ -1,0 +1,204 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Space Works free tick interface fixture",
+    "version": "1"
+  },
+  "x-contract-only": true,
+  "x-profile": "free",
+  "paths": {
+    "/api/v1/internal/free/tick": {
+      "post": {
+        "operationId": "internal_free_tick_create",
+        "tags": [
+          "Internal"
+        ],
+        "x-internal": true,
+        "security": [
+          {
+            "FreeTickSecret": []
+          }
+        ],
+        "description": "Free only; absent under full. HTTPS; no task/command selection. Empty body or {} only, maximum 1024 bytes. Atomic PostgreSQL limiter and transaction guard; bounded resumable chunks; no post-response work.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Healthy/no due work/budget deferral",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TickResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Generic invalid/missing/non-ASCII secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TickError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Full profile/unset configured secret; no endpoint disclosure"
+          },
+          "405": {
+            "description": "Mounted route allows POST only"
+          },
+          "429": {
+            "description": "Atomic admission rate exceeded",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TickError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Admission/database/service/task failure; successful checkpoints retained",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/TickResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TickError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body: only empty body or {} allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TickError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds 1024 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TickError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported request media type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TickError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "FreeTickSecret": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Cron-Secret"
+      }
+    },
+    "schemas": {
+      "TickResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "run_id",
+          "elapsed_seconds",
+          "completed",
+          "deferred",
+          "failed",
+          "reasons"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "elapsed_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "deferred": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reasons": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        }
+      },
+      "TickError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      }
+    }
+  }
+}

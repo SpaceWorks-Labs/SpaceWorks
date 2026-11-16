@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { Product, RequestCartItem } from "../../../types/inventory";
+import { clearStashedCart, readStashedCart } from "./cartHandoff";
 
 function maxQuantity(product: Product): number {
   if (
@@ -15,7 +16,10 @@ function maxQuantity(product: Product): number {
 
 /** Cart state for the public inventory page: a product-id keyed map plus its two mutators. */
 export function useInventoryCart() {
-  const [cart, setCart] = useState<Record<number, RequestCartItem>>({});
+  // A visitor back from "Sign in to borrow" gets the cart they left with (0.12.0 row 29). The
+  // stash is read without side effects (StrictMode runs initialisers twice) and dropped after mount.
+  const [cart, setCart] = useState<Record<number, RequestCartItem>>(() => readStashedCart());
+  useEffect(() => { clearStashedCart(); }, []);
   const selectedItems = useMemo(() => Object.values(cart), [cart]);
 
   function incrementItem(product: Product) {

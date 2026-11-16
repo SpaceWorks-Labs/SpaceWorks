@@ -5,10 +5,12 @@ from pathlib import Path
 import uuid
 
 from botocore.exceptions import BotoCoreError, ClientError
+from django.apps import apps
 from django.conf import settings
 
 from apps.backup.storage import client
 from apps.object_storage import delete_all_versions
+from apps.backup.capture_managers import every_row
 
 
 CHUNK_SIZE = 1024 * 1024
@@ -113,11 +115,46 @@ def _receipt_reserved(bucket_kind, key):
         return False
     from apps.evidence.models import EvidenceAbandonedUploadReceipt
 
-    return EvidenceAbandonedUploadReceipt.objects.filter(object_key=key).exists()
+    from django.db.models import Q
+    evidence_keys = [key]
+    if key.startswith("staging/"):
+        evidence_keys.append(key[len("staging/"):])
+    if EvidenceAbandonedUploadReceipt.objects.filter(object_key__in=evidence_keys).exists():
+        return True
+    for label, fields in (("events.EventAssetObligation", ("object_key", "staging_key", "verification_key")),
+                          ("events.BadgePrintCleanupReceipt", ("object_key",))):
+        try:
+            model = apps.get_model(label)
+        except LookupError:
+            continue
+        predicate = Q(pk__in=[])
+        for field in fields:
+            predicate |= Q(**{field: key})
+        if every_row(model).filter(predicate).exists():
+            return True
+    return False
 
 
 def _occupied(bucket_kind, key):
-    return _receipt_reserved(bucket_kind, key) or object_exists(bucket_kind, key)
+    if _receipt_reserved(bucket_kind, key):
+        return True
+    # A pending or repairing page cleanup will delete this exact key (private page
+    # bytes, or a public event cover), so an import must never be handed it.
+    if every_row(apps.get_model("makerspaces.PublicPageObjectCleanup")).filter(object_key=key).exists():
+        return True
+    if bucket_kind == "private":
+        # A row reserves its unique key even when its bytes are missing. Allocate
+        # here so promotion and imported rows share one key. Removed domain apps
+        # have no rows to reserve and must not be imported just to inspect storage.
+        for label in ("makerspaces.MakerspacePublicPageAsset", "organizations.OrganizationPublicPageAsset",
+                      "events.EventCertificateArtwork", "events.EventPageAsset", "bookings.BookingResourcePageAsset"):
+            try:
+                model = apps.get_model(label)
+            except LookupError:
+                continue
+            if every_row(model).filter(object_key=key).exists():
+                return True
+    return object_exists(bucket_kind, key)
 
 
 def choose_target_key(bucket_kind, source_key, job_id):

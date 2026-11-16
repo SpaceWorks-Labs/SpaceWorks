@@ -3,10 +3,9 @@ from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts import rbac
-from apps.accounts.services_staff_invitations import create as create_invitation
+from apps.accounts.services_staff_invitations import issue as issue_invitation
 from apps.accounts.staff_invitation_delivery import deliver
 from apps.audit import services as audit
-from apps.makerspaces.models import MakerspaceRole
 from apps.makerspaces.module_install import ModuleInstallError, replace_modules
 from apps.makerspaces.module_registry import core_module_keys, with_dependencies
 from apps.makerspaces.roles import ensure_default_roles
@@ -45,9 +44,8 @@ def configure_creation(actor, space, setup):
                      meta={"fields": sorted(changed)})
     invite = setup.get("first_staff_invite")
     if invite:
+        # One account per person: an email invitation the invitee accepts while signed in
+        # to their own account. The link goes to them only, never back to the creator.
         ensure_default_roles(space)
-        role = rbac.scope_by_action(actor, rbac.Action.MANAGE_MAKERSPACE,
-                                   MakerspaceRole.objects.filter(makerspace=space)).get(slug=invite["role_slug"])
-        row, raw = create_invitation(actor, space.pk, email=invite["email"], role_id=role.pk)
-        # Delivery fails safely and returns a privately shareable fallback link.
+        row, raw = issue_invitation(actor, space.pk, email=invite["email"], roles=[invite["role_slug"]])
         transaction.on_commit(lambda: setattr(space, "creation_invitation", deliver(row, raw)))

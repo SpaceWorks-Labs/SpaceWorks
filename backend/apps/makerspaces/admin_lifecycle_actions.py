@@ -5,16 +5,25 @@ routes through `apps.makerspaces.lifecycle` -- the single lifecycle source -- an
 writes `archived_at` itself.
 """
 
+from django.utils.translation import gettext
 from django.contrib import admin, messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.core.exceptions import ValidationError
 from django.template.response import TemplateResponse
 
 from apps.makerspaces.models import MakerspaceArchiveRequest
+from django.utils.translation import gettext_lazy
+
+
+def visible_archive_impacts(makerspaces):
+    from apps.makerspaces import lifecycle
+
+    return [{"object": space, **lifecycle.archive_impact(space)}
+            for space in makerspaces]
 
 
 class MakerspaceLifecycleActionsMixin:
-    @admin.action(description="Archive selected makerspaces")
+    @admin.action(description=gettext_lazy("Archive selected makerspaces"))
     def archive_makerspaces(self, request, queryset):
         from apps.makerspaces import lifecycle
 
@@ -29,7 +38,7 @@ class MakerspaceLifecycleActionsMixin:
             }
             context = {
                 **self.admin_site.each_context(request),
-                "title": "Archive selected makerspaces",
+                "title": gettext("Archive selected makerspaces"),
                 "makerspaces": [
                     {
                         "object": makerspace,
@@ -64,7 +73,7 @@ class MakerspaceLifecycleActionsMixin:
                     level=messages.SUCCESS,
                 )
 
-    @admin.action(description="Unarchive selected makerspaces")
+    @admin.action(description=gettext_lazy("Unarchive selected makerspaces"))
     def unarchive_makerspaces(self, request, queryset):
         from apps.makerspaces import lifecycle
 
@@ -84,14 +93,15 @@ class MakerspaceLifecycleActionsMixin:
                     level=messages.SUCCESS,
                 )
 
-    @admin.action(description="Purge selected archived makerspaces")
+    @admin.action(description=gettext_lazy("Purge selected archived makerspaces"))
     def purge_makerspaces(self, request, queryset):
         makerspaces = list(queryset)
         if "confirm_purge" not in request.POST:
             context = {
                 **self.admin_site.each_context(request),
-                "title": "Purge selected makerspaces",
+                "title": gettext("Purge selected makerspaces"),
                 "queryset": makerspaces,
+                "impacts": visible_archive_impacts(makerspaces),
                 "opts": self.model._meta,
                 "action_name": "purge_makerspaces",
                 "action_checkbox_name": ACTION_CHECKBOX_NAME,

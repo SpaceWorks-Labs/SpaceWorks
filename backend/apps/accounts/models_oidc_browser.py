@@ -1,16 +1,20 @@
 from django.conf import settings
 from django.db import models
+from apps.accounts.models_social import SocialSurface
 
 
 class OidcBrowserAttempt(models.Model):
     """Single-use authorization-code attempt with three protocol secrets."""
 
     provider = models.CharField(max_length=64)
+    surface = models.CharField(max_length=16, choices=SocialSurface.choices, default=SocialSurface.MEMBER)
     state_digest = models.CharField(max_length=64, unique=True)
     nonce_digest = models.CharField(max_length=64, unique=True)
     code_verifier = models.CharField(max_length=128)
     redirect_uri = models.CharField(max_length=2048)
     origin = models.CharField(max_length=512)
+    # Same-origin relative path the SPA wanted after sign-in (validated in `safe_next`); echoed by the callback.
+    next_path = models.CharField(max_length=512, blank=True, default="")
     intended_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,

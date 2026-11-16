@@ -1,4 +1,5 @@
 """Printer policy and immutable measured report, separate from authoritative workflow."""
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -28,7 +29,7 @@ class PrinterJob(ScopedPiiModelMixin, models.Model):
         AWAITING = "awaiting", "Awaiting"
         REPORTED = "reported", "Reported"
         APPLIED = "applied", "Applied"
-        NEEDS_REVIEW = "needs_review", "Needs review"
+        NEEDS_REVIEW = "needs_review", gettext_noop("Needs review")
         CANCELLED = "cancelled", "Cancelled"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

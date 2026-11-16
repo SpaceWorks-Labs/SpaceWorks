@@ -7,6 +7,7 @@ every channel accepted the link, and when the link (and the object) expire. Deli
 carry bytes into chat channels; they carry a short-lived signed download URL.
 """
 
+from django.utils.translation import gettext
 import calendar
 from datetime import timedelta
 
@@ -20,18 +21,18 @@ MAX_RECIPIENT_EMAILS = 10
 
 def validate_recipient_emails(value):
     if not isinstance(value, list):
-        raise ValidationError("Recipient emails must be a list.")
+        raise ValidationError(gettext("Recipient emails must be a list."))
     if len(value) > MAX_RECIPIENT_EMAILS:
-        raise ValidationError(f"At most {MAX_RECIPIENT_EMAILS} recipient emails are allowed.")
+        raise ValidationError(gettext('At most {MAX_RECIPIENT_EMAILS} recipient emails are allowed.').format(MAX_RECIPIENT_EMAILS=MAX_RECIPIENT_EMAILS))
     for item in value:
         if not isinstance(item, str):
-            raise ValidationError("Recipient emails must be strings.")
+            raise ValidationError(gettext("Recipient emails must be strings."))
         validate_email(item)
 
 
 def validate_schedule_filters(value):
     if not isinstance(value, dict):
-        raise ValidationError("Report filters must be an object.")
+        raise ValidationError(gettext("Report filters must be an object."))
 
 
 def step_cadence(moment, cadence):

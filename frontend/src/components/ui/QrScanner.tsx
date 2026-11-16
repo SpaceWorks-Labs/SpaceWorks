@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -22,6 +23,10 @@ type QrScannerProps = {
   feedback?: ReactNode;
 };
 
+// The native BarcodeDetector is not in TypeScript's DOM library yet; this is the slice we use.
+type BarcodeDetectorLike = { detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]> };
+type BarcodeDetectorConstructor = new (options: { formats: string[] }) => BarcodeDetectorLike;
+
 let zxingReaderPromise: Promise<typeof import("zxing-wasm/reader")> | null = null;
 const loadZxingReader = () => {
   zxingReaderPromise ??= import("zxing-wasm/reader").then((mod) => {
@@ -43,7 +48,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<number | null>(null);
-  const detectorRef = useRef<any>(null);
+  const detectorRef = useRef<BarcodeDetectorLike | null>(null);
   const nativeFailedRef = useRef(false);
   const onScanRef = useRef(onScan);
   const lastScanRef = useRef({ value: "", at: 0 });
@@ -74,6 +79,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   useEffect(() => {
     onScanRef.current = onScan;
   }, [onScan]);
+  const closeRef = useRef<() => void>(() => {});
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const token = pushDialog({
@@ -86,7 +92,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!amTopRef.current) return;
-      if (event.key === "Escape") close();
+      if (event.key === "Escape") closeRef.current();
       if (panel) trapDialogFocus(event, panel);
     };
 
@@ -120,7 +126,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
       try {
         if ("BarcodeDetector" in window && !nativeFailedRef.current) {
           try {
-            const Detector = (window as any).BarcodeDetector;
+            const Detector = (window as unknown as { BarcodeDetector: BarcodeDetectorConstructor }).BarcodeDetector;
             detectorRef.current ??= new Detector({ formats: ["qr_code"] });
             const results = await detectorRef.current.detect(video);
             emitScan(results[0]?.rawValue ?? "");
@@ -147,7 +153,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
         }
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "QR scanner could not start.");
+        setError(err instanceof Error ? err.message : t`QR scanner could not start.`);
         stopScanner();
       } finally {
         isDetectingRef.current = false;
@@ -160,7 +166,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
       // opaque "Cannot read properties of undefined" instead of a clear message.
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error(
-          "Camera needs a secure connection (https:// or localhost). Open this site over HTTPS or on the same machine to scan."
+          t`Camera needs a secure connection (https:// or localhost). Open this site over HTTPS or on the same machine to scan.`
         );
       }
       try {
@@ -198,7 +204,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
         intervalRef.current = window.setInterval(detect, 400);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Camera access was denied.");
+        setError(err instanceof Error ? err.message : t`Camera access was denied.`);
       }
     };
 
@@ -213,38 +219,38 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
     stopScanner();
     onClose();
   };
+  closeRef.current = close;
 
   return createPortal(
-    <div ref={layerRef} inert={!amTop} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
-      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="flex max-h-[90vh] w-full max-w-lg flex-col gap-3 overflow-y-auto rounded-lg border border-line bg-panel p-4 shadow-xl outline-none">
-        <h2 id={titleId} className="sr-only">QR scanner</h2>
+    <div data-replay-block ref={layerRef} inert={!amTop} className="sw-camera-layer fixed inset-0 z-[100] flex items-stretch justify-center bg-scrim/70 sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="sw-camera-panel flex h-dvh w-full flex-col gap-3 overflow-y-auto overscroll-contain bg-panel pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] shadow-overlay outline-none sm:h-auto sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg sm:border sm:border-line sm:p-4">
+        <h2 id={titleId} className="sr-only">{t`QR scanner`}</h2>
         {error ? (
-          <div className="grid gap-3">
+          <div className="my-auto grid gap-3 sm:my-0">
             <p className="text-sm text-danger">{error}</p>
             <button className="desk-button w-full" type="button" onClick={close}>
-              Close
-            </button>
+              {t`Close`}</button>
           </div>
         ) : (
-          <div className="grid gap-3">
-            <div className="relative">
+          <div className="sw-camera flex min-h-0 flex-1 flex-col gap-3 sm:grid sm:flex-none">
+            {/* Phones: the viewfinder takes the free height (portrait); tablet and up: a 16:9 preview. */}
+            <div className="sw-camera-media relative min-h-0 flex-1 sm:flex-none">
               <video
                 ref={videoRef}
-                className="aspect-video max-h-[60vh] w-full rounded-md bg-black object-cover"
+                className="h-full min-h-[40dvh] w-full rounded-md bg-surface object-cover sm:aspect-video sm:h-auto sm:min-h-0 sm:max-h-[60dvh]"
                 autoPlay
                 muted
                 playsInline
               />
               {!ready ? (
-                <p className="absolute inset-0 grid place-items-center text-sm text-white">Starting camera...</p>
+                <p className="absolute inset-0 grid place-items-center text-sm text-ink">{t`Starting camera...`}</p>
               ) : null}
             </div>
-            <p className="text-center text-sm text-muted">Point the camera at a QR code</p>
+            <p className="text-center text-sm text-muted">{t`Point the camera at a QR code`}</p>
             <CameraTorch stream={streamRef} ready={ready} />
             {feedback}
             <button className="desk-button-primary w-full" type="button" onClick={close}>
-              Done
-            </button>
+              {t`Done`}</button>
           </div>
         )}
       </div>

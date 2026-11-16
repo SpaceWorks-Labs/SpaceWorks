@@ -2,7 +2,7 @@ export type ResolveTarget =
   | { type: "product"; id: number; name: string }
   | { type: "asset"; id: number; asset_tag: string; product: string; status: string }
   | { type: "box"; id: number; label: string; code: string };
-export type ResolvedQr = { id: number; makerspace: number; makerspace_id?: number; payload: string; status: string };
+export type ResolvedQr = { id: number; makerspace: number; makerspace_id?: number; payload: string; status: string; source?: "spaceworks" | "external" };
 export type Resolved = { qr: ResolvedQr; target: ResolveTarget; allowed_actions: string[] };
 export type Rebound = { qr: ResolvedQr; target: ResolveTarget };
 export type BoxContents = {

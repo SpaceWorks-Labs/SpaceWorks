@@ -1,0 +1,184 @@
+name: Tests
+
+# The committed test suites (decision 244: "CI runs the committed backend and frontend suites").
+# Checks (checks.yml) stays the fast required gate; this workflow runs the full suites.
+#
+# Backend: the same isolated runner as local work (`scripts/dev.sh test`): it builds the backend image
+# (version-matched pg 16/17 clients, fonts, render deps) and starts a throwaway Postgres 16, Redis and
+# object store per shard on a private Docker network. The suite is split into shards by test file.
+# Frontend: the whole vitest suite.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+    inputs:
+      areas:
+        description: "Optional comma/space-separated areas (e.g. events bookings); empty runs the full suite. See docs/TESTING-BY-AREA.md."
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    if: ${{ !inputs.areas }}
+    name: backend tests (${{ matrix.shard }}/8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick this shard's test files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd backend
+          # Tests that drive MigrationExecutor rewind the schema across dozens of migrations (Django rebuilds
+          # the project state per step: minutes and gigabytes each), so they run in their own job below.
+          grep -rl --include='test_*.py' MigrationExecutor tests | LC_ALL=C sort > .ci-deep-tests.txt
+          find tests -name 'test_*.py' -not -path '*/__pycache__/*' -not -path 'tests/tombstone/*' | LC_ALL=C sort \
+            | grep -v -x -F -f .ci-deep-tests.txt \
+            | awk -v shard=${{ matrix.shard }} -v total=8 '(NR - 1) % total == shard - 1' > .ci-shard-tests.txt
+          echo "Shard ${{ matrix.shard }}: $(wc -l < .ci-shard-tests.txt) test files"
+
+      - name: Run the shard in the isolated test runner
+        run: bash scripts/dev.sh test -q @.ci-shard-tests.txt
+
+  backend-migrations:
+    if: ${{ !inputs.areas }}
+    name: backend tests (migration rewinds ${{ matrix.slice }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        slice: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick this slice's migration-rewind test files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd backend
+          grep -rl --include='test_*.py' MigrationExecutor tests | LC_ALL=C sort \
+            | awk -v slice=${{ matrix.slice }} -v total=4 '(NR - 1) % total == slice - 1' > .ci-deep-slice.txt
+          echo "Slice ${{ matrix.slice }}: $(wc -l < .ci-deep-slice.txt) test files"
+
+      - name: Run the slice in the isolated test runner
+        run: bash scripts/dev.sh test -q @.ci-deep-slice.txt
+
+  backend-tombstone:
+    if: ${{ !inputs.areas }}
+    name: backend tests (tombstone profile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      # tests/tombstone is a separate pytest process with apps actually removed (see its conftest.py), so it
+      # cannot share a shard with the all-active suite. The variable must be set before Django imports settings.
+      - name: Run the tombstone profile in the isolated test runner
+        env:
+          TOMBSTONED_APPS: bookings,devices,event_reimbursements,events,maintenance,notifications,payments_rail,presence,procurement,tenant_migration,warranty
+        run: bash scripts/dev.sh test -q tests/tombstone
+
+  frontend:
+    if: ${{ !inputs.areas }}
+    name: frontend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Vitest (whole suite)
+        run: npx vitest run --maxWorkers=2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: node:test suites (website serving, documentation contracts)
+        working-directory: .
+        run: node --test frontend/scripts/verify-website-serving.test.mjs backend/tests/docs/documentation.test.cjs
+
+  areas:
+    name: selected area tests
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.areas != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SELECTED_AREAS: ${{ inputs.areas }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run selected backend areas (including migration tests)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t areas < <(python -c 'import os; print("\n".join(os.environ["SELECTED_AREAS"].replace(",", " ").split()))')
+          ((${#areas[@]})) || { echo "Supply at least one area" >&2; exit 2; }
+          args=()
+          for area in "${areas[@]}"; do args+=(--area "$area"); done
+          bash scripts/dev.sh test -q "${args[@]}"
+      - name: Run selected tombstone-profile areas
+        shell: bash
+        env:
+          TOMBSTONED_APPS: bookings,devices,event_reimbursements,events,maintenance,notifications,payments_rail,presence,procurement,tenant_migration,warranty
+        run: |
+          set -euo pipefail
+          mapfile -t areas < <(python -c 'import os; print("\n".join(os.environ["SELECTED_AREAS"].replace(",", " ").split()))')
+          args=()
+          for area in "${areas[@]}"; do args+=(--area "$area"); done
+          # Pytest exit 5 means this separate deployment profile has no matching cases.
+          status=0
+          bash scripts/dev.sh test -q tests/tombstone "${args[@]}" || status=$?
+          [[ "$status" == 0 || "$status" == 5 ]] || exit "$status"
+      - name: Run selected frontend areas
+        working-directory: frontend
+        run: npm run test:area -- "$SELECTED_AREAS" --maxWorkers=2
+      - name: Shared website and documentation contracts for shell/platform areas
+        shell: bash
+        run: |
+          case " ${SELECTED_AREAS//,/ } " in
+            *" frontend_shell "*|*" platform "*|*" api_contract "*)
+              node --test frontend/scripts/verify-website-serving.test.mjs backend/tests/docs/documentation.test.cjs ;;
+          esac

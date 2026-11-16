@@ -1,0 +1,44 @@
+/* Overlays. Each carries data-state="open|closed"; the closed state is what usePresence keeps
+   mounted until the exit finishes. All of it is inside no-preference: under reduced motion (and in
+   jsdom) the components unmount immediately instead. Kiosk and TV screens zero the distances via
+   the tokens in index.css, leaving a fade. */
+@media (prefers-reduced-motion: no-preference) {
+  .sw-fx-fade[data-state="open"] { animation: sw-fade-in var(--sw-dur-base) var(--sw-ease-standard) both; }
+  .sw-fx-fade[data-state="closed"] { animation: sw-fade-out var(--sw-dur-fast) var(--sw-ease-exit) both; pointer-events: none; }
+
+  .sw-fx-pop[data-state="open"] { animation: sw-pop-in var(--sw-dur-base) var(--sw-ease-enter) both; }
+  .sw-fx-pop[data-state="closed"] { animation: sw-pop-out var(--sw-dur-fast) var(--sw-ease-exit) both; }
+
+  .sw-fx-drawer[data-state="open"] { animation: sw-drawer-in var(--sw-dur-slow) var(--sw-ease-enter) both; }
+  .sw-fx-drawer[data-state="closed"] { animation: sw-drawer-out var(--sw-dur-base) var(--sw-ease-exit) both; }
+  .sw-fx-drawer[data-edge="left"][data-state="open"] { animation-name: sw-drawer-in-left; }
+  .sw-fx-drawer[data-edge="left"][data-state="closed"] { animation-name: sw-drawer-out-left; }
+
+  .sw-fx-menu { --sw-from-y: calc(var(--sw-pop-offset) * -1); }
+  .sw-fx-menu[data-above] { --sw-from-y: var(--sw-pop-offset); }
+  .sw-fx-menu[data-state="open"] { animation: sw-menu-in var(--sw-dur-fast) var(--sw-ease-enter) both; }
+  .sw-fx-menu[data-state="closed"] { animation: sw-menu-out var(--sw-dur-fast) var(--sw-ease-exit) both; pointer-events: none; }
+
+  .sw-fx-toast[data-state="open"] { animation: sw-toast-in var(--sw-dur-base) var(--sw-ease-enter) both; }
+  .sw-fx-toast[data-state="closed"] { animation: sw-toast-out var(--sw-dur-fast) var(--sw-ease-exit) both; pointer-events: none; }
+
+  /* Phones show the modal as a bottom sheet, so it rises instead of scaling. */
+  @media (max-width: 639px) {
+    .sw-fx-pop[data-state="open"] { animation-name: sw-sheet-in; }
+    .sw-fx-pop[data-state="closed"] { animation-name: sw-sheet-out; }
+  }
+}
+@keyframes sw-fade-in { from { opacity: 0; } }
+@keyframes sw-fade-out { to { opacity: 0; } }
+@keyframes sw-pop-in { from { opacity: 0; transform: scale(var(--sw-pop-scale)); } }
+@keyframes sw-pop-out { to { opacity: 0; transform: scale(var(--sw-pop-scale)); } }
+@keyframes sw-sheet-in { from { opacity: 0; transform: translateY(calc(var(--sw-enter-y) * 2)); } }
+@keyframes sw-sheet-out { to { opacity: 0; transform: translateY(calc(var(--sw-enter-y) * 2)); } }
+@keyframes sw-drawer-in { from { transform: translateX(var(--sw-slide-x)); } }
+@keyframes sw-drawer-out { to { transform: translateX(var(--sw-slide-x)); } }
+@keyframes sw-drawer-in-left { from { transform: translateX(calc(var(--sw-slide-x) * -1)); } }
+@keyframes sw-drawer-out-left { to { transform: translateX(calc(var(--sw-slide-x) * -1)); } }
+@keyframes sw-menu-in { from { opacity: 0; transform: translateY(var(--sw-from-y)); } }
+@keyframes sw-menu-out { to { opacity: 0; transform: translateY(var(--sw-from-y)); } }
+@keyframes sw-toast-in { from { opacity: 0; transform: translateY(calc(var(--sw-enter-y) * 1.5)); } }
+@keyframes sw-toast-out { to { opacity: 0; transform: translateY(var(--sw-enter-y)); } }

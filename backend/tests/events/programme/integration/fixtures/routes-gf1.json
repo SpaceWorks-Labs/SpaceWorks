@@ -1,0 +1,3675 @@
+{
+  "contract": "G-FINAL Part 1 mounted inventory",
+  "routes": [
+    {
+      "name": "events-programme-member-application-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/application/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.hackathons.views_application.ApplicationView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-application-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/application/submit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_application.ApplicationSubmitView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-application-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/application/withdraw/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_application.ApplicationWithdrawView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-application-rsvp",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/application/rsvp/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_application.ApplicationRsvpView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-application-date-review",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/application/date-review/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_application.ApplicationDateReviewView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_teams.TeamListView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.hackathons.views_teams.TeamDetailView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-invite",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/invite/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_team_commands.InviteView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-join-request",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/join-request/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_team_commands.JoinRequestView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-accept",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/accept/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_team_commands.AcceptView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-leave",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/leave/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_team_commands.LeaveView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-lock",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/lock/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_team_commands.LockView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-team-cancel",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/cancel/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_team_commands.CancelView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-team-comments",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/comments/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_finder.CommentsView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-team-finder",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/team-finder/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.hackathons.views_finder.FinderView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-team-finder-me",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/team-finder/me/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.hackathons.views_finder.FinderMeView",
+      "provider": "apps.events.hackathons.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-hackathon",
+      "path": "/api/v1/admin/events/{pk}/hackathon/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.hackathons.views_config.ConfigView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-applications",
+      "path": "/api/v1/admin/events/{pk}/applications/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.hackathons.views_review.ApplicationListView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-application-review-assign",
+      "path": "/api/v1/admin/events/{pk}/application-review/assign/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_review.ReviewAssignView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-application-reviews",
+      "path": "/api/v1/admin/events/{pk}/application-reviews/{review_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.hackathons.views_review.ReviewView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-application-decisions-preview",
+      "path": "/api/v1/admin/events/{pk}/application-decisions/preview/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_decisions.DecisionPreviewView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-application-decisions-stage",
+      "path": "/api/v1/admin/events/{pk}/application-decisions/stage/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_decisions.DecisionStageView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-application-decisions-release",
+      "path": "/api/v1/admin/events/{pk}/application-decisions/release/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_decisions.DecisionReleaseView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-application-decisions-cancel",
+      "path": "/api/v1/admin/events/{pk}/application-decisions/cancel/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_decisions.DecisionCancelView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-application-decisions-detail",
+      "path": "/api/v1/admin/events/{pk}/application-decisions/{batch_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.hackathons.views_decisions.DecisionDetailView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-applications-extend-rsvp",
+      "path": "/api/v1/admin/events/{pk}/applications/{application_id}/extend-rsvp/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_decisions.ExtendRsvpView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-applications-rsvp-on-behalf",
+      "path": "/api/v1/admin/events/{pk}/applications/{application_id}/rsvp-on-behalf/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.hackathons.views_decisions.StaffRsvpView",
+      "provider": "apps.events.hackathons.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-context",
+      "path": "/api/v1/public/event-programmes/{public_token}/context/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.hackathons.views_application.ContextView",
+      "provider": "apps.events.hackathons.urls_public",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-submission",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/submission/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.submissions.views_projects.ProjectView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-submission-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/submission/submit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_projects.ProjectCommandView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-submission-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/submission/withdraw/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_projects.ProjectCommandView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-assets-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/assets/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.UploadView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-assets-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/assets/{asset_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_uploads.AssetDetailView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-assets-parts",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/assets/{asset_id}/parts/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.AssetPartsView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-assets-resume",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/assets/{asset_id}/resume/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.AssetResumeView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-assets-complete",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/assets/{asset_id}/complete/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.AssetCommandView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-teams-assets-abort",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/assets/{asset_id}/abort/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.AssetCommandView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-assets-download",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/assets/{asset_id}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_downloads.AssetDownloadView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-assets-preview",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/assets/{asset_id}/preview/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_downloads.AssetDownloadView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-participant-resumes",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/participant-resumes/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.ResumeCollectionView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-participant-resume-from-saved",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/participant-resumes/from-saved/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.FromSavedView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-participant-resume-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/participant-resumes/{asset_id}/",
+      "methods": [
+        "DELETE",
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_uploads.ResumeDetailView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "DELETE": {},
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-participant-resume-complete",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/participant-resumes/{asset_id}/complete/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.AssetCommandView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-participant-resume-abort",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/participant-resumes/{asset_id}/abort/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_uploads.AssetCommandView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-participant-resume-download",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/participant-resumes/{asset_id}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_downloads.AssetDownloadView",
+      "provider": "apps.events.submissions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-submissions-amend",
+      "path": "/api/v1/admin/events/{pk}/submissions/{submission_id}/amend/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_projects.AmendView",
+      "provider": "apps.events.submissions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-submissions-triage",
+      "path": "/api/v1/admin/events/{pk}/submissions/{submission_id}/triage/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.views_projects.TriageView",
+      "provider": "apps.events.submissions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-assets-download",
+      "path": "/api/v1/admin/events/{pk}/assets/{asset_id}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_downloads.AssetDownloadView",
+      "provider": "apps.events.submissions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-assets-preview",
+      "path": "/api/v1/admin/events/{pk}/assets/{asset_id}/preview/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_downloads.AssetDownloadView",
+      "provider": "apps.events.submissions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-gallery-assets",
+      "path": "/api/v1/public/event-programmes/{public_token}/gallery/assets/{public_asset_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.views_downloads.GalleryAssetView",
+      "provider": "apps.events.submissions.urls_public",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-posting-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-postings/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_member.PostingListView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-posting-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-postings/{posting_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_member.PostingDetailView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-application-create",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-postings/{posting_id}/application/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.RoleApplicationCreateView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-application-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_member.RoleApplicationListView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-application-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.contributions.views_member.RoleApplicationDetailView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-application-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/submit/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.RoleSubmitView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-application-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/withdraw/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.RoleWithdrawView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-role-application-date-review",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/date-review/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.RoleDateReviewView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-shift-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shifts/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_member.ShiftListView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-shift-apply",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shifts/{shift_id}/apply/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.ShiftApplyView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-shift-signup-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_member.SignupListView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-shift-signup-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_member.SignupDetailView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-shift-signup-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/withdraw/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.SignupWithdrawView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-shift-signup-check-in",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/check-in/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.SignupCheckInView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-shift-signup-check-out",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/check-out/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_member.SignupCheckOutView",
+      "provider": "apps.events.contributions.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-roles-list",
+      "path": "/api/v1/admin/events/{pk}/roles/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.RolesView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-roles",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.RoleDetailView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-roles-approve",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/approve/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.RoleApproveView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-roles-revoke",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/revoke/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.RoleRevokeView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-volunteer-postings-list",
+      "path": "/api/v1/admin/events/{pk}/volunteer-postings/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.PostingsView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-volunteer-postings-detail",
+      "path": "/api/v1/admin/events/{pk}/volunteer-postings/{posting_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.PostingDetailView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shifts-list",
+      "path": "/api/v1/admin/events/{pk}/shifts/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.ShiftsView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shifts-detail",
+      "path": "/api/v1/admin/events/{pk}/shifts/{shift_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.ShiftDetailView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shift-signup-approve",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/approve/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.SignupApproveView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shift-signup-withdraw",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/withdraw/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.SignupWithdrawView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shift-signup-check-in",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/check-in/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.SignupAttendanceView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shift-signup-check-out",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/check-out/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.SignupCheckOutView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shift-signup-verify-hours",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/verify-hours/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.SignupVerifyHoursView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-shift-signup-adjust-hours",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/adjust-hours/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_admin.SignupAdjustHoursView",
+      "provider": "apps.events.contributions.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-volunteer-postings",
+      "path": "/api/v1/public/event-programmes/{public_token}/volunteer-postings/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_public.VolunteerPostingPublicView",
+      "provider": "apps.events.contributions.urls_public",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-office-hours-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.mentoring.views_office_hours.OfficeHoursListView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-office-hours-booking-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/bookings/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.mentoring.views_office_hours.OfficeHoursBookingListView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-office-hours-booking-create",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/{slot_id}/bookings/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_office_hours.OfficeHoursBookingCreateView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-office-hours-booking-cancel",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/bookings/{booking_id}/cancel/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_office_hours.OfficeHoursBookingCancelView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-help-collection",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.HelpCollectionView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-help-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.mentoring.views_help.HelpDetailView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-help-comments",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/comments/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.HelpCommentsView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-help-cancel",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/cancel/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.HelpCancelView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-help-reopen",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/reopen/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.HelpReopenView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-collection",
+      "path": "/api/v1/admin/events/{pk}/help/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpCollectionView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-detail",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpDetailView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-comments",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/comments/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpCommentsView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-claim",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/claim/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpClaimView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-release",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/release/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpReleaseView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-resolve",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/resolve/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpResolveView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-reopen",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/reopen/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpReopenView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-help-assign",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/assign/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_help.AdminHelpAssignView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-list",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.AssignmentsView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-preview",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/preview/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.AssignmentPreviewView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-assign",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/assign/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.AssignmentRunView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-list",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundsView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-detail",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundDetailView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-open",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/open/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundOpenView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-close",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/close/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundCloseView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-skip",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/skip/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundSkipView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-claim",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/claim/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundClaimView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-heartbeat",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/heartbeat/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundHeartbeatView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-submit",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/submit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundSubmitView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-release",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/release/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.RoundReleaseView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-mentor-analytics",
+      "path": "/api/v1/admin/events/{pk}/mentor-analytics/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.mentoring.views_operations.AnalyticsView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-teams-import-preview",
+      "path": "/api/v1/admin/events/{pk}/teams-import/preview/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.ImportPreviewView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-teams-import-commit",
+      "path": "/api/v1/admin/events/{pk}/teams-import/commit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_operations.ImportCommitView",
+      "provider": "apps.events.mentoring.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-roles-complete",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/complete/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.RoleCompletionView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "ADMIN",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-roles-reject",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/reject/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.RoleRejectView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "ADMIN",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-roles-reopen-answers",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/reopen-answers/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.RoleReopenView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "ADMIN",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-roles-reconfirm",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/reconfirm/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.RoleReconfirmView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "ADMIN",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-roles-requirement-overrides",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/requirement-overrides/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.RequirementOverrideView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "ADMIN",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-roles-admit",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/admit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.ContributorAdmissionView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "ADMIN",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-member-role-application-decline",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/decline/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.RoleDeclineView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "MEMBER",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-member-role-application-export",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/export/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.contributions.views_completion.RoleOwnerExportView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "MEMBER",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-mentor-profiles",
+      "path": "/api/v1/admin/events/{pk}/mentor-profiles/{assignment_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.mentoring.views_configuration.MentorProfileView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-help-types-list",
+      "path": "/api/v1/admin/events/{pk}/help-types/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_configuration.HelpTypesView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-help-types-detail",
+      "path": "/api/v1/admin/events/{pk}/help-types/{type_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_configuration.HelpTypeDetailView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-mentor-conflicts",
+      "path": "/api/v1/admin/events/{pk}/mentor-conflicts/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_configuration.ConflictView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-mentor-attention-mute",
+      "path": "/api/v1/admin/events/{pk}/mentor-attention/mute/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_configuration.MuteView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-nominations",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/nominations/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_configuration.NominationView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-help-renew",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/renew/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_configuration.RenewHelpView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-activate",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/{assignment_id}/activate/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_completion.AssignmentActivateView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-end",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/{assignment_id}/end/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.mentoring.views_completion.AssignmentEndView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-teams-export",
+      "path": "/api/v1/admin/events/{pk}/teams-export/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.mentoring.views_completion.TeamExportView",
+      "provider": "apps.events.mentoring.urls_completion",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-judging-signals",
+      "path": "/api/v1/admin/events/{pk}/judging-signals/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.judging.views_signals.ShortlistSignals",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-tracks-list",
+      "path": "/api/v1/admin/events/{pk}/tracks/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.TrackList",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-tracks-detail",
+      "path": "/api/v1/admin/events/{pk}/tracks/{track_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.TrackDetail",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-prizes-list",
+      "path": "/api/v1/admin/events/{pk}/prizes/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.PrizeList",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-prizes-detail",
+      "path": "/api/v1/admin/events/{pk}/prizes/{prize_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.PrizeDetail",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-list",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.RoundList",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-detail",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.RoundDetail",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-open",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/open/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.RoundOpen",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-assign",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/assign/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.RoundAssign",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-close",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/close/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.RoundClose",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-finalize",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/finalize/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_definitions.RoundFinalize",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-list",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.judging.views_scoring.AssignmentList",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-detail",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.judging.views_scoring.AssignmentDetail",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-score",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/score/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_scoring.AssignmentScore",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-rank",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/rank/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_scoring.AssignmentRank",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-recuse",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/recuse/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_scoring.AssignmentRecuse",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-skip",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/skip/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_scoring.AssignmentSkip",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-sponsors-submissions",
+      "path": "/api/v1/admin/events/{pk}/sponsors/{sponsor_id}/submissions/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.judging.views_sponsors.SponsorSubmissions",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-sponsors-prizes-propose",
+      "path": "/api/v1/admin/events/{pk}/sponsors/{sponsor_id}/prizes/{prize_id}/propose/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_sponsors.SponsorWinnerProposal",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-sponsor-resume-download",
+      "path": "/api/v1/admin/events/{pk}/sponsors/{sponsor_id}/resumes/{participant_asset_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.judging.views_sponsors.SponsorResumeDownload",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-results-preview",
+      "path": "/api/v1/admin/events/{pk}/results/preview/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_results.ResultsPreview",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-results-finalize",
+      "path": "/api/v1/admin/events/{pk}/results/finalize/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_results.ResultsFinalize",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-results-publish",
+      "path": "/api/v1/admin/events/{pk}/results/publish/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_results.ResultsPublish",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-results-correct",
+      "path": "/api/v1/admin/events/{pk}/results/correct/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_results.ResultsCorrect",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-gallery-publish",
+      "path": "/api/v1/admin/events/{pk}/gallery/publish/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryPublish",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-gallery-list",
+      "path": "/api/v1/admin/events/{pk}/gallery/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.gallery_views.AdminGallery",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-gallery-entries-hide",
+      "path": "/api/v1/admin/events/{pk}/gallery/entries/{entry_id}/hide/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryHide",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-gallery-amend",
+      "path": "/api/v1/admin/events/{pk}/gallery/amend/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryAmend",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-gallery-correct-result",
+      "path": "/api/v1/admin/events/{pk}/gallery/correct-result/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryCorrectResult",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-resume-consents",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/resume-consents/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.judging.views_sponsors.ResumeConsents",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-resume-consent-revoke",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/resume-consents/{consent_id}/revoke/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.judging.views_sponsors.ResumeConsentRevoke",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-gallery-consent-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/gallery-consent/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryConsentDetail",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-gallery-consent-grant",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/gallery-consent/grant/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryConsentGrant",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-gallery-consent-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/gallery-consent/withdraw/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryConsentWithdraw",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-gallery-list",
+      "path": "/api/v1/public/event-programmes/{public_token}/gallery/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryList",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-gallery-detail",
+      "path": "/api/v1/public/event-programmes/{public_token}/gallery/{entry_public_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.gallery_views.GalleryDetail",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-results",
+      "path": "/api/v1/public/event-programmes/{public_token}/results/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.submissions.gallery_views.PublicResults",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-registrations-credential-rotate",
+      "path": "/api/v1/admin/events/{pk}/registrations/{registration_id}/credential/rotate/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.credentials.views.CredentialRotateView",
+      "provider": "apps.events.credentials.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-registrations-credential-revoke",
+      "path": "/api/v1/admin/events/{pk}/registrations/{registration_id}/credential/revoke/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.credentials.views.CredentialRevokeView",
+      "provider": "apps.events.credentials.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-badge-design-preview",
+      "path": "/api/v1/admin/events/{pk}/badges/design-preview.pdf",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.print_preview.BadgePreviewView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-certificate-publication-policy",
+      "path": "/api/v1/admin/events/{pk}/certificates/verification-policy/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.certificates.publication_views.CertificatePublicationView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-certificate-eligibility",
+      "path": "/api/v1/admin/events/{pk}/certificates/eligibility/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.views.CertificateEligibilityView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-certificates-bulk",
+      "path": "/api/v1/admin/events/{pk}/certificates/bulk/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.views.BulkIssueView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-certificates-batches",
+      "path": "/api/v1/admin/events/{pk}/certificates/batches/{batch_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.views.BatchView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-certificates-revoke",
+      "path": "/api/v1/admin/events/{pk}/certificates/{certificate_id}/revoke/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.views.CertificateRevokeView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-certificates-reissue",
+      "path": "/api/v1/admin/events/{pk}/certificates/{certificate_id}/reissue/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.views.CertificateReissueView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-badge-design",
+      "path": "/api/v1/admin/events/{pk}/badges/designs/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.certificates.views.BadgeDesignView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-badge-desk-design",
+      "path": "/api/v1/admin/events/{pk}/badges/desk-design/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.views.DeskDesignView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-badge-print-create",
+      "path": "/api/v1/admin/events/{pk}/badges/print-jobs/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.views.PrintCreateView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-badge-print-detail",
+      "path": "/api/v1/admin/events/{pk}/badges/print-jobs/{job_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.views.PrintDetailView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-badge-print-download",
+      "path": "/api/v1/admin/events/{pk}/badges/print-jobs/{job_id}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.views.PrintDownloadView",
+      "provider": "apps.events.certificates.urls_admin",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-tenant-admin-import-event",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/from-event/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.library_views.LibraryCaptureView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-library-artwork-reserve",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/{template_id}/artwork/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.library_artwork_views.LibraryArtworkReserveView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-library-artwork-finalize",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/{template_id}/artwork/{artwork_id}/finalize/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.library_artwork_views.LibraryArtworkFinalizeView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-tenant-admin-list",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.events.certificates.library_views.LibraryListView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-tenant-admin-detail",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/{template_id}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.certificates.library_views.LibraryDetailView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-tenant-admin-revisions-list",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/{template_id}/revisions/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.library_views.LibraryRevisionsView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-tenant-admin-revisions-detail",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/{template_id}/revisions/{revision_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.library_views.LibraryRevisionView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-tenant-admin-copy-to-event",
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/{template_id}/copy-to-event/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.certificates.library_views.LibraryCopyView",
+      "provider": "apps.events.certificates.urls_library",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-certificate-verify",
+      "path": "/api/v1/public/event-certificates/{verification_id}/verify/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.certificates.verification.CertificateVerificationView",
+      "provider": "apps.events.certificates.urls_public",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-profile-photo-options",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/profile-photo-options/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.profile_photos.views.ProfileOptionsView",
+      "provider": "apps.events.profile_photos.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-member-presentation-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/presentation/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.profile_photos.views.PresentationView",
+      "provider": "apps.events.profile_photos.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-public-member-card-photo",
+      "path": "/api/v1/public/event-programmes/{public_token}/member-cards/{card_public_id}/photo/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.profile_photos.views_public.PublicCardPhotoView",
+      "provider": "apps.events.profile_photos.urls_public",
+      "variable": "urlpatterns",
+      "scope": "public",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-broadcasts-detail",
+      "path": "/api/v1/admin/events/{pk}/broadcasts/{campaign_id}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.programme.broadcast_views.BroadcastDetailView",
+      "provider": "apps.events.programme.broadcast_urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-broadcasts-preview",
+      "path": "/api/v1/admin/events/{pk}/broadcasts/{campaign_id}/preview/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.programme.broadcast_views.BroadcastPreviewView",
+      "provider": "apps.events.programme.broadcast_urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-broadcasts-test",
+      "path": "/api/v1/admin/events/{pk}/broadcasts/{campaign_id}/test/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.programme.broadcast_views.BroadcastTestView",
+      "provider": "apps.events.programme.broadcast_urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-broadcasts-schedule",
+      "path": "/api/v1/admin/events/{pk}/broadcasts/{campaign_id}/schedule/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.programme.broadcast_views.BroadcastScheduleView",
+      "provider": "apps.events.programme.broadcast_urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-programme-readiness",
+      "path": "/api/v1/admin/events/{pk}/programme/readiness/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.programme.views.ReadinessView",
+      "provider": "apps.events.programme.urls",
+      "variable": "admin_patterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-programme-live",
+      "path": "/api/v1/admin/events/{pk}/programme/live/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.programme.views.EventDayView",
+      "provider": "apps.events.programme.urls",
+      "variable": "admin_patterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-programme-publishing",
+      "path": "/api/v1/admin/events/{pk}/programme/publishing/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "view": "apps.events.programme.views.PublishingView",
+      "provider": "apps.events.programme.urls",
+      "variable": "admin_patterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PATCH": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-form-detail",
+      "path": "/api/v1/admin/events/{pk}/forms/{form_key}/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT"
+      ],
+      "view": "apps.events.programme.views.EventFormView",
+      "provider": "apps.events.programme.urls",
+      "variable": "admin_patterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "PUT": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-form-validate",
+      "path": "/api/v1/admin/events/{pk}/forms/{form_key}/validate/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.programme.views.EventFormValidateView",
+      "provider": "apps.events.programme.urls",
+      "variable": "admin_patterns",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-series-guests",
+      "path": "/api/v1/admin/event-series/{pk}/guests/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.programme.series_guests.SeriesGuestsView",
+      "provider": "apps.events.programme.urls",
+      "variable": "series_patterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-details-list",
+      "path": "/api/v1/member/saved-details/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.accounts.saved_details.views.DetailsView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-details-prefill",
+      "path": "/api/v1/member/saved-details/prefill/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.accounts.saved_details.views.PrefillView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-detail-intent-detail",
+      "path": "/api/v1/member/saved-details/save-intents/{operation_uuid}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.accounts.saved_details.views.IntentView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-resume-create",
+      "path": "/api/v1/member/saved-details/resume-assets/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.accounts.saved_details.views.ResumeCreateView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-resume-detail",
+      "path": "/api/v1/member/saved-details/resume-assets/{asset_id}/",
+      "methods": [
+        "DELETE",
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.accounts.saved_details.views.ResumeDetailView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "DELETE": {},
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-resume-complete",
+      "path": "/api/v1/member/saved-details/resume-assets/{asset_id}/complete/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.accounts.saved_details.views.ResumeCompleteView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-resume-download",
+      "path": "/api/v1/member/saved-details/resume-assets/{asset_id}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.accounts.saved_details.views.ResumeDownloadView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-details-export-create",
+      "path": "/api/v1/member/saved-details/export/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.accounts.saved_details.views.ExportCreateView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-details-export-detail",
+      "path": "/api/v1/member/saved-details/export/{job_uuid}/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.accounts.saved_details.views.ExportDetailView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-details-export-download",
+      "path": "/api/v1/member/saved-details/export/{job_uuid}/download/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.accounts.saved_details.views.ExportDownloadView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-saved-detail-detail",
+      "path": "/api/v1/member/saved-details/{field_key}/",
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
+      "view": "apps.accounts.saved_details.views.DetailView",
+      "provider": "apps.accounts.saved_details.urls",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "DELETE": {},
+        "PUT": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-security-activity",
+      "path": "/api/v1/member/security-activity/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.accounts.security_activity.MemberSecurityActivityView",
+      "provider": "core",
+      "variable": "",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "member-organization-leave",
+      "path": "/api/v1/member/organizations/{pk}/leave/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.organizations.member_leave.MemberOrganizationLeaveView",
+      "provider": "core",
+      "variable": "",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {},
+        "POST": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "admin-platform-insights",
+      "path": "/api/v1/admin/platform/insights/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.operations.platform_insights.PlatformInsightsView",
+      "provider": "core",
+      "variable": "",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    },
+    {
+      "name": "events-programme-admin-roles-requirement-completions",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/requirement-completions/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.events.contributions.views_completion.RequirementCompletionView",
+      "provider": "apps.events.contributions.urls_completion",
+      "variable": "ADMIN",
+      "scope": "admin",
+      "operations": {
+        "POST": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-member-help-topics",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help-topics/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.mentoring.views_member_topics.MemberHelpTopicListView",
+      "provider": "apps.events.mentoring.urls_member",
+      "variable": "urlpatterns",
+      "scope": "member",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "C2"
+    },
+    {
+      "name": "events-programme-admin-assigned-sponsors",
+      "path": "/api/v1/admin/events/{pk}/assigned-sponsors/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.events.judging.views_sponsor_discovery.AssignedSponsorListView",
+      "provider": "apps.events.judging.urls",
+      "variable": "urlpatterns",
+      "scope": "admin",
+      "operations": {
+        "GET": {},
+        "HEAD": {}
+      },
+      "owner": "integration"
+    }
+  ]
+}

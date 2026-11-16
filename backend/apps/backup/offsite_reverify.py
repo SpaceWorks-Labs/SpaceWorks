@@ -9,6 +9,8 @@ failure proves nothing either way and only records its code.
 This does NOT prove an archive restores -- that needs the platform `age` identity, which
 lives only on the host.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -38,7 +40,7 @@ def reverify_offsite_copies(limit=5):
         .order_by("verified_at", "pk")[:limit]
     )
     checked = 0
-    for row in rows:
+    for row in bounded.page(rows, "offsite-reverify"):
         destination = row.destination
         try:
             s3 = offsite_client.destination_client(destination)

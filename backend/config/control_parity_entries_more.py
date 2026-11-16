@@ -1,0 +1,120 @@
+"""The #190 parity rows, second half; read through ``config.control_parity``."""
+
+from config.control_parity import KEY_ROTATION, RAW_REPAIR, SERVER, host, web
+
+PS = "Platform → Platform settings"
+S = "Space console"
+DATA = "Platform → Data & recovery"  # /admin/platform-data?section=...
+MOVES = f"{DATA} → Self-host moves"
+PROVIDERS = f"{PS} → Messaging providers"
+SPACES = "Platform → Spaces"
+
+MORE_ENTRIES = (
+    # Money
+    ("payments.makerspacepaymentsettings", web(f"{S} → Settings → Payments", "admin-makerspace-payment-settings")),
+    # Events
+    ("events.eventseriesorganizer", web(f"{S} → Events → Series → Collaborators", "admin-event-series-collaborators")),
+    # Machines & devices
+    ("machines.machine", web(f"{S} → Machines", "admin-machine-detail")),
+    ("machines.machine.retire_selected", web(f"{S} → Machines → Retire", "admin-machine-retire")),
+    ("machines.machine.unretire_selected", web(f"{S} → Machines → Reactivate", "admin-machine-unretire")),
+    ("machines.machine.mark_maintenance", web(f"{S} → Machines → Status", "admin-machine-detail")),
+    ("machines.machine.mark_idle", web(f"{S} → Machines → Status", "admin-machine-detail")),
+    ("machines.machinetype", web(f"{S} → Machines → Types", "admin-machine-types", "admin-machine-type-detail")),
+    # Inventory
+    ("inventory.inventoryproduct", web(f"{S} → Items", "admin-inventory-detail")),
+    ("inventory.inventoryproduct.adjust_quantities", web(f"{S} → Items → Adjust quantity", "admin-inventory-adjust-quantity")),
+    ("inventory.inventoryproduct.generate_qr_assets", web(f"{S} → Items → Generate units", "asset-generate")),
+    ("inventory.inventoryproduct.repair_needs_fix", web(f"{S} → Repair shelf", "admin-needs-fix-action")),
+    ("inventory.inventoryproduct.scrap_needs_fix", web(f"{S} → Repair shelf", "admin-needs-fix-action")),
+    ("view:inventory_inventoryproduct_bulk_import", web(f"{S} → Bulk import", "inventory-import-preview", "inventory-import-apply")),
+    ("inventory.category", web(f"{S} → Items → Categories", "admin-category-detail")),
+    ("inventory.inventoryasset", web(f"{S} → Items → Units", "admin-inventory-assets", "admin-inventory-asset-detail")),
+    ("boxes.box", web(f"{S} → Containers", "containers", "container-detail")),
+    ("boxes.qrcode", web(f"{S} → QR tools", "qr-revoke", "qr-rebind-target")),
+    ("boxes.qrcode.revoke_selected", web(f"{S} → QR tools → Revoke", "qr-revoke")),
+    ("boxes.qrcode.rebind_selected", web(f"{S} → QR tools → Move", "qr-rebind-target")),
+    ("hardware_requests.hardwarerequest", web(f"{S} → Requests", "hardware_requests:request-accept", "hardware_requests:request-reject")),
+    ("hardware_requests.hardwarerequest.assign_box_selected", web(f"{S} → Requests → Container", "hardware_requests:request-assign-box")),
+    ("hardware_requests.hardwarerequest.set_return_due", web(f"{S} → Requests → Return due", "hardware_requests:request-return-due")),
+    ("view:hardware_requests_hardwarerequest_review", web(f"{S} → Requests → Review", "hardware_requests:request-accept", "hardware_requests:request-reject")),
+    ("hardware_requests.publicproblemreport", web(f"{S} → Problem reports", "problem-report-resolve", "problem-report-triage")),
+    ("operations.qrprintbatch", web(f"{S} → QR tools → Print batches", "qr-print-batches", "qr-print-batch-detail")),
+    ("operations.qrprintbatch.mark_printed_selected", web(f"{S} → QR tools → Print batches", "qr-print-batch-detail")),
+    ("operations.qrprintbatch.download_zip_selected", web(f"{S} → QR tools → Print batches", "qr-print-batch-download")),
+    ("operations.stocktakesession", web(f"{S} → Stocktake", "stocktakes", "stocktake-detail")),
+    ("operations.stocktakesession.complete_selected", web(f"{S} → Stocktake → Complete", "stocktake-complete")),
+    ("operations.stocktakesession.approve_selected", web(f"{S} → Stocktake → Approve", "stocktake-approve")),
+    ("operations.stocktakesession.apply_adjustments_selected", web(f"{S} → Stocktake → Apply", "stocktake-apply-adjustments")),
+    ("view:operations_stocktakesession_count", web(f"{S} → Stocktake → Count", "stocktake-count-lines")),
+    ("operations.stocktransfer", web(f"{S} → Transfers", "stock-transfers")),
+    ("procurement.tobuyitem", web(f"{S} → To buy", "procurement:to-buy-list", "procurement:to-buy-detail")),
+    ("procurement.tobuyreceipt", web(f"{S} → To buy → Receipts", "procurement:to-buy-receipt-detail")),
+    ("warranty.warranty", web(f"{S} → Warranty", "admin-asset-warranty", "admin-machine-warranty")),
+    ("warranty.warrantydocument", web(f"{S} → Warranty → Documents", "admin-warranty-document-detail")),
+    # Backups & recovery
+    ("backup.backupdestination", web(f"{DATA} → Offsite copies", "admin-backup-destinations", "admin-backup-destination")),
+    ("backup.backupdestination.retire_destinations", web(f"{DATA} → Offsite copies → Retire", "admin-backup-destination-retire")),
+    ("backup.backupdestination.test_destinations", web(f"{DATA} → Offsite copies → Test", "admin-backup-destination-probe")),
+    ("view:backup_platformbackupsettings_console", web(f"{DATA} → Backup & restore (platform and space)", "admin-deployment-backups",
+                                                       "admin-makerspace-backups", "admin-backup-schedule")),
+    ("view:backup_backuparchive_notice", web(f"{S} → Backups → Download", "admin-backup-download-url")),
+    ("view:makerspaces_makerspace_backup", web(f"{S} → Backups", "admin-makerspace-backups")),
+    ("view:makerspaces_makerspace_space_restore", web(f"{S} → Backups → Restore", "admin-space-restore", "admin-makerspace-restores")),
+    ("view:backup_backupkeyfingerprint_keys", web(f"{DATA} → Restore drills", "admin-platform-restore-drills")),
+    ("keys:rotate_platform", KEY_ROTATION),
+    ("keys:rotate_server", KEY_ROTATION),
+    # One-space archives only: a whole-platform archive is encrypted to the platform key alone and can be
+    # neither re-encrypted on the server nor purged from a space's view; it expires or is purged on /control/.
+    ("keys:reencrypt", web(f"{SPACES} → Manage → Keys → Archives on a retired key", "admin-platform-space-archive-key")),
+    ("keys:purge", web(f"{SPACES} → Manage → Keys → Archives on a retired key (one-space archives)",
+                       "admin-platform-space-archive-key")),
+    # Kept host-only [#165 auto]: the platform-wide re-encryption follows a platform/server key rotation run on the server.
+    ("keys:reencrypt_all", KEY_ROTATION),
+    ("keys:reencrypt_stop", KEY_ROTATION),
+    ("keys:settings", web(f"{DATA} → Restore drills → Settings", "admin-platform-restore-drill-settings")),
+    ("tenant_migration.selfhostmoverequest.approve_moves", web(MOVES, "admin-platform-selfhost-move-approve")),
+    ("tenant_migration.selfhostmoverequest.reject_moves", web(MOVES, "admin-platform-selfhost-move-reject")),
+    ("view:tenant_migration_selfhostmoverequest_run", web(MOVES, "admin-platform-selfhost-move-export",
+                                                          "admin-platform-selfhost-move-discard",
+                                                          "admin-platform-selfhost-move-download-url")),
+    # Integrations & messaging
+    ("payments.platformstripeconnectsettings", web(f"{PS} → Stripe Connect", "admin-platform-payment-settings")),
+    ("integrations.platformsmssettings", web(f"{PROVIDERS} → SMS", "admin-platform-sms-settings",
+                                             "admin-platform-sms-settings-test")),
+    ("integrations.platformpushsettings", web(f"{PROVIDERS} → Push", "admin-platform-push-settings",
+                                              "admin-platform-push-settings-test")),
+    ("integrations.platformwhatsappsettings", web(f"{PROVIDERS} → WhatsApp", "admin-platform-whatsapp-settings",
+                                                  "admin-platform-whatsapp-settings-test")),
+    ("accounts.platformattestationsettings", web(f"{PROVIDERS} → App attestation", "admin-platform-attestation-settings")),
+    ("integrations.platformemailsettings", web(f"{PS} → Email", "admin-platform-email-settings")),
+    ("integrations.emailtemplate", web(f"{S} → Email templates", "admin-email-templates", "admin-email-template-detail")),
+    ("integrations.machinetypeemailtemplate", web(f"{S} → Machines → Types → Email", "admin-machine-type-email-template-detail")),
+    ("integrations.chattemplate", web(f"{PS} → Chat templates; {S} → Settings → Notifications (Space Manager)",
+                                      "admin-platform-chat-templates", "admin-platform-chat-template",
+                                      "admin-chat-templates", "admin-chat-template")),
+    ("integrations.emaillog.retry_selected", web(f"{S} → Delivery log → Retry", "admin-email-log-retry")),
+    ("integrations.notificationdeliverylog.requeue_failed_deliveries", web(f"{S} → Delivery log → Retry", "delivery-log-retry")),
+    ("integrations.emailsuppression", web(f"{S} → Delivery log → Suppressed addresses", "email-suppression-list",
+                                          "email-suppression-delete")),
+    ("integrations.notificationdestination", web(f"{S} → Settings → Notifications → Rooms", "admin-notification-destinations",
+                                                 "admin-notification-destination-detail")),
+    ("integrations.notificationrecipient", web(f"{S} → Settings → Notifications → Who gets notified", "admin-notification-recipients")),
+    ("integrations.dailyotpsmscounter", RAW_REPAIR),  # [#165 auto] a quota counter: plumbing, no workflow owns it
+    ("notifications.notification", web(f"{S} → Inbox", "notifications:inbox-list", "notifications:inbox-archive")),
+    ("apiclients.apiclient", web(f"{S} → API clients", "admin-api-clients", "admin-api-client")),
+    ("apiclients.apikeyrequest", web(f"{SPACES} → Requests → API keys", "admin-platform-api-key-requests")),
+    ("apiclients.apikeyrequest.approve_and_issue", web(f"{SPACES} → Requests → API keys", "admin-platform-api-key-request-approve")),
+    ("apiclients.apikeyrequest.reject_selected", web(f"{SPACES} → Requests → API keys", "admin-platform-api-key-request-reject")),
+    ("apiclients.apiclientimportapproval", web("Platform → space moves → identity decisions", "tenant-migration-import-decisions")),
+    ("oauth2_provider.application", web(f"{S} → API clients → Connected apps", "admin-oauth-apps", "admin-oauth-app")),
+    ("oauth2_provider.accesstoken.revoke_tokens", web(f"{S} → API clients → Connected apps → Revoke", "admin-oauth-app")),
+    ("oauth2_provider.refreshtoken.revoke_tokens", web(f"{S} → API clients → Connected apps → Revoke", "admin-oauth-app")),
+    ("oauth2_provider.grant", RAW_REPAIR),
+    ("oauth2_provider.idtoken", RAW_REPAIR),
+    # System
+    ("view:control-storage", web("Platform → Platform dashboard (storage) and a space's Usage & limits", "platform-overview", "admin-makerspace-usage")),
+    ("view:managed_hosting_spacehostingtype_limits", web(f"{SPACES} → Plans; {S} → Usage & limits",
+                                                          "admin-space-limits", "admin-platform-space-limits-bulk")),
+    ("view:control-rls", host(f"Database role diagnostics; repair with manage.py rls_sync on the server ({SERVER})")),
+)

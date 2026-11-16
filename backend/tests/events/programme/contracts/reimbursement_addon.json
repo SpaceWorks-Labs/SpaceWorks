@@ -1,0 +1,3101 @@
+{
+  "contract_version": 1,
+  "checkpoint": "G1",
+  "runtime_enabled": false,
+  "baseline": {
+    "head": "d63f9f04a48cab0638c78cfea3bd373ca1792d07",
+    "branch": "lane/events-rg",
+    "working_tree_delta_before_g1": [],
+    "leaves": {
+      "events": "0039_events_programme_guards",
+      "accounts": "0038_events_programme_schema",
+      "encryption": "0009_account_programme_guards",
+      "payments": "0022_bd_r1_bills_branding",
+      "makerspaces": "0096_enable_existing_presence",
+      "organizations": "0005_events_programme_schema"
+    },
+    "organizations": "0005_events_programme_schema"
+  },
+  "ownership": {
+    "R": [
+      "event_reimbursements",
+      "events.staged_forms",
+      "payments.event_payouts"
+    ],
+    "F": "lane/events-r-forms",
+    "P": "lane/events-r-saved",
+    "acknowledgement": "Lane handoffs read; joint runtime acceptance remains required",
+    "shared": "G owns contracts, all migrations, registration, currency, encryption and registries"
+  },
+  "legacy": {
+    "CLAIM_INPUT": {
+      "answers": {
+        "estimate": {
+          "amount_minor": 125000,
+          "currency": "INR"
+        },
+        "journey": {
+          "arrive_at": "2026-12-02T01:00:00Z",
+          "depart_at": "2026-12-01T12:00:00Z",
+          "destination": "Bengaluru",
+          "mode": "rail",
+          "origin": " Kochi "
+        },
+        "receipt": [
+          {
+            "asset_id": 91,
+            "generation": 1,
+            "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ]
+      },
+      "derivations": {},
+      "event_date_revision": 1,
+      "form": {
+        "form_id": "travel",
+        "revision": 1,
+        "schema_version": 2
+      },
+      "save_choices": {},
+      "saved_detail_versions": {}
+    },
+    "CLAIM_SCHEMA": {
+      "form_id": "travel",
+      "questions": [
+        {
+          "id": "estimate",
+          "label": "Question",
+          "money": {
+            "currencies": [
+              "INR"
+            ],
+            "max_minor": 10000000,
+            "min_minor": 0
+          },
+          "required": true,
+          "type": "money"
+        },
+        {
+          "id": "journey",
+          "itinerary": {
+            "modes": [
+              "rail",
+              "air",
+              "bus",
+              "car",
+              "other"
+            ]
+          },
+          "label": "Question",
+          "required": false,
+          "sensitive": true,
+          "type": "itinerary"
+        },
+        {
+          "file": {
+            "max_bytes_each": 10485760,
+            "max_files": 5,
+            "purpose": "reimbursement_receipt"
+          },
+          "id": "receipt",
+          "label": "Question",
+          "required": true,
+          "sensitive": true,
+          "type": "file"
+        }
+      ],
+      "revision": 1,
+      "schema_version": 2
+    },
+    "FILE_REF": {
+      "asset_id": 91,
+      "generation": 1,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "STAGE_SCHEMA": {
+      "form_id": "travel",
+      "questions": [
+        {
+          "file": {
+            "max_bytes_each": 10485760,
+            "max_files": 5,
+            "purpose": "stage_form_file"
+          },
+          "id": "q",
+          "label": "Question",
+          "required": false,
+          "type": "file"
+        }
+      ],
+      "revision": 1,
+      "schema_version": 2
+    },
+    "V1_INPUT": {
+      "count": "2",
+      "yes": false
+    },
+    "V1_SCHEMA": [
+      {
+        "id": "count",
+        "label": "People",
+        "options": [],
+        "required": true,
+        "type": "number"
+      },
+      {
+        "id": "yes",
+        "label": "Joining",
+        "options": [],
+        "required": true,
+        "type": "yes_no"
+      }
+    ],
+    "V1_SNAPSHOT": {
+      "answers": [
+        {
+          "id": "count",
+          "label": "People",
+          "type": "number",
+          "value": 2
+        },
+        {
+          "id": "yes",
+          "label": "Joining",
+          "type": "yes_no",
+          "value": false
+        }
+      ],
+      "version": 1
+    }
+  },
+  "form_envelope": {
+    "member_keys": [
+      "form",
+      "answers",
+      "derivations",
+      "save_choices",
+      "saved_detail_versions",
+      "event_date_revision"
+    ],
+    "answers_type": "question_id_map",
+    "snapshots": "server_only_arrays",
+    "base_schema": {
+      "schema_version": 2,
+      "form_id": "registration-41",
+      "revision": 1,
+      "questions": [
+        {
+          "id": "name",
+          "type": "short_text",
+          "label": "Name",
+          "required": true,
+          "profile_field_key": "name"
+        },
+        {
+          "id": "phone",
+          "type": "phone",
+          "label": "Phone",
+          "required": true,
+          "profile_field_key": "phone"
+        }
+      ]
+    },
+    "base_input": {
+      "form": {
+        "schema_version": 2,
+        "form_id": "registration-41",
+        "revision": 1
+      },
+      "answers": {
+        "name": "A Maker",
+        "phone": "+919876543210"
+      },
+      "derivations": {},
+      "save_choices": {
+        "name": true,
+        "phone": true
+      },
+      "saved_detail_versions": {
+        "name": 0,
+        "phone": 2
+      },
+      "event_date_revision": 1
+    },
+    "hidden_field": {
+      "question_id": "hidden",
+      "save_choice": true,
+      "expected": "invalid_save_choices"
+    },
+    "missing_save_version": {
+      "field_key": "name",
+      "expected": "saved_version_required"
+    },
+    "stale_descriptor": {
+      "revision": 0,
+      "expected": "form_revision_changed",
+      "status": 409
+    },
+    "stale_date": {
+      "event_date_revision": 0,
+      "expected": "event_date_changed",
+      "status": 409
+    },
+    "base_derivation": {
+      "age": {
+        "source": {
+          "kind": "inline_dob",
+          "date_of_birth": "2000-02-29"
+        },
+        "reviewed_event_date_revision": 1,
+        "reviewed_as_of_date": "2026-12-01"
+      }
+    }
+  },
+  "inline_forms": {
+    "outer_operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+    "event_id": 41,
+    "owner_id": 73,
+    "operations": {
+      "base": {
+        "operation_id": "712c20d0-df44-5ed4-855b-f9be8d4befbc",
+        "kind": "registration",
+        "subject_id": 101
+      },
+      "stage:11": {
+        "operation_id": "11374a6e-8fab-5acf-a199-5e4617b0ba0b",
+        "kind": "stage_response",
+        "subject_id": 111
+      },
+      "stage:12": {
+        "operation_id": "ea70f3aa-792c-5bf1-8f79-1dffafdfb135",
+        "kind": "stage_response",
+        "subject_id": 112
+      }
+    },
+    "invalid_slots": [
+      "stage:0",
+      "stage:01",
+      "stage:-1",
+      "stage:1.0",
+      "stage:١",
+      "base ",
+      "payee",
+      "stage:11:2"
+    ],
+    "statuses": [
+      {
+        "slot": "base",
+        "operation_id": "712c20d0-df44-5ed4-855b-f9be8d4befbc",
+        "intent_id": "fd89eaf4-9ff3-580f-bf4c-8263f04db175",
+        "state": "pending",
+        "fields": {},
+        "status_url": "/api/v1/member/saved-details/save-intents/712c20d0-df44-5ed4-855b-f9be8d4befbc/"
+      },
+      {
+        "slot": "stage:11",
+        "operation_id": "11374a6e-8fab-5acf-a199-5e4617b0ba0b",
+        "intent_id": "c018ab18-b483-5c20-9e9f-1dc94c9ef2de",
+        "state": "pending",
+        "fields": {},
+        "status_url": "/api/v1/member/saved-details/save-intents/11374a6e-8fab-5acf-a199-5e4617b0ba0b/"
+      },
+      {
+        "slot": "stage:12",
+        "operation_id": "ea70f3aa-792c-5bf1-8f79-1dffafdfb135",
+        "intent_id": "3a154d1b-bd7b-5a25-ac17-c284f9921bce",
+        "state": "pending",
+        "fields": {},
+        "status_url": "/api/v1/member/saved-details/save-intents/ea70f3aa-792c-5bf1-8f79-1dffafdfb135/"
+      }
+    ],
+    "no_save": {
+      "slot": "stage:12",
+      "operation_id": "ea70f3aa-792c-5bf1-8f79-1dffafdfb135",
+      "intent_id": null,
+      "state": "not_requested",
+      "fields": {},
+      "status_url": null
+    },
+    "binding": {
+      "virtual_creation_uuid": "child",
+      "base_creation_receipt": "outer",
+      "stage_assignment_creation_uuid": "child",
+      "proof": "server-owned locked pending map; VerifiedFormOperation + VerifiedIntentBinding",
+      "http_proof": false,
+      "checks": [
+        "outer",
+        "slot",
+        "child",
+        "event",
+        "owner",
+        "kind",
+        "bound subject",
+        "form hash",
+        "answer hash",
+        "date revision",
+        "key epoch",
+        "chosen visible keys"
+      ]
+    },
+    "conflict": {
+      "slots": [
+        "base",
+        "stage:11"
+      ],
+      "field_keys": [
+        "name"
+      ],
+      "values": [
+        "A Maker",
+        "Another Maker"
+      ],
+      "versions": [
+        0,
+        0
+      ],
+      "expected": "saved_detail_form_conflict",
+      "status": 409
+    },
+    "equal_save": {
+      "values": [
+        "A Maker",
+        "A Maker"
+      ],
+      "versions": [
+        0,
+        0
+      ],
+      "second_status": "unchanged"
+    },
+    "rollback": {
+      "inject": [
+        "final form bind",
+        "request insert",
+        "intent insert",
+        "notice insert",
+        "outer receipt insert"
+      ],
+      "absent_after": [
+        "new registration",
+        "new application",
+        "stages",
+        "request",
+        "derivations",
+        "intents",
+        "notices",
+        "code",
+        "waiver",
+        "charge"
+      ],
+      "existing_draft": "unchanged",
+      "single_outer_transaction": true
+    }
+  },
+  "stages": {
+    "subject": {
+      "kind": "stage_response",
+      "event_id": 41,
+      "owner_member_id": 73,
+      "subject_id": 111
+    },
+    "virtual_subject": {
+      "kind": "stage_response",
+      "event_id": 41,
+      "owner_member_id": 73,
+      "creation_operation_id": "11374a6e-8fab-5acf-a199-5e4617b0ba0b"
+    },
+    "derivations": {},
+    "forbidden_types": [
+      "date_of_birth",
+      "age_at_event"
+    ],
+    "forbidden_profile_keys": [
+      "date_of_birth",
+      "age_at_event"
+    ],
+    "invalid_derivations": {
+      "q": {
+        "source": {
+          "kind": "inline_dob",
+          "date_of_birth": "2000-01-01"
+        }
+      }
+    },
+    "refusal": {
+      "code": "stage_age_question_unsupported",
+      "status": 400
+    },
+    "file_context": {
+      "context": "stage",
+      "purpose": "stage_form_file",
+      "forbidden": [
+        "reimbursement_receipt",
+        "reimbursement_payee_document"
+      ]
+    },
+    "cancel": {
+      "route": "admin-event-stage-assignment-cancel",
+      "serializer": "CancelStageAssignmentCommand",
+      "body": {
+        "operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+        "expected_version": 3,
+        "expected_response_version": 2,
+        "expected_stage_form_version": 4,
+        "reason_code": "no_longer_required",
+        "reason": "Checklist cancelled.",
+        "confirmed": true
+      },
+      "preserve": "submitted revisions",
+      "exempts_guard": true
+    },
+    "reassign": {
+      "route": "admin-event-stage-assignment-reassign",
+      "serializer": "ReassignStageAssignmentCommand",
+      "body": {
+        "operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+        "expected_version": 3,
+        "expected_response_version": 2,
+        "expected_stage_form_version": 4,
+        "reason_code": "replacement_revision",
+        "reason": "Use the corrected checklist.",
+        "confirmed": true,
+        "replacement_form_revision_id": 72,
+        "due_at": "2026-12-01T10:00:00Z"
+      },
+      "replacement": "published same-definition revision",
+      "preserve": "submitted revisions",
+      "guard": "renew until valid submission"
+    },
+    "missing_coverage": [
+      {
+        "event_type": "ordinary",
+        "action": "check_in",
+        "assignment_ids": [],
+        "published_applicable_stage_ids": [
+          11
+        ],
+        "status": 409,
+        "code": "stage_incomplete",
+        "side_effects": []
+      },
+      {
+        "event_type": "ordinary",
+        "action": "claim_submit",
+        "assignment_ids": [],
+        "published_applicable_stage_ids": [
+          11
+        ],
+        "status": 409,
+        "code": "stage_incomplete",
+        "side_effects": []
+      },
+      {
+        "event_type": "hackathon",
+        "action": "rsvp",
+        "assignment_ids": [],
+        "published_applicable_stage_ids": [
+          11
+        ],
+        "status": 409,
+        "code": "stage_incomplete",
+        "side_effects": []
+      },
+      {
+        "event_type": "hackathon",
+        "action": "check_in",
+        "assignment_ids": [],
+        "published_applicable_stage_ids": [
+          11
+        ],
+        "status": 409,
+        "code": "stage_incomplete",
+        "side_effects": []
+      },
+      {
+        "event_type": "hackathon",
+        "action": "claim_submit",
+        "assignment_ids": [],
+        "published_applicable_stage_ids": [
+          11
+        ],
+        "status": 409,
+        "code": "stage_incomplete",
+        "side_effects": []
+      }
+    ],
+    "offline": {
+      "cached_ready": true,
+      "current_coverage": false,
+      "outcome": "stage_incomplete",
+      "attendance_written": false
+    },
+    "detail": {
+      "response_id": 111,
+      "current_submitted_revision": 2,
+      "selected_revision": 1,
+      "immutable": true,
+      "organizer": {
+        "route": "admin-event-stage-response-detail",
+        "view": "StageResponseDetailView",
+        "serializer": "StageResponseDetailSerializer",
+        "authority": [
+          "manage_registrations",
+          "VIEW_AUDIT"
+        ],
+        "projection": "pinned intersect current disclosure; no sensitive"
+      },
+      "finance": {
+        "route": "admin-event-stage-response-finance-detail",
+        "view": "StageResponseFinanceDetailView",
+        "serializer": "StageResponseFinanceDetailSerializer",
+        "authority": [
+          "VIEW_FINANCE"
+        ],
+        "projection": "sensitive only"
+      },
+      "deny": [
+        "check_in_only",
+        "foreign_event",
+        "revoked",
+        "API_client"
+      ],
+      "bytes": "reauthorize selected revision and purpose"
+    },
+    "inline_schemas": [
+      {
+        "schema_version": 2,
+        "form_id": "stage-11",
+        "revision": 1,
+        "questions": [
+          {
+            "id": "school",
+            "type": "short_text",
+            "label": "Institution",
+            "required": true,
+            "profile_field_key": "institution"
+          }
+        ]
+      },
+      {
+        "schema_version": 2,
+        "form_id": "stage-12",
+        "revision": 1,
+        "questions": [
+          {
+            "id": "access",
+            "type": "long_text",
+            "label": "Accessibility needs",
+            "required": true,
+            "sensitive": true,
+            "profile_field_key": "accessibility_needs"
+          }
+        ]
+      }
+    ]
+  },
+  "submission": {
+    "ordinary": {
+      "idempotency_key": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+      "payload": {
+        "operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+        "expected_version": 0,
+        "email": "maker@example.test",
+        "phone": "+919876543210",
+        "form": {
+          "schema_version": 2,
+          "form_id": "registration-41",
+          "revision": 1
+        },
+        "answers": {
+          "name": "A Maker",
+          "phone": "+919876543210"
+        },
+        "derivations": {},
+        "save_choices": {
+          "name": true,
+          "phone": true
+        },
+        "saved_detail_versions": {
+          "name": 0,
+          "phone": 2
+        },
+        "event_date_revision": 1,
+        "stage_forms": [
+          {
+            "stage_form_id": 11,
+            "form": {
+              "schema_version": 2,
+              "form_id": "stage-11",
+              "revision": 1
+            },
+            "answers": {
+              "school": "Maker College"
+            },
+            "derivations": {},
+            "save_choices": {
+              "institution": true
+            },
+            "saved_detail_versions": {
+              "institution": 0
+            },
+            "event_date_revision": 1
+          },
+          {
+            "stage_form_id": 12,
+            "form": {
+              "schema_version": 2,
+              "form_id": "stage-12",
+              "revision": 1
+            },
+            "answers": {
+              "access": "Step-free access"
+            },
+            "derivations": {},
+            "save_choices": {
+              "accessibility_needs": true
+            },
+            "saved_detail_versions": {
+              "accessibility_needs": 0
+            },
+            "event_date_revision": 1
+          }
+        ],
+        "reimbursement_request": {
+          "programme_id": 9,
+          "programme_version": 3,
+          "submit": true,
+          "form": {
+            "schema_version": 2,
+            "form_id": "reimbursement-request-9",
+            "revision": 3
+          },
+          "estimates": [
+            {
+              "category": "rail",
+              "amount_minor": 125000,
+              "currency": "INR"
+            },
+            {
+              "category": "lodging",
+              "amount_minor": 50000,
+              "currency": "INR"
+            }
+          ],
+          "itinerary": {
+            "mode": "rail",
+            "origin": "Kochi",
+            "destination": "Bengaluru",
+            "depart_at": "2026-12-01T12:00:00Z",
+            "arrive_at": "2026-12-02T01:00:00Z"
+          },
+          "need_statement": "Travel support requested.",
+          "distance_km": "550.000"
+        }
+      },
+      "success_status": 201,
+      "route": {
+        "path": "/api/v1/public/{makerspace_slug}/events/{public_token}/register/",
+        "name": "public-event-register"
+      }
+    },
+    "application": {
+      "idempotency_key": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+      "payload": {
+        "operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+        "expected_version": 0,
+        "email": "maker@example.test",
+        "phone": "+919876543210",
+        "form": {
+          "schema_version": 2,
+          "form_id": "application-41",
+          "revision": 1
+        },
+        "answers": {
+          "name": "A Maker",
+          "phone": "+919876543210"
+        },
+        "derivations": {},
+        "save_choices": {
+          "name": true,
+          "phone": true
+        },
+        "saved_detail_versions": {
+          "name": 0,
+          "phone": 2
+        },
+        "event_date_revision": 1,
+        "stage_forms": [
+          {
+            "stage_form_id": 11,
+            "form": {
+              "schema_version": 2,
+              "form_id": "stage-11",
+              "revision": 1
+            },
+            "answers": {
+              "school": "Maker College"
+            },
+            "derivations": {},
+            "save_choices": {
+              "institution": true
+            },
+            "saved_detail_versions": {
+              "institution": 0
+            },
+            "event_date_revision": 1
+          },
+          {
+            "stage_form_id": 12,
+            "form": {
+              "schema_version": 2,
+              "form_id": "stage-12",
+              "revision": 1
+            },
+            "answers": {
+              "access": "Step-free access"
+            },
+            "derivations": {},
+            "save_choices": {
+              "accessibility_needs": true
+            },
+            "saved_detail_versions": {
+              "accessibility_needs": 0
+            },
+            "event_date_revision": 1
+          }
+        ],
+        "reimbursement_request": {
+          "programme_id": 9,
+          "programme_version": 3,
+          "submit": true,
+          "form": {
+            "schema_version": 2,
+            "form_id": "reimbursement-request-9",
+            "revision": 3
+          },
+          "estimates": [
+            {
+              "category": "rail",
+              "amount_minor": 125000,
+              "currency": "INR"
+            },
+            {
+              "category": "lodging",
+              "amount_minor": 50000,
+              "currency": "INR"
+            }
+          ],
+          "itinerary": {
+            "mode": "rail",
+            "origin": "Kochi",
+            "destination": "Bengaluru",
+            "depart_at": "2026-12-01T12:00:00Z",
+            "arrive_at": "2026-12-02T01:00:00Z"
+          },
+          "need_statement": "Travel support requested.",
+          "distance_km": "550.000"
+        },
+        "coc": {
+          "revision": 2,
+          "accepted": true
+        },
+        "optional_consents": {
+          "mlh_data_sharing": false
+        }
+      },
+      "success_status": [
+        201,
+        200
+      ],
+      "route": {
+        "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/application/submit/",
+        "name": "events-programme-member-application-submit"
+      }
+    },
+    "request_serializer": "ReimbursementRequestSubmissionSerializer",
+    "fixed_request_schema": {
+      "schema_version": 2,
+      "form_id": "reimbursement-request-9",
+      "revision": 3,
+      "questions": [
+        {
+          "id": "estimate_rail",
+          "type": "money",
+          "label": "Estimate Rail",
+          "required": true,
+          "money": {
+            "currencies": [
+              "INR"
+            ],
+            "min_minor": 0,
+            "max_minor": 10000000
+          }
+        },
+        {
+          "id": "estimate_lodging",
+          "type": "money",
+          "label": "Estimate Lodging",
+          "required": true,
+          "money": {
+            "currencies": [
+              "INR"
+            ],
+            "min_minor": 0,
+            "max_minor": 10000000
+          }
+        },
+        {
+          "id": "itinerary",
+          "type": "itinerary",
+          "label": "Itinerary",
+          "required": true,
+          "sensitive": true,
+          "itinerary": {
+            "modes": [
+              "rail",
+              "air",
+              "bus",
+              "car",
+              "other"
+            ]
+          }
+        },
+        {
+          "id": "need_statement",
+          "type": "long_text",
+          "label": "Need Statement",
+          "required": true,
+          "bounds": {
+            "min_length": 1,
+            "max_length": 5000
+          }
+        }
+      ]
+    },
+    "mapped_form": {
+      "form": {
+        "schema_version": 2,
+        "form_id": "reimbursement-request-9",
+        "revision": 3
+      },
+      "answers": {
+        "estimate_rail": {
+          "amount_minor": 125000,
+          "currency": "INR"
+        },
+        "estimate_lodging": {
+          "amount_minor": 50000,
+          "currency": "INR"
+        },
+        "itinerary": {
+          "mode": "rail",
+          "origin": "Kochi",
+          "destination": "Bengaluru",
+          "depart_at": "2026-12-01T12:00:00Z",
+          "arrive_at": "2026-12-02T01:00:00Z"
+        },
+        "need_statement": "Travel support requested."
+      },
+      "derivations": {},
+      "save_choices": {},
+      "saved_detail_versions": {},
+      "event_date_revision": 1
+    },
+    "mapping": {
+      "estimates": "estimate_{category}",
+      "itinerary": "itinerary",
+      "need_statement": "need_statement",
+      "estimated_total_minor": 175000,
+      "currency": "INR",
+      "distance": "self_reported"
+    },
+    "request_reference": {
+      "id": 52,
+      "uuid": "95940318-1682-493d-80d2-13ff1904cbe1",
+      "version": 1,
+      "state": "requested"
+    },
+    "response_reference": {
+      "reimbursement_request": {
+        "id": 52,
+        "uuid": "95940318-1682-493d-80d2-13ff1904cbe1",
+        "version": 1,
+        "state": "requested"
+      },
+      "form_operations": {
+        "base": {
+          "operation_id": "712c20d0-df44-5ed4-855b-f9be8d4befbc",
+          "kind": "registration",
+          "subject_id": 101
+        },
+        "stage:11": {
+          "operation_id": "11374a6e-8fab-5acf-a199-5e4617b0ba0b",
+          "kind": "stage_response",
+          "subject_id": 111
+        },
+        "stage:12": {
+          "operation_id": "ea70f3aa-792c-5bf1-8f79-1dffafdfb135",
+          "kind": "stage_response",
+          "subject_id": 112
+        }
+      },
+      "form_save_intents": [
+        {
+          "slot": "base",
+          "operation_id": "712c20d0-df44-5ed4-855b-f9be8d4befbc",
+          "intent_id": "fd89eaf4-9ff3-580f-bf4c-8263f04db175",
+          "state": "pending",
+          "fields": {},
+          "status_url": "/api/v1/member/saved-details/save-intents/712c20d0-df44-5ed4-855b-f9be8d4befbc/"
+        },
+        {
+          "slot": "stage:11",
+          "operation_id": "11374a6e-8fab-5acf-a199-5e4617b0ba0b",
+          "intent_id": "c018ab18-b483-5c20-9e9f-1dc94c9ef2de",
+          "state": "pending",
+          "fields": {},
+          "status_url": "/api/v1/member/saved-details/save-intents/11374a6e-8fab-5acf-a199-5e4617b0ba0b/"
+        },
+        {
+          "slot": "stage:12",
+          "operation_id": "ea70f3aa-792c-5bf1-8f79-1dffafdfb135",
+          "intent_id": "3a154d1b-bd7b-5a25-ac17-c284f9921bce",
+          "state": "pending",
+          "fields": {},
+          "status_url": "/api/v1/member/saved-details/save-intents/ea70f3aa-792c-5bf1-8f79-1dffafdfb135/"
+        }
+      ]
+    },
+    "omitted_request": {
+      "reimbursement_request": null,
+      "R_off": "harmless"
+    },
+    "errors": {
+      "no_consent": [
+        400,
+        "reimbursement_consent_required"
+      ],
+      "stale_programme": [
+        409,
+        "programme_version_changed"
+      ],
+      "stale_form": [
+        409,
+        "form_revision_changed"
+      ],
+      "R_off_with_block": [
+        409,
+        "reimbursement_unavailable"
+      ],
+      "wrong_phase": [
+        409,
+        "reimbursement_request_phase_closed"
+      ],
+      "closed_window": [
+        409,
+        "reimbursement_request_window_closed"
+      ],
+      "draft_or_answer_edit_or_consent_repair": [
+        400,
+        "reimbursement_submit_only"
+      ],
+      "different_operation_existing_request": [
+        409,
+        "reimbursement_request_exists"
+      ],
+      "same_key_altered_request": [
+        409,
+        "idempotency_conflict"
+      ]
+    },
+    "replay": {
+      "identical": "same stable reference and child IDs",
+      "digest_includes": [
+        "block presence",
+        "normalized reimbursement_request",
+        "base",
+        "stages"
+      ],
+      "receipt_lookup": "before consent repair",
+      "receipt_expiry": "unique(programme,member) still prevents duplicate"
+    },
+    "reject_input": [
+      "owner",
+      "member",
+      "event",
+      "creation_operation_id",
+      "unknown keys",
+      "files",
+      "profile mappings",
+      "bank values"
+    ],
+    "phase_window": {
+      "allowed": [
+        "application",
+        "both"
+      ],
+      "lower": "inclusive",
+      "upper": "exclusive"
+    },
+    "rollback": "inline_forms.rollback applies to invalid request and injected late failure; existing draft unchanged"
+  },
+  "currencies": {
+    "version": 1,
+    "valid": [
+      {
+        "input": " inr ",
+        "normalized": "INR",
+        "exponent": 2
+      },
+      {
+        "input": "jPy",
+        "normalized": "JPY",
+        "exponent": 0
+      },
+      {
+        "input": "KWD",
+        "normalized": "KWD",
+        "exponent": 3
+      }
+    ],
+    "invalid": [
+      "ZZZ",
+      "XAU",
+      "XTS",
+      "XXX",
+      "CLF",
+      "UYW",
+      "IQD",
+      "LYD",
+      "ISK",
+      "inr1",
+      "ＩＮＲ",
+      true,
+      3,
+      null,
+      "MGA",
+      "VED",
+      "XDR",
+      "XBA"
+    ],
+    "mixed_currency": {
+      "payout": "INR",
+      "obligation": "USD",
+      "expected": "currency_mismatch"
+    },
+    "rounding": [
+      {
+        "original_minor": 1,
+        "original_exponent": 0,
+        "target_exponent": 2,
+        "fx_rate": "0.005",
+        "converted_minor": 1
+      },
+      {
+        "original_minor": 1000,
+        "original_exponent": 3,
+        "target_exponent": 0,
+        "fx_rate": "1.5",
+        "converted_minor": 2
+      }
+    ],
+    "rule": "HALF_UP"
+  },
+  "initialization": {
+    "route": "admin-event-reimbursement-programme",
+    "serializer": "ProgrammeCreateOrGetCommand",
+    "payload": {
+      "operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+      "expected_version": 0,
+      "currency": "INR",
+      "initial_total_minor": 1000000,
+      "initial_settings": {
+        "enabled": false,
+        "claim_due_at": "2026-12-15T00:00:00Z"
+      }
+    },
+    "first": {
+      "status": 201,
+      "created": true,
+      "programme_version": 1,
+      "pool_version": 1,
+      "fund_entries": 1
+    },
+    "same_policy": {
+      "status": 200,
+      "created": false,
+      "fund_entries": 1
+    },
+    "same_key_changed": 409,
+    "concurrent_different_policy": 409,
+    "lock": "event before programme/pool",
+    "atomic": [
+      "programme",
+      "pool",
+      "initial fund entry",
+      "receipt",
+      "audit"
+    ],
+    "PATCH_missing": "refuse; never upsert or fund",
+    "authority": [
+      "VIEW_FINANCE",
+      "full_session",
+      "recent_reauth"
+    ],
+    "event_types": [
+      "ordinary",
+      "hackathon"
+    ]
+  },
+  "routes": [
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/",
+      "name": "member-event-stage-form-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/context/",
+      "name": "member-event-stage-form-context",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-responses/{response_id}/",
+      "name": "member-event-stage-response",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-responses/{response_id}/submit/",
+      "name": "member-event-stage-response-submit",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/draft/",
+      "name": "member-event-stage-draft",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/",
+      "name": "admin-event-stage-form-list",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "edit_details; blocking policy requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/",
+      "name": "admin-event-stage-form-detail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "serializer": null,
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/publish/",
+      "name": "admin-event-stage-form-publish",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/retire/",
+      "name": "admin-event-stage-form-retire",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/activate/",
+      "name": "admin-event-stage-form-activate",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/",
+      "name": "admin-event-stage-assignment-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "manage_registrations OR VIEW_FINANCE; status only",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/extend/",
+      "name": "admin-event-stage-assignment-extend",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/reopen/",
+      "name": "admin-event-stage-assignment-reopen",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/cancel/",
+      "name": "admin-event-stage-assignment-cancel",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "CancelStageAssignmentCommand",
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/reassign/",
+      "name": "admin-event-stage-assignment-reassign",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ReassignStageAssignmentCommand",
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-milestones/shortlist/",
+      "name": "admin-event-stage-shortlist",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "manage_registrations OR hackathon review_applications",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-responses/{response_id}/",
+      "name": "admin-event-stage-response-detail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": "StageResponseDetailSerializer",
+      "authority": "manage_registrations AND VIEW_AUDIT",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-responses/{response_id}/finance/",
+      "name": "admin-event-stage-response-finance-detail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": "StageResponseFinanceDetailSerializer",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/",
+      "name": "member-event-reimbursement",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/request/submit/",
+      "name": "member-event-reimbursement-request-submit",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ReimbursementRequestSubmissionSerializer",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/request/withdraw/",
+      "name": "member-event-reimbursement-request-withdraw",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/award/accept/",
+      "name": "member-event-reimbursement-award-accept",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/award/decline/",
+      "name": "member-event-reimbursement-award-decline",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/",
+      "name": "member-event-reimbursement-claim",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/submit/",
+      "name": "member-event-reimbursement-claim-submit",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/appeal/",
+      "name": "member-event-reimbursement-claim-appeal",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/programme/",
+      "name": "admin-event-reimbursement-programme",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PATCH"
+      ],
+      "serializer": "ProgrammeCreateOrGetCommand / ProgrammeFinanceCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "programme_workflow.create_or_get / update"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/",
+      "name": "admin-event-reimbursement-request-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "review_reimbursements OR VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/{request_id}/decide/",
+      "name": "admin-event-reimbursement-request-decide",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "AwardDecisionCommand",
+      "authority": "review_reimbursements OR VIEW_FINANCE; finance requires reauth",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "award_workflow"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/",
+      "name": "admin-event-reimbursement-claim-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "review_reimbursements OR VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/{claim_id}/",
+      "name": "admin-event-reimbursement-claim-detail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "review_reimbursements OR VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/{claim_id}/review/",
+      "name": "admin-event-reimbursement-claim-review",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ClaimReviewCommand",
+      "authority": "recommend: review_reimbursements; decide: VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "claim_workflow"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/{claim_id}/extend/",
+      "name": "admin-event-reimbursement-claim-extend",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ClaimDeadlineCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "claim_workflow"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/{claim_id}/attendance-attestations/",
+      "name": "admin-event-reimbursement-attendance-attest",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "AttendanceAttestationCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "claim_workflow"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/{claim_id}/receipt-allocation-overrides/",
+      "name": "admin-event-reimbursement-receipt-override",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ReceiptAllocationOverrideCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "claim_workflow"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/{claim_id}/correct-decision/",
+      "name": "admin-event-reimbursement-claim-correct-decision",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "CorrectClaimDecisionCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "claim_workflow"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/",
+      "name": "finance-event-payout-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/",
+      "name": "finance-event-payout-detail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/payee/reveal/",
+      "name": "finance-event-payee-reveal",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayeeRevealCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "payee_workflow.reveal"
+    },
+    {
+      "path": "/api/v1/member/event-payouts/",
+      "name": "member-event-payout-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/event-payouts/{obligation_id}/",
+      "name": "member-event-payout-detail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee/reveal/",
+      "name": "member-event-payee-reveal",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayeeRevealCommand",
+      "authority": "owner",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "payee_workflow.reveal"
+    },
+    {
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee/",
+      "name": "member-event-payout-payee",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT",
+        "DELETE"
+      ],
+      "serializer": "OwnerPayeeCommand / OwnerPayeeDeleteCommand",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/dashboard/",
+      "name": "finance-event-payout-dashboard",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": "FinanceDashboard",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/record/",
+      "name": "finance-event-payout-record",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayoutRecordCommand",
+      "authority": "VIEW_FINANCE AND RECORD_REIMBURSEMENT_PAYOUT",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "payout_workflow.record"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/cancel/",
+      "name": "finance-event-payout-cancel",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "CancelUnpaidObligationCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "obligation_workflow.cancel_unpaid"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/hold/",
+      "name": "finance-event-payout-hold",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayoutHoldCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "obligation_workflow.hold"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/release-hold/",
+      "name": "finance-event-payout-release-hold",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayoutHoldReleaseCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "obligation_workflow.release_hold"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/acknowledge-eligibility/",
+      "name": "finance-event-payout-acknowledge-eligibility",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "EligibilityAcknowledgementCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "obligation_workflow.acknowledge_eligibility"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/entries/{entry_id}/amend/",
+      "name": "finance-event-payout-amend",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayoutAmendCommand",
+      "authority": "VIEW_FINANCE AND RECORD_REIMBURSEMENT_PAYOUT",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "payout_workflow.amend"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/payee/verify/",
+      "name": "finance-event-payee-verify",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayeeVerifyCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "payee_workflow"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/{obligation_id}/payee/request-correction/",
+      "name": "finance-event-payee-request-correction",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "PayeeCorrectionCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": "payee_workflow"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/exports/",
+      "name": "finance-event-payout-export",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "MaskedPayoutExportCommand",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/exports/{batch_id}/download/",
+      "name": "finance-event-payout-export-download",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": "MaskedPayoutBatchDetail",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/{makerspace_id}/event-payouts/attachments/{asset_id}/download/",
+      "name": "finance-event-attachment-download",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": "FinanceAttachmentReadQuery",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/",
+      "name": "member-event-stage-file-create",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/{asset_id}/",
+      "name": "member-event-stage-file-detail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "DELETE"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/{asset_id}/complete/",
+      "name": "member-event-stage-file-complete",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/",
+      "name": "member-event-receipt-file-create",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/{asset_id}/",
+      "name": "member-event-receipt-file-detail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "DELETE"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/{asset_id}/complete/",
+      "name": "member-event-receipt-file-complete",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee-files/",
+      "name": "member-event-payee-file-create",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee-files/{asset_id}/",
+      "name": "member-event-payee-file-detail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "DELETE"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/event-payouts/{obligation_id}/payee-files/{asset_id}/complete/",
+      "name": "member-event-payee-file-complete",
+      "methods": [
+        "POST"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": null,
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/{asset_id}/download/",
+      "name": "member-event-stage-file-download",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-files/{asset_id}/download/",
+      "name": "admin-event-stage-file-download",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "authorized selected-answer disclosure",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/staff-claims/",
+      "name": "admin-event-reimbursement-staff-claim",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StaffClaimCommand",
+      "authority": "VIEW_FINANCE or review_reimbursements; finance requires reauth",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": null
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/crew-pool/",
+      "name": "admin-event-reimbursement-crew-pool",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "CrewPoolCommand",
+      "authority": "VIEW_FINANCE; finance requires reauth",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "pools"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/{request_id}/direct-booking/",
+      "name": "admin-event-reimbursement-direct-booking",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "DirectBookingCommand",
+      "authority": "VIEW_FINANCE; finance requires reauth",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "direct_booking"
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/{request_id}/direct-booking/cancel/",
+      "name": "admin-event-reimbursement-direct-booking-cancel",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "DirectBookingCancelCommand",
+      "authority": "VIEW_FINANCE; finance requires reauth",
+      "recent_reauth": true,
+      "live_host": true,
+      "session_only": true,
+      "module": "event_reimbursements",
+      "workflow": "direct_booking"
+    }
+  ],
+  "schemas": {
+    "decision_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source",
+        "decision",
+        "award",
+        "totals",
+        "lines",
+        "eligibility"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "claim_uuid",
+            "claim_revision",
+            "decision_uuid",
+            "decision_sequence"
+          ],
+          "properties": {
+            "claim_uuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "claim_revision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "decision_uuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "decision_sequence": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "outcome",
+            "decided_at",
+            "actor_id",
+            "reason_code",
+            "reason"
+          ],
+          "properties": {
+            "outcome": {
+              "enum": [
+                "approved",
+                "partially_approved",
+                "rejected"
+              ]
+            },
+            "decided_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "actor_id": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "reason_code": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            }
+          }
+        },
+        "award": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "uuid",
+            "cap_minor",
+            "currency",
+            "policy_revision",
+            "rule_revision",
+            "applied_rules"
+          ],
+          "properties": {
+            "uuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "cap_minor": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "currency": {
+              "type": "string"
+            },
+            "policy_revision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "rule_revision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "applied_rules": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "category_caps"
+              ],
+              "properties": {
+                "category_caps": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "rail": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "air": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "bus": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "ground_transport": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "lodging": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "claimed_minor",
+            "eligible_minor",
+            "approved_minor"
+          ],
+          "properties": {
+            "claimed_minor": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "eligible_minor": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "approved_minor": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/decision_line"
+          }
+        },
+        "eligibility": {
+          "$ref": "#/$defs/eligibility"
+        }
+      },
+      "$defs": {
+        "decision_line": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "line_uuid",
+            "category",
+            "expense_date",
+            "vendor",
+            "description",
+            "traveller",
+            "original_amount_minor",
+            "original_currency",
+            "original_exponent",
+            "fx_rate",
+            "rate_date",
+            "rate_source",
+            "source_note",
+            "currency",
+            "target_exponent",
+            "converted_minor",
+            "approved_minor",
+            "limits",
+            "rounding",
+            "reason_code",
+            "reason",
+            "receipt"
+          ],
+          "properties": {
+            "line_uuid": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "expense_date": {
+              "type": "string"
+            },
+            "vendor": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "traveller": {
+              "type": "string"
+            },
+            "original_currency": {
+              "type": "string"
+            },
+            "fx_rate": {
+              "type": "string"
+            },
+            "rate_date": {
+              "type": "string"
+            },
+            "rate_source": {
+              "type": "string"
+            },
+            "source_note": {
+              "type": "string"
+            },
+            "currency": {
+              "type": "string"
+            },
+            "reason_code": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "original_amount_minor": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "original_exponent": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "target_exponent": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "converted_minor": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "approved_minor": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "cap_minor"
+              ],
+              "properties": {
+                "cap_minor": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "rounding": {
+              "const": "HALF_UP"
+            },
+            "receipt": {
+              "$ref": "#/$defs/receipt"
+            }
+          }
+        },
+        "receipt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "attachment_id",
+            "generation",
+            "sha256",
+            "total_minor",
+            "currency",
+            "receipt_use_id",
+            "receipt_use_version",
+            "allocation_minor",
+            "override_uuid",
+            "override_allocation",
+            "override_reason_code",
+            "override_reason"
+          ],
+          "properties": {
+            "attachment_id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "total_minor": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "receipt_use_id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "receipt_use_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "allocation_minor": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "currency": {
+              "type": "string"
+            },
+            "override_uuid": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "override_allocation": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "claim_uuid",
+                  "line_uuid",
+                  "original_amount_minor"
+                ],
+                "properties": {
+                  "claim_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "line_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "original_amount_minor": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            },
+            "override_reason_code": {
+              "type": "string"
+            },
+            "override_reason": {
+              "type": "string"
+            }
+          }
+        },
+        "eligibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "registration_id",
+            "attendance_revision",
+            "checkin_event_id",
+            "correction_watermark",
+            "attestation_uuid",
+            "project_snapshot_ref",
+            "core_eligibility_revision"
+          ],
+          "properties": {
+            "registration_id": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "attendance_revision": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "checkin_event_id": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "correction_watermark": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "core_eligibility_revision": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "attestation_uuid": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "project_snapshot_ref": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "cancellation_revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_id",
+        "command_digest",
+        "sequence",
+        "previous_revision_id",
+        "kind",
+        "approved_minor",
+        "currency",
+        "reason_code",
+        "cancellation_note",
+        "decision_summary_schema_version",
+        "decision_summary"
+      ],
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "command_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "previous_revision_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "const": "cancellation"
+        },
+        "approved_minor": {
+          "const": 0
+        },
+        "currency": {
+          "type": "string"
+        },
+        "reason_code": {
+          "type": "string"
+        },
+        "cancellation_note": {
+          "type": "string"
+        },
+        "decision_summary_schema_version": {
+          "const": 1
+        },
+        "decision_summary": {
+          "type": "object"
+        }
+      }
+    },
+    "coordination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain_coordination_state",
+        "expected_pool_version"
+      ],
+      "properties": {
+        "domain_coordination_state": {
+          "enum": [
+            "attached",
+            "detached"
+          ]
+        },
+        "expected_pool_version": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "domain_coordination_state": {
+              "const": "attached"
+            },
+            "expected_pool_version": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "domain_coordination_state": {
+              "const": "detached"
+            },
+            "expected_pool_version": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "attachment_closure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "obligation_id",
+        "terminal_financial_at",
+        "closure_reason_code",
+        "closure_operation_id",
+        "retention_policy_revision",
+        "retention_days_snapshot",
+        "expires_at",
+        "staging_key",
+        "object_key",
+        "deletion_receipt"
+      ],
+      "properties": {
+        "asset_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retention_policy_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "obligation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "terminal_financial_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "closure_reason_code": {
+          "type": "string"
+        },
+        "closure_operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "retention_days_snapshot": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "staging_key": {
+          "type": "string"
+        },
+        "object_key": {
+          "type": "string"
+        },
+        "deletion_receipt": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "core_evidence": {
+    "decision_summary": {
+      "schema_version": 1,
+      "source": {
+        "claim_uuid": "95940318-1682-493d-80d2-13ff1904cbe1",
+        "claim_revision": 1,
+        "decision_uuid": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+        "decision_sequence": 1
+      },
+      "decision": {
+        "outcome": "partially_approved",
+        "decided_at": "2026-12-05T10:00:00Z",
+        "actor_id": 5,
+        "reason_code": "policy_cap",
+        "reason": "Bounded to the accepted cap."
+      },
+      "award": {
+        "uuid": "83bb2a54-73a6-4e77-87b6-d7eaf6409867",
+        "cap_minor": 150000,
+        "currency": "INR",
+        "policy_revision": 1,
+        "rule_revision": 1,
+        "applied_rules": {
+          "category_caps": {
+            "rail": 150000
+          }
+        }
+      },
+      "totals": {
+        "claimed_minor": 175000,
+        "eligible_minor": 175000,
+        "approved_minor": 150000
+      },
+      "lines": [
+        {
+          "line_uuid": "fb8966ca-5f55-5915-839d-e71ea779027f",
+          "category": "rail",
+          "expense_date": "2026-12-01",
+          "vendor": "Rail vendor",
+          "description": "Travel",
+          "traveller": "A Maker",
+          "original_amount_minor": 175000,
+          "original_currency": "INR",
+          "original_exponent": 2,
+          "fx_rate": "1.000000000000",
+          "rate_date": "2026-12-01",
+          "rate_source": "receipt",
+          "source_note": "",
+          "currency": "INR",
+          "target_exponent": 2,
+          "converted_minor": 175000,
+          "approved_minor": 150000,
+          "limits": {
+            "cap_minor": 150000
+          },
+          "rounding": "HALF_UP",
+          "reason_code": "policy_cap",
+          "reason": "Accepted cap.",
+          "receipt": {
+            "attachment_id": 91,
+            "generation": 1,
+            "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "total_minor": 175000,
+            "currency": "INR",
+            "receipt_use_id": 19,
+            "receipt_use_version": 1,
+            "allocation_minor": 175000,
+            "override_uuid": null,
+            "override_allocation": [],
+            "override_reason_code": "",
+            "override_reason": ""
+          }
+        }
+      ],
+      "eligibility": {
+        "registration_id": 101,
+        "attendance_revision": 2,
+        "checkin_event_id": 37,
+        "correction_watermark": 34,
+        "attestation_uuid": null,
+        "project_snapshot_ref": null,
+        "core_eligibility_revision": 2
+      }
+    },
+    "cancellation_command": {
+      "operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+      "expected_version": 4,
+      "expected_revision_sequence": 1,
+      "expected_pool_version": null,
+      "reason_code": "no_liability",
+      "note": "Finance cancelled the unpaid obligation."
+    },
+    "cancellation_revision": {
+      "operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+      "command_digest": "ce9e8098280dcb8ece9051c72105f1c053cdf5bae4a8f1bf19cf306a7d2f9b59",
+      "sequence": 2,
+      "previous_revision_id": 23,
+      "kind": "cancellation",
+      "approved_minor": 0,
+      "currency": "INR",
+      "reason_code": "no_liability",
+      "cancellation_note": "Finance cancelled the unpaid obligation.",
+      "decision_summary_schema_version": 1,
+      "decision_summary": {
+        "schema_version": 1,
+        "source": {
+          "claim_uuid": "95940318-1682-493d-80d2-13ff1904cbe1",
+          "claim_revision": 1,
+          "decision_uuid": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+          "decision_sequence": 1
+        },
+        "decision": {
+          "outcome": "partially_approved",
+          "decided_at": "2026-12-05T10:00:00Z",
+          "actor_id": 5,
+          "reason_code": "policy_cap",
+          "reason": "Bounded to the accepted cap."
+        },
+        "award": {
+          "uuid": "83bb2a54-73a6-4e77-87b6-d7eaf6409867",
+          "cap_minor": 150000,
+          "currency": "INR",
+          "policy_revision": 1,
+          "rule_revision": 1,
+          "applied_rules": {
+            "category_caps": {
+              "rail": 150000
+            }
+          }
+        },
+        "totals": {
+          "claimed_minor": 175000,
+          "eligible_minor": 175000,
+          "approved_minor": 150000
+        },
+        "lines": [
+          {
+            "line_uuid": "fb8966ca-5f55-5915-839d-e71ea779027f",
+            "category": "rail",
+            "expense_date": "2026-12-01",
+            "vendor": "Rail vendor",
+            "description": "Travel",
+            "traveller": "A Maker",
+            "original_amount_minor": 175000,
+            "original_currency": "INR",
+            "original_exponent": 2,
+            "fx_rate": "1.000000000000",
+            "rate_date": "2026-12-01",
+            "rate_source": "receipt",
+            "source_note": "",
+            "currency": "INR",
+            "target_exponent": 2,
+            "converted_minor": 175000,
+            "approved_minor": 150000,
+            "limits": {
+              "cap_minor": 150000
+            },
+            "rounding": "HALF_UP",
+            "reason_code": "policy_cap",
+            "reason": "Accepted cap.",
+            "receipt": {
+              "attachment_id": 91,
+              "generation": 1,
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "total_minor": 175000,
+              "currency": "INR",
+              "receipt_use_id": 19,
+              "receipt_use_version": 1,
+              "allocation_minor": 175000,
+              "override_uuid": null,
+              "override_allocation": [],
+              "override_reason_code": "",
+              "override_reason": ""
+            }
+          }
+        ],
+        "eligibility": {
+          "registration_id": 101,
+          "attendance_revision": 2,
+          "checkin_event_id": 37,
+          "correction_watermark": 34,
+          "attestation_uuid": null,
+          "project_snapshot_ref": null,
+          "core_eligibility_revision": 2
+        }
+      }
+    },
+    "coordination": [
+      {
+        "domain_coordination_state": "attached",
+        "expected_pool_version": 3
+      },
+      {
+        "domain_coordination_state": "detached",
+        "expected_pool_version": null
+      }
+    ],
+    "attachment_closure": {
+      "asset_id": 91,
+      "obligation_id": null,
+      "terminal_financial_at": "2026-12-05T10:00:00Z",
+      "closure_reason_code": "no_liability",
+      "closure_operation_id": "cbb5092b-55bf-4ff5-a42d-f9720747083f",
+      "retention_policy_revision": 1,
+      "retention_days_snapshot": 2555,
+      "expires_at": "2033-12-03T10:00:00Z",
+      "staging_key": "finance/staging/opaque",
+      "object_key": "finance/final/opaque",
+      "deletion_receipt": {}
+    },
+    "cancel_replay": "durable unique operation_id + normalized digest; independent of command receipt expiry",
+    "detached_cancel": "no domain lookup; VIEW_FINANCE only + full session/recent reauth",
+    "attached_cancel": "pool before obligation; budget_service sole release writer",
+    "nonzero_effective_paid": "obligation_already_paid",
+    "correction": "replace effective chain tip; never add original and replacement; never mutate originals"
+  },
+  "purge_preflight": {
+    "keys": [
+      "events",
+      "event_reimbursements"
+    ],
+    "result": {
+      "allowed": false,
+      "blockers": [
+        {
+          "code": "unfinished_reimbursement_claims",
+          "count": 1
+        }
+      ],
+      "preserved_core_obligations": 1,
+      "preserved_finance_attachments": 1
+    },
+    "blocker_codes": [
+      "unfinished_reimbursement_awards",
+      "unfinished_reimbursement_claims",
+      "missing_core_reimbursement_evidence",
+      "missing_finance_attachment_closure"
+    ],
+    "CLI": "--preflight; --yes cannot bypass blockers",
+    "locked_recheck": "before key collection, trigger capability, index or row deletion",
+    "module_purge": "preserve core; detach coordination; reassert existing closure policy/anchor",
+    "tenant_purge": "existing explicit whole-tenant graph, including unpaid ledger",
+    "archive": "pause all finance; delete no rows"
+  },
+  "mandatory_encryption": {
+    "fields": {
+      "payments.EventPayeeRevision": [
+        "details"
+      ],
+      "payments.EventPayoutObligationRevision": [
+        "decision_summary",
+        "cancellation_note"
+      ]
+    },
+    "optional_switch_off": "mandatory values still envelopes; recognized envelopes always decrypt",
+    "bulk": [
+      "update mapped",
+      "bulk_update mapped",
+      "bulk_create mapped"
+    ],
+    "empty": [
+      "cancellation_note",
+      "purged payee details"
+    ],
+    "prepare": "broker outside domain transaction; scoped key/AAD protocol",
+    "fence": "global then tenant then account",
+    "rollback": "refuse persistent mandatory plaintext",
+    "key_retirement": "refuse any referenced mandatory version",
+    "readiness": "fail closed on missing broker/key or mandatory plaintext"
+  },
+  "lock_order": [
+    "source lock-only boundary",
+    "global PII shared fence",
+    "tenant fences sorted",
+    "account fences sorted",
+    "series/event",
+    "host/collaboration tenants sorted",
+    "authority",
+    "ticket/config/capacity/admission",
+    "programme",
+    "budget pools sorted",
+    "request",
+    "award",
+    "claim",
+    "stage definition/assignment",
+    "response",
+    "obligation",
+    "payee revision",
+    "payout chain parent",
+    "children sorted"
+  ],
+  "retained_contracts": {
+    "core_imports_R": false,
+    "payments_rail_required": false,
+    "membership_required": false,
+    "stage_forms_require_R": false,
+    "account_zip_addition": false,
+    "tax_fields": false,
+    "automatic_transfers": false
+  },
+  "rsvp_identity": {
+    "instant": "2026-12-01T10:00:00Z",
+    "encoding": "UTC ISO-8601 with Z; seconds; microseconds only if nonzero",
+    "example": "application:81:offer:3:due:2026-12-01T10:00:00Z"
+  },
+  "provider_split": {
+    "stage_saved_details": "separate StageResponseSubject -> R owner resolver (owner_member_id)",
+    "age": "AnswerSubject/SubjectKind unchanged; base registration/application only",
+    "dispatcher": "one query-free installed provider; hooks do not authorize HTTP",
+    "F_helpers": [
+      "validate_schema(context)",
+      "validate_submission(context,file_resolver)",
+      "project_schema(viewer,current_schema)",
+      "project_answers(viewer,current_schema,file_projector)",
+      "append_stage_revision_locked"
+    ],
+    "P_helpers": [
+      "prepare_saved_detail_intent(outer_operation_id,form_slot)",
+      "validate_form_save_conflicts",
+      "form_intent_statuses"
+    ]
+  }
+}

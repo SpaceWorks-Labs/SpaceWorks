@@ -1,0 +1,43 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/access.offline_decision.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed": {
+      "type": "boolean"
+    },
+    "binding_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "decided_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "digest": {
+      "maxLength": 64,
+      "minLength": 64,
+      "type": "string"
+    },
+    "operation_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "reason": {
+      "maxLength": 48,
+      "type": "string"
+    }
+  },
+  "required": [
+    "operation_id",
+    "binding_id",
+    "allowed",
+    "decided_at"
+  ],
+  "type": "object"
+}

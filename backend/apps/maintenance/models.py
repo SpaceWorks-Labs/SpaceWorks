@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -5,6 +6,7 @@ from django.utils import timezone
 
 
 from .models_feed import MaintenanceCalendarFeed  # noqa: F401
+from apps.payments.money_model import MoneyDecimalField
 
 
 class MaintenanceLogImmutableError(RuntimeError):
@@ -17,8 +19,8 @@ class MaintenanceSchedule(models.Model):
     job_count = models.PositiveIntegerField(null=True, blank=True)
     meter_started_at = models.DateTimeField(default=timezone.now, editable=False)
     class Anchor(models.TextChoices):
-        COMPLETION = "completion", "Completion date"
-        CALENDAR = "calendar", "Fixed calendar"
+        COMPLETION = "completion", gettext_noop("Completion date")
+        CALENDAR = "calendar", gettext_noop("Fixed calendar")
 
     anchor = models.CharField(max_length=16, choices=Anchor.choices, default=Anchor.COMPLETION)
     machine = models.ForeignKey(
@@ -30,6 +32,8 @@ class MaintenanceSchedule(models.Model):
     interval_days = models.PositiveIntegerField()
     next_due = models.DateField()
     is_active = models.BooleanField(default=True)
+    # Lockout (machines D6, MT5): overdue past the type's grace days blocks starting jobs.
+    blocks_use = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="+",
@@ -74,8 +78,8 @@ class MaintenanceLog(models.Model):
     )
     performed_at = models.DateTimeField(default=timezone.now)
     summary = models.TextField()
-    cost = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True,
+    cost = MoneyDecimalField(
+        max_digits=13, decimal_places=3, null=True, blank=True,
     )
     parts_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -126,3 +130,15 @@ class MaintenanceLogDocument(models.Model):
 
     def __str__(self):
         return self.object_key
+
+
+from .models_work_orders import WorkOrder  # noqa: E402,F401
+# Release 2 L16: technicians, issue reports, repairs and item/room maintenance.
+from .repairs.models_contacts import TechnicianContact, TechnicianCoverage, TechnicianDefault  # noqa: E402,F401
+from .repairs.models_issues import IssueAssignment, IssueReport  # noqa: E402,F401
+from .repairs.models_records import IssueEvent, IssuePhoto, RepairPart, TechnicianDispatch  # noqa: E402,F401
+from .repairs.models_service import (  # noqa: E402,F401
+    RoomOutage, SubjectMaintenanceLog, SubjectMaintenanceSchedule,
+)
+# Release 0.12.0 (decision 223): the safety incident register.
+from .incidents.models import Incident, IncidentAction  # noqa: E402,F401

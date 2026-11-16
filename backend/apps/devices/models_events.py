@@ -6,6 +6,7 @@ live ``device`` FK is remapped, so a source integer can never silently rebind to
 unrelated target Machine, request or batch.
 """
 
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.db import models
@@ -19,29 +20,29 @@ class DeviceEvent(models.Model):
     class EventType(models.TextChoices):
         CREATED = "created", "Created"
         UPDATED = "updated", "Updated"
-        ENROLLMENT_CREATED = "enrollment_created", "Enrollment created"
+        ENROLLMENT_CREATED = "enrollment_created", gettext_noop("Enrollment created")
         ENROLLED = "enrolled", "Enrolled"
-        ROTATION_STARTED = "rotation_started", "Rotation started"
+        ROTATION_STARTED = "rotation_started", gettext_noop("Rotation started")
         ROTATED = "rotated", "Rotated"
         REVOKED = "revoked", "Revoked"
         HEARTBEAT = "heartbeat", "Heartbeat"
-        PRINTER_BOUND = "printer_bound", "printer bound"
-        PRINTER_UNBOUND = "printer_unbound", "printer unbound"
-        PRINTER_JOB_CREATED = "printer_job_created", "printer job created"
-        COMMAND_LEASED = "command_leased", "command leased"
-        COMMAND_ACKNOWLEDGED = "command_acknowledged", "command acknowledged"
-        COMMAND_DELIVERY_FAILED = "command_delivery_failed", "command delivery failed"
-        PRINTER_TELEMETRY_RECEIVED = "printer_telemetry_received", "printer telemetry received"
-        PRINTER_RESULT_CLAIMED = "printer_result_claimed", "printer result claimed"
-        PRINTER_RESULT_APPLIED = "printer_result_applied", "printer result applied"
-        PRINTER_RESULT_NEEDS_REVIEW = "printer_result_needs_review", "printer result needs review"
-        PRINTER_JOB_CANCELLED = "printer_job_cancelled", "printer job cancelled"
-        LABEL_COMMAND_CREATED = "label_command_created", "Label command created"
-        LABEL_CONTENT_DOWNLOADED = "label_content_downloaded", "Label content downloaded"
-        LABEL_COMMAND_SUCCEEDED = "label_command_succeeded", "Label command succeeded"
-        LABEL_COMMAND_RETRY_SCHEDULED = "label_command_retry_scheduled", "Label command retry scheduled"
-        LABEL_COMMAND_FAILED = "label_command_failed", "Label command failed"
-        OFFLINE = "offline_detected", "Offline detected"
+        PRINTER_BOUND = "printer_bound", gettext_noop("printer bound")
+        PRINTER_UNBOUND = "printer_unbound", gettext_noop("printer unbound")
+        PRINTER_JOB_CREATED = "printer_job_created", gettext_noop("printer job created")
+        COMMAND_LEASED = "command_leased", gettext_noop("command leased")
+        COMMAND_ACKNOWLEDGED = "command_acknowledged", gettext_noop("command acknowledged")
+        COMMAND_DELIVERY_FAILED = "command_delivery_failed", gettext_noop("command delivery failed")
+        PRINTER_TELEMETRY_RECEIVED = "printer_telemetry_received", gettext_noop("printer telemetry received")
+        PRINTER_RESULT_CLAIMED = "printer_result_claimed", gettext_noop("printer result claimed")
+        PRINTER_RESULT_APPLIED = "printer_result_applied", gettext_noop("printer result applied")
+        PRINTER_RESULT_NEEDS_REVIEW = "printer_result_needs_review", gettext_noop("printer result needs review")
+        PRINTER_JOB_CANCELLED = "printer_job_cancelled", gettext_noop("printer job cancelled")
+        LABEL_COMMAND_CREATED = "label_command_created", gettext_noop("Label command created")
+        LABEL_CONTENT_DOWNLOADED = "label_content_downloaded", gettext_noop("Label content downloaded")
+        LABEL_COMMAND_SUCCEEDED = "label_command_succeeded", gettext_noop("Label command succeeded")
+        LABEL_COMMAND_RETRY_SCHEDULED = "label_command_retry_scheduled", gettext_noop("Label command retry scheduled")
+        LABEL_COMMAND_FAILED = "label_command_failed", gettext_noop("Label command failed")
+        OFFLINE = "offline_detected", gettext_noop("Offline detected")
         RECOVERED = "recovered", "Recovered"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

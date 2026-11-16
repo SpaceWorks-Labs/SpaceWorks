@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from .notification_cutover import guarded, sending_allowed, CutoverClosed
 from django.db import transaction
 from django.db.models import CharField, IntegerField, Value
 from django.shortcuts import get_object_or_404
@@ -91,15 +93,18 @@ class DeliveryLogRetryView(APIView):
 
     @extend_schema(tags=["Notification delivery"], request=RetrySerializer,
                    responses={200: DeliverySerializer, **errors(400, 401, 403, 404, 423, 503)})
+    @guarded(mutation=True)
     def post(self, request, makerspace_id, kind, pk):
+        if not sending_allowed():
+            raise CutoverClosed()
         space = staff_space(request.user, makerspace_id)
         if kind not in ("email", "channel"):
-            raise ValidationError({"kind": "Expected email or channel."})
+            raise ValidationError({"kind": gettext("Expected email or channel.")})
         rows = email_rows(request.user, space) if kind == "email" else channel_rows(request.user, space)
         log = get_object_or_404(rows, pk=pk)
         blocked = email_module_blocks(space, log.stream, log.event) if kind == "email" else channel_module_blocks(space, log.channel)
         if blocked:
-            raise ValidationError({"module": "This delivery channel is disabled."})
+            raise ValidationError({"module": gettext("This delivery channel is disabled.")})
         serializer = RetrySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         log = retry_delivery(request.user, log, expected_generation=serializer.validated_data["generation"])
@@ -111,27 +116,30 @@ class DeliveryTestView(APIView):
 
     @extend_schema(tags=["Notification delivery"], request=DeliveryTestSerializer,
                    responses={200: DeliveryTestResultSerializer, **errors(400, 401, 403, 404, 423, 503)})
+    @guarded(mutation=True)
     def post(self, request, makerspace_id):
+        if not sending_allowed():
+            raise CutoverClosed()
         space = staff_space(request.user, makerspace_id)
         serializer = DeliveryTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         destination_id = serializer.validated_data.get("destination_id")
-        text = "SpaceWorks notification delivery test. No member data is included."
+        text = gettext("SpaceWorks notification delivery test. No member data is included.")
         with transaction.atomic():
             if destination_id:
                 destination = get_object_or_404(rbac.scope_by_action(
                     request.user, rbac.Action.MANAGE_MAKERSPACE, NotificationDestination.objects.all(),
                 ), pk=destination_id, makerspace=space, is_active=True)
                 if channel_module_blocks(space, destination.channel):
-                    raise ValidationError({"module": "The destination channel is disabled."})
+                    raise ValidationError({"module": gettext("The destination channel is disabled.")})
                 from apps.integrations.delivery_tests import queue_destination_test
                 log = queue_destination_test(space, destination, text)
                 kind = "channel"
             else:
                 if not request.user.email or email_module_blocks(space, "test", "delivery_test"):
-                    raise ValidationError({"email": "Email is disabled or your account has no email address."})
+                    raise ValidationError({"email": gettext("Email is disabled or your account has no email address.")})
                 log = dispatch_email(makerspace=space, to_email=request.user.email,
-                                     recipient_id=request.user.pk, subject="SpaceWorks delivery test",
+                                     recipient_id=request.user.pk, subject=gettext("SpaceWorks delivery test"),
                                      text_body=text, stream="test", event="delivery_test", audience="staff")
                 kind = "email"
             audit.record(request.user, "notification.test_sent", makerspace=space, target=space,

@@ -1,0 +1,31 @@
+/* Only Gilroy's free Light (300) and ExtraBold (800) ship (AGPL repo; see public/fonts/README.md).
+   Text and UI at 400-700 use Outfit (OFL, variable). font-synthesis: none on body means a Gilroy
+   request at another weight snaps to the nearest real face instead of being faked. */
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/fonts/Outfit-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Unbounded";
+  src: url("/fonts/Unbounded-Variable.woff2") format("woff2");
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}

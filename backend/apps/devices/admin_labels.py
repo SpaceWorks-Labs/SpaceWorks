@@ -8,6 +8,7 @@ from apps.separability.tombstones import app_is_tombstoned
 class LabelPrintCommandAdmin(ReadOnlyDeviceAdmin):
     list_display = ("batch_title_snapshot", "makerspace", "device", "result", "created_at")
     list_filter = ("result", "makerspace")
+    search_fields = ("batch_title_snapshot", "makerspace__name")
 
 
 class LabelPrintResultAdmin(ReadOnlyDeviceAdmin):

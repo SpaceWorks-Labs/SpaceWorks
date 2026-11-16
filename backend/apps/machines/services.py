@@ -1,4 +1,5 @@
 """Audited workflow services for machine mutations."""
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db import transaction
@@ -17,7 +18,7 @@ from apps.makerspaces.guards import require_module_locked
 
 def _retired(machine):
     if not machine.is_active:
-        raise ValidationError("Machine is retired.")
+        raise ValidationError(gettext("Machine is retired."))
 
 
 def _audit(machine, actor, action, meta=None):
@@ -28,27 +29,28 @@ def _audit(machine, actor, action, meta=None):
 
 
 @transaction.atomic
-def set_status(machine, actor, status):
+def set_status(machine, actor, status, *, reason="", expected_back_at=None):
     if status not in Machine.Status.values:
-        raise ValidationError({"status": "Invalid machine status."})
+        raise ValidationError({"status": gettext("Invalid machine status.")})
     _retired(machine)
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
-    old_status = machine.status
-    machine.status = status
-    machine.save(update_fields=["status", "updated_at"])
-    _audit(machine, actor, "machine.status_changed", {"old": old_status, "new": status})
+    from .status_tracking import change_status
+    change_status(machine, status, source="manual", actor=actor, reason=reason, expected_back_at=expected_back_at)
     return machine
 
 
 @transaction.atomic
-def log_usage(machine, actor, hours, note=""):
+def log_usage(machine, actor, hours, note="", *, member=None, started_at=None):
     _retired(machine)
     if hours <= 0:
-        raise ValidationError({"hours": "Hours must be greater than zero."})
+        raise ValidationError({"hours": gettext("Hours must be greater than zero.")})
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
+    from .usage_attribution import validate_attribution
+    member = validate_attribution(machine, member, started_at)
     entry = MachineUsageEntry.objects.create(
+        member=member, started_at=started_at,
         machine=machine,
         hours=hours,
         source=MachineUsageEntry.Source.MANUAL,
@@ -76,7 +78,7 @@ def update_image(machine, actor, object_key):
         object_key,
         machine_id=machine.pk,
     ):
-        raise ValidationError({"object_key": "This image is already in use."})
+        raise ValidationError({"object_key": gettext("This image is already in use.")})
     if old_key and old_key != object_key:
         public_image_storage.release_public_image_on_commit(
             machine.makerspace, old_key
@@ -106,11 +108,11 @@ def remove_image(machine, actor):
 def assign_operator(machine, actor, user, access_level):
     _retired(machine)
     if access_level not in MachineOperator.AccessLevel.values:
-        raise ValidationError({"access_level": "Invalid operator access level."})
+        raise ValidationError({"access_level": gettext("Invalid operator access level.")})
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
     if not access.is_active_member(user, machine.makerspace_id):
-        raise ValidationError({"user": "User is not an active makerspace member."})
+        raise ValidationError({"user": gettext("User is not an active makerspace member.")})
     existing = MachineOperator.objects.filter(machine=machine, user=user).first()
     existing_level = existing.access_level if existing else None
     if not access.can_assign_operator(
@@ -165,8 +167,8 @@ def retire_machine(machine, actor):
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     old_status = machine.status
     machine.is_active = False
-    machine.status = Machine.Status.OFFLINE
-    machine.save(update_fields=["is_active", "status", "updated_at"])
+    from .status_tracking import change_status
+    change_status(machine, Machine.Status.OFFLINE, source="retire", actor=actor, extra_fields=("is_active",))
     _audit(machine, actor, "machine.retired", {"old_status": old_status})
     return machine
 
@@ -188,7 +190,7 @@ def unretire_machine(machine, actor):
 def log_error(machine, actor, severity, message):
     _retired(machine)
     if severity not in MachineErrorLog.Severity.values:
-        raise ValidationError({"severity": "Invalid error severity."})
+        raise ValidationError({"severity": gettext("Invalid error severity.")})
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
     row = MachineErrorLog.objects.create(
@@ -204,14 +206,15 @@ def log_error(machine, actor, severity, message):
 @transaction.atomic
 def attach_document(machine, actor, object_key, doc_type, original_filename):
     if doc_type not in MachineDocument.DocType.values:
-        raise ValidationError({"doc_type": "Invalid machine document type."})
+        raise ValidationError({"doc_type": gettext("Invalid machine document type.")})
     storage.assert_machine_object_key_for_makerspace(object_key, machine.makerspace_id)
     if MachineDocument.objects.filter(object_key=object_key).exists():
-        raise ValidationError("Evidence already used.")
+        raise ValidationError(gettext("Evidence already used."))
     from django.conf import settings
 
     storage.finalize_upload(object_key, settings.MACHINE_DOC_MAX_BYTES)
     result = storage.validate_machine_object(object_key)
+    limits.charge_upload(machine.makerspace, result.size, object_key=object_key)
     doc = MachineDocument.objects.create(
         machine=machine,
         doc_type=doc_type,
@@ -230,15 +233,38 @@ def attach_document(machine, actor, object_key, doc_type, original_filename):
     return doc
 
 
-@transaction.atomic
 def remove_document(machine, actor, document):
-    object_key = document.object_key
-    document_id = document.pk
-    document.delete()
-    storage.delete_object(object_key)
-    _audit(
-        machine,
-        actor,
-        "machine.document_removed",
-        {"document_id": document_id, "object_key": object_key},
-    )
+    from apps.makerspaces.models import Makerspace
+    from apps.makerspaces.storage_reservations import object_operation, deletion_claim, claimed_receipt
+
+    # Fetch the canonical key before taking the per-object fence.
+    found = MachineDocument.objects.filter(pk=document.pk, machine_id=machine.pk).first()
+    if found is None:
+        return
+    with object_operation(found.object_key):
+        with transaction.atomic():
+            space = Makerspace.objects.select_for_update().get(pk=machine.makerspace_id)
+            require_module_locked(space, "machines")
+            found = MachineDocument.objects.select_for_update().filter(pk=found.pk, machine_id=machine.pk).first()
+            if found is None:
+                return
+            receipt, version = deletion_claim(
+                space, found.object_key, found.size_bytes, charged=True, bounded_upload=True)
+        # No tenant or document row lock is held during provider enumeration/deletion.
+        if storage.delete_object(found.object_key) is not None:
+            raise storage.StorageUnavailable
+        with transaction.atomic():
+            space = Makerspace.objects.select_for_update().get(pk=machine.makerspace_id)
+            require_module_locked(space, "machines")
+            fresh = MachineDocument.objects.select_for_update().filter(pk=found.pk, machine_id=machine.pk).first()
+            receipt = claimed_receipt(receipt, version)
+            if (fresh is None or receipt is None or fresh.object_key != found.object_key
+                    or fresh.size_bytes != found.size_bytes):
+                return
+            limits.free_storage(space, fresh.size_bytes)
+            receipt.released, receipt.cleaning = True, False
+            receipt.save(update_fields=["released", "cleaning"])
+            document_id = fresh.pk
+            fresh.delete()
+            _audit(machine, actor, "machine.document_removed",
+                   {"document_id": document_id, "object_key": found.object_key})

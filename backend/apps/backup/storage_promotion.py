@@ -2,10 +2,13 @@
 
 import hashlib
 import hmac
-import tempfile
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
+
+from apps.storage_capabilities import CapabilityError
+from apps.storage_capabilities.budget import checkpoint
+from apps.storage_capabilities.promotion import promote
 
 
 CHUNK_SIZE = 1024 * 1024
@@ -30,15 +33,19 @@ def stream_verify(key, *, expected_size, expected_sha256):
 
     body = None
     try:
-        body = storage.client().get_object(
+        checkpoint()
+        body = storage.private_client().get_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key
         )["Body"]
         digest = hashlib.sha256()
         size = 0
         while chunk := body.read(CHUNK_SIZE):
+            checkpoint()
             size += len(chunk)
+            if size > expected_size:
+                raise storage.BackupVerificationError("The stored archive exceeds its expected size.")
             digest.update(chunk)
-    except (BotoCoreError, ClientError, OSError) as exc:
+    except (BotoCoreError, ClientError, OSError, CapabilityError) as exc:
         raise storage.BackupStorageError(
             "The backup archive could not be streamed for verification."
         ) from exc
@@ -64,53 +71,34 @@ def create_final_from_staging(staging_key, final_key):
     """
     from apps.backup import storage
 
-    source = None
     try:
-        s3 = storage.client()
-        with tempfile.TemporaryFile(prefix="spaceworks-promote-") as spool:
-            source = s3.get_object(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=staging_key
-            )["Body"]
-            while chunk := source.read(CHUNK_SIZE):
-                spool.write(chunk)
-            size = spool.tell()
-            source.close()
-            source = None
-            spool.seek(0)
-            s3.put_object(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                Key=final_key,
-                Body=spool,
-                ContentLength=size,
-                ContentType="application/octet-stream",
-                IfNoneMatch="*",
-            )
-    except ClientError as exc:
-        code = exc.response.get("Error", {}).get("Code")
-        status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        if code in {"PreconditionFailed", "ConditionalRequestConflict"} or status in {
-            409, 412
-        }:
-            raise storage.BackupStorageError(
-                "The immutable final backup locator already exists."
-            ) from exc
+        s3 = storage.private_client()
+        bucket = settings.AWS_STORAGE_BUCKET_NAME
+        checkpoint()
+        size = s3.head_object(Bucket=bucket, Key=staging_key)["ContentLength"]
+        if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+            maximum = getattr(settings, "FREE_MAX_PROMOTION_BYTES", 16 * 1024 * 1024)
+            if type(maximum) is not int or maximum < 1 or size > maximum:
+                raise CapabilityError("storage_free_promotion_requires_external_job")
+        else:
+            maximum = size
+        promote(s3, source_bucket=bucket, source_key=staging_key,
+                destination_bucket=bucket, destination_key=final_key,
+                max_bytes=maximum, content_type="application/octet-stream")
+    except (BotoCoreError, ClientError, OSError, CapabilityError) as exc:
+        if isinstance(exc, CapabilityError) and exc.code == "storage_final_already_exists":
+            raise storage.BackupStorageError("The immutable final backup locator already exists.") from exc
         raise storage.BackupStorageError(
             "The backup staging object could not be promoted."
         ) from exc
-    except (BotoCoreError, OSError) as exc:
-        raise storage.BackupStorageError(
-            "The backup staging object could not be promoted."
-        ) from exc
-    finally:
-        if source is not None and hasattr(source, "close"):
-            source.close()
 
 
 def object_exists(key):
     from apps.backup import storage
 
     try:
-        storage.client().head_object(
+        checkpoint()
+        storage.private_client().head_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key
         )
         return True
@@ -122,7 +110,7 @@ def object_exists(key):
         raise storage.BackupStorageError(
             "The backup object locator could not be inspected."
         ) from exc
-    except BotoCoreError as exc:
+    except (BotoCoreError, CapabilityError) as exc:
         raise storage.BackupStorageError(
             "The backup object locator could not be inspected."
         ) from exc

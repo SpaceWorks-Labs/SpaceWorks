@@ -1,27 +1,31 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { Skeleton } from "../../components/ui";
 import { EventCertificateActions } from "./EventCertificateActions";
 import { useEventFeedbackResponses } from "./eventFeedbackApi";
 import { eventErrorText } from "./eventUi";
+import { EventPanelPager } from "./EventPanelPager";
+import { LogoLoader } from "../../components/LogoLoader";
 
-export function EventFeedbackResponses({ eventId, makerspaceId, responseCount }: {
+export function EventFeedbackResponses({ eventId, makerspaceId, responseCount, canManageCertificates = true }: {
   eventId: number;
   makerspaceId: number;
   responseCount: number;
+  canManageCertificates?: boolean;
 }) {
   const [page, setPage] = useState(1);
   const responses = useEventFeedbackResponses(eventId, page, true);
   return <div className="mt-5">
-    <h4 className="title-section">Responses <span className="font-mono">({responses.data?.count ?? responseCount})</span></h4>
-    {responses.isLoading ? <Skeleton className="mt-2 h-24 w-full" /> : null}
+    <h4 className="title-section">{t`Responses `}<span className="tabular-nums">({responses.data?.count ?? responseCount})</span></h4>
+    {responses.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
     {responses.error ? <p className="mt-2 text-sm text-danger">{eventErrorText(responses.error)}</p> : null}
     {responses.data?.results.map((response) => <article key={response.id} className="mt-2 rounded-lg border border-line p-3 text-sm">
-      <p className="font-medium text-ink">{response.identity?.name ?? "Anonymous response"}</p>
-      <p className="text-xs text-muted">{new Date(response.created_at).toLocaleString()}</p>
+      <p className="font-medium text-ink">{response.identity?.name ?? t`Anonymous response`}</p>
+      <p className="text-xs text-muted">{new Date(response.created_at).toLocaleString(formatLocale())}</p>
       <dl className="mt-2 grid gap-1">{response.answers.answers.map((answer) => <div key={answer.id}><dt className="eyebrow">{answer.label}</dt><dd className="whitespace-pre-wrap text-ink">{Array.isArray(answer.value) ? answer.value.join(", ") : String(answer.value)}</dd></div>)}</dl>
-      {response.certificate ? <EventCertificateActions certificate={response.certificate} eventId={eventId} makerspaceId={makerspaceId} /> : null}
+      {response.certificate && canManageCertificates ? <EventCertificateActions certificate={response.certificate} eventId={eventId} makerspaceId={makerspaceId} /> : null}
     </article>)}
-    <div className="mt-3 flex gap-2"><button className="desk-button" type="button" disabled={!responses.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!responses.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div>
+    <div className="mt-3"><EventPanelPager page={page} setPage={setPage} count={responses.data?.count} next={responses.data?.next} /></div>
   </div>;
 }

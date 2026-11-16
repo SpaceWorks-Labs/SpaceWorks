@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { t } from "@lingui/core/macro";
+import { useContext, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
-import { CustomAnswersView } from "../forms/CustomAnswersView";
-import { BookableSpaceForm, valuesForSpace } from "./BookableSpaceForm";
+import { ConfirmDialog, ErrorBlock, Modal, SegmentedControl, StatusBadge } from "../../components/ui";
+import { capabilityOn } from "../../lib/features";
+import { StaffListContext } from "./StaffListContext";
+import { StaffOrganizationBookingForm } from "./StaffOrganizationBookingForm";
+import { DetailLayout } from "../../components/layouts";
+import { opsQueryState, useOpsTabs } from "./opsPresentation";
+import { BookingAgenda } from "./BookingAgenda";
+import { BookingRequests } from "./BookingRequests";
 import { StaffBookingForm } from "./StaffBookingForm";
 import {
   useBookableSpace,
@@ -16,21 +22,24 @@ import {
   type BookingFilters,
 } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
-import { PaymentReconcileActions } from "./PaymentReconcileActions";
+import { BookingWebsiteEditor } from "./BookingWebsiteEditor";
+import { BookingPassDesigner } from "./BookingPassDesigner";
+import { BookingArrivalScanner } from "./BookingArrivalScanner";
+import { BookingBroadcastsPanel } from "./BookingBroadcastsPanel";
+import { bookingAccess } from "./bookingStaffPermissions";
+import { BookingResourceAnalytics } from "./BookingResourceAnalytics";
+import { BookingSpaceSettings } from "./BookingSpaceSettings";
+import { BookingDecisionDialog } from "./BookingDecisionDialog";
+import { BookingIssuesList } from "./BookingIssuesList";
+import { SpacePhotosSection } from "./SpacePhotosSection";
 
+/** Later lanes supply their separately authorized tab components through the `additionalTabs` slot. */
+export type BookingDrawerTab = { id: string; label: string; content: ReactNode };
 type PendingAction = { booking: Booking; action: BookingAction };
-
-function errorText(error: unknown) {
-  return error instanceof Error ? error.message : "Something went wrong.";
-}
-
-function bookingTime(booking: Booking) {
-  const format = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
-  return `${format.format(new Date(booking.starts_at))} – ${format.format(new Date(booking.ends_at))}`;
-}
 
 function actionLabel(action: BookingAction) {
   return {
+    restore: "Undo cancellation",
     approve: "Approve",
     reject: "Reject",
     cancel: "Cancel booking",
@@ -39,21 +48,27 @@ function actionLabel(action: BookingAction) {
   }[action];
 }
 
-export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled = false }: {
+export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled = false, initialCreateOpen = false, additionalTabs = [] }: {
+  /** Later lanes supply their separately authorized tab components through this slot. */
+  additionalTabs?: BookingDrawerTab[];
   recurringEnabled?: boolean;
+  /** Open the New booking form on arrival (the bookings list "New booking" space picker). */
+  initialCreateOpen?: boolean;
   makerspaceId: number;
   spaceId: number;
   onClose: () => void;
 }) {
   const spaceQuery = useBookableSpace(spaceId);
   const space = spaceQuery.data;
-  const [params] = useSearchParams();
+  // A resource grant narrows the console: managers see everything, grantees only their granted surfaces.
+  const access = bookingAccess(space);
+  const [params, setParams] = useSearchParams();
   const list = useUrlListState({ page: "1", status: "", starts_at: "", ends_at: "", ordering: "starts_at" }, `booking-${spaceId}.`);
   const { page, setPage } = list;
   const filters: BookingFilters = { ...list.values, status: list.values.status as BookingFilters["status"], booking_id: Number(params.get("space")) === spaceId ? Number(params.get("booking")) || undefined : undefined };
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
-  const bookings = useSpaceBookings(spaceId, filters, page, list.values.ordering);
+  const bookings = useSpaceBookings(spaceId, filters, page, list.values.ordering, access.reservations);
   const update = useUpdateBookableSpace(makerspaceId, spaceId);
   const deactivate = useDeactivateBookableSpace(makerspaceId, spaceId);
   const action = useBookingAction(makerspaceId, spaceId);
@@ -62,112 +77,89 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
     list.setFilter(key, String(value ?? ""));
   };
   const actionError = update.error || deactivate.error || action.error;
+  // Each optional surface is a tab only when the space enables it AND this actor may use it.
+  const optionalTabs: BookingDrawerTab[] = space ? [
+    ...(space.checkin_enabled && (access.manager || space.staff_permissions?.includes("check_in")) ? [{
+      id: "check-in", label: t`Arrivals`, content: <BookingArrivalScanner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
+    ...(access.reservations && space.broadcasts_enabled ? [{
+      id: "broadcasts", label: t`Broadcasts`, content: <BookingBroadcastsPanel makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
+    ...(space.report_features?.length ? [{
+      id: "analytics", label: t`Analytics`, content: <BookingResourceAnalytics makerspaceId={makerspaceId} spaceId={spaceId} features={space.report_features} /> }] : []),
+    ...(space.website_enabled && (access.edit || space.staff_permissions?.includes("publish_page")) ? [{
+      id: "website", label: t`Website`, content: <BookingWebsiteEditor key={spaceId} space={space} /> }] : []),
+    ...(space.passes_enabled && access.edit ? [{
+      id: "passes", label: t`Pass designer`, content: <BookingPassDesigner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
+    ...additionalTabs,
+  ] : additionalTabs;
+  const tabs = useOpsTabs("bookingTab", [
+    ...(access.reservations ? [{ key: "requests", label: t`Requests`, count: bookings.data?.count }, { key: "calendar", label: t`Calendar` }] : []),
+    ...optionalTabs.map(tab => ({ key: tab.id, label: tab.label })),
+    ...(access.reservations ? [{ key: "issues", label: t`Issues` }] : []),
+    ...(access.manager || access.edit ? [{ key: "photos", label: t`Photos` }] : []),
+    { key: "settings", label: access.manager || access.edit ? t`Settings` : t`Details` }],
+    // Requests first: the basic path is apply -> review -> notify.
+    !access.reservations ? optionalTabs[0]?.id ?? "settings" : "requests");
+  const [createOpen, setCreateOpen] = useState(initialCreateOpen);
+  // Decision 223 P2: a booking for a partner organization, behind `bookings.organization_bookings`.
+  const organizations = capabilityOn(useContext(StaffListContext).makerspace, "bookings.organization_bookings");
+  const [createFor, setCreateFor] = useState<"member" | "organization">("member");
+  const openBooking = (bookingId: number) => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.set("space", String(spaceId));
+    next.set("booking", String(bookingId));
+    next.set("booking-" + spaceId + ".page", "1");
+    next.set("bookingTab", "requests");
+    return next;
+  });
+  const optional = optionalTabs.find(tab => tab.id === tabs.active);
 
   return (
     <>
-      <DetailDrawer open title={space?.name ?? "Space details"} onClose={onClose}>
-        {spaceQuery.isLoading ? <Skeleton className="h-64 w-full" /> : null}
-        {spaceQuery.error ? <EmptyState title="Unable to load space" description={errorText(spaceQuery.error)} /> : null}
-        {space ? (
-          <div className="grid gap-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge status={space.is_active ? "active" : "inactive"} />
-              <span className="text-sm text-muted">{space.effective_requester_notifications_enabled ? "Requester emails on" : "Requester emails off"}</span>
-            </div>
-            <BookableSpaceForm
-              makerspaceId={makerspaceId}
-              key={space.updated_at}
-              initialValues={valuesForSpace(space)}
-              onSubmit={(payload) => update.mutate(payload)}
-              pending={update.isPending}
-              error={update.error ? errorText(update.error) : undefined}
-              submitLabel="Save changes"
-              disabled={!space.is_active}
-            />
-            {space.is_active ? <button className="desk-button-danger w-fit" type="button" onClick={() => setConfirmDeactivate(true)}>Deactivate space</button> : <p className="text-sm text-muted">This space is inactive and read-only.</p>}
-            <section aria-labelledby="space-bookings-title">
-              {space.is_active ? <StaffBookingForm recurringEnabled={recurringEnabled} makerspaceId={makerspaceId} space={space} /> : null}
-              <div className="mb-3">
-                <h3 id="space-bookings-title" className="title-section">Bookings <span className="font-mono">({bookings.data?.count ?? 0})</span></h3>
-                <p className="mt-1 text-xs text-muted">Contact details and custom answers are staff-only.</p>
-              </div>
-              <label className="text-xs text-muted">Sort<select className="desk-input" value={list.values.ordering} onChange={(event) => list.setFilter("ordering", event.target.value)}><option value="starts_at">Starts first</option><option value="-starts_at">Starts last</option><option value="created_at">Created first</option></select></label>
-              <div className="mb-3 grid gap-2 sm:grid-cols-3">
-                <label className="grid gap-1 text-xs font-semibold text-muted">Status
-                  <select className="desk-input" value={filters.status ?? ""} onChange={(event) => setFilter("status", event.target.value as BookingFilters["status"])}>
-                    <option value="">All statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="completed">Completed</option>
-                    <option value="no_show">No-show</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-xs font-semibold text-muted">Starts after
-                  <input className="desk-input" type="datetime-local" value={filters.starts_at ?? ""} onChange={(event) => setFilter("starts_at", event.target.value)} />
-                </label>
-                <label className="grid gap-1 text-xs font-semibold text-muted">Ends before
-                  <input className="desk-input" type="datetime-local" value={filters.ends_at ?? ""} onChange={(event) => setFilter("ends_at", event.target.value)} />
-                </label>
-              </div>
-              {bookings.isLoading ? <Skeleton className="h-40 w-full" /> : null}
-              {bookings.error ? <p className="text-sm text-danger" role="alert">{errorText(bookings.error)}</p> : null}
-              {bookings.data && !bookings.data.results.length ? <EmptyState title="No matching bookings" description="Bookings for this space will appear here." /> : null}
-              {bookings.data?.results.length ? (
-                <div className="grid gap-3">
-                  {bookings.data.results.map((booking) => (
-                    <article className="rounded-xl border border-line bg-bg p-3" key={booking.id}>
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div><h4 className="title-section">{booking.name}</h4><p className="mt-1 font-mono text-xs text-muted">{bookingTime(booking)}</p></div>
-                        <StatusBadge status={booking.status} />
-                      </div>
-                      <div className="mt-2 text-sm"><a className="block break-all hover:underline" href={"mailto:" + booking.email}>{booking.email}</a><a className="block text-muted hover:underline" href={"tel:" + booking.phone}>{booking.phone}</a></div>
-                      <details className="mt-3 rounded-lg border border-line bg-panel p-3">
-                        <summary className="cursor-pointer text-sm font-semibold text-ink">View custom answers</summary>
-                        <div className="mt-3"><CustomAnswersView snapshot={booking.custom_answers} /></div>
-                      </details>
-                      <PaymentReconcileActions
-                        makerspaceId={makerspaceId}
-                        payment={booking.payment}
-                        invalidateKeys={[
-                          ["booking-space", spaceId, "bookings"],
-                          ["booking-space", spaceId],
-                        ]}
-                      />
-                      <BookingActions booking={booking} onAction={(nextAction) => setPendingAction({ booking, action: nextAction })} />
-                    </article>
-                  ))}
-                </div>
-              ) : null}
-              {bookings.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="font-mono text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!bookings.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!bookings.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
-            </section>
-            {actionError ? <p className="text-sm text-danger" role="alert">{errorText(actionError)}</p> : null}
-          </div>
-        ) : null}
-      </DetailDrawer>
+      <div onClickCapture={tabs.onClickCapture}>
+        <DetailLayout title={space?.name ?? t`Space details`} back={{ label: t`Bookings`, onClick: onClose }}
+          identity={{ kind: "icon", icon: "Calendar", tone: "info" }}
+          state={opsQueryState(spaceQuery, "this space")} tabs={tabs.tabs} activeTab={tabs.active}
+          status={space ? <StatusBadge status={space.is_active ? "active" : "inactive"} label={space.is_active ? t`Active` : t`Inactive`} /> : undefined}
+          meta={space ? [space.location, space.effective_requester_notifications_enabled ? t`Requester emails on` : t`Requester emails off`] : undefined}
+          actions={space?.is_active && access.reservations ? { primary: { label: t`New booking`, onClick: () => setCreateOpen(true) } } : undefined}
+          danger={space?.is_active && access.manager && tabs.active === "settings" ? [{ title: t`Deactivate space`,
+            consequence: "The public page will hide this space and no new bookings can be submitted or approved.",
+            action: { label: t`Deactivate space`, confirms: true, tone: "danger", onClick: () => setConfirmDeactivate(true) } }] : undefined}
+          main={space ? <div className="grid gap-6">
+            {tabs.active === "settings" ? <BookingSpaceSettings makerspaceId={makerspaceId} space={space} access={access} update={update} />
+              : optional ? optional.content
+              : tabs.active === "calendar" ? <BookingAgenda spaceId={spaceId} onOpen={openBooking} />
+              : tabs.active === "issues" ? <BookingIssuesList makerspaceId={makerspaceId} spaceId={spaceId} />
+              : tabs.active === "photos" ? <SpacePhotosSection spaceId={spaceId} active={space.is_active} />
+              : <BookingRequests makerspaceId={makerspaceId} spaceId={spaceId} space={space} canReconcile={access.manager} bookings={bookings} list={list}
+                filters={filters} setFilter={setFilter} page={page} setPage={setPage}
+                onAction={(booking, nextAction) => setPendingAction({ booking, action: nextAction })} />}
+            {actionError ? <ErrorBlock error={actionError} /> : null}
+          </div> : null} />
+      </div>
+      <Modal open={createOpen && access.reservations} onClose={() => setCreateOpen(false)} title={t`New booking`}>
+        {space && createOpen && access.reservations && organizations ? <div className="mb-3"><SegmentedControl label={t`Who is this booking for?`} value={createFor}
+          options={[{ value: "member", label: t`Member or house` }, { value: "organization", label: t`Organization` }]} onChange={value => setCreateFor(value as "member" | "organization")} /></div> : null}
+        {space && createOpen && access.reservations && organizations && createFor === "organization" ? <StaffOrganizationBookingForm makerspaceId={makerspaceId} space={space} />
+          : space && createOpen && access.reservations ? <StaffBookingForm recurringEnabled={recurringEnabled || Boolean(space.recurring_enabled)} makerspaceId={makerspaceId} space={space} /> : null}
+      </Modal>
+      <BookingDecisionDialog key={pendingAction ? `${pendingAction.booking.id}-${pendingAction.action}` : "none"}
+        open={pendingAction?.action === "reject" || pendingAction?.action === "cancel"}
+        action={pendingAction?.action === "reject" ? "reject" : "cancel"} bookerName={pendingAction?.booking.name ?? ""}
+        pending={action.isPending} onCancel={() => setPendingAction(null)}
+        onConfirm={reason => pendingAction && action.mutate({ bookingId: pendingAction.booking.id, action: pendingAction.action, reason },
+          { onSuccess: () => setPendingAction(null), onError: () => setPendingAction(null) })} />
       <ConfirmDialog
-        open={pendingAction !== null}
-        title={pendingAction ? actionLabel(pendingAction.action) : "Update booking"}
+        open={pendingAction !== null && pendingAction.action !== "reject" && pendingAction.action !== "cancel"}
+        title={pendingAction ? actionLabel(pendingAction.action) : t`Update booking`}
         message={pendingAction ? actionLabel(pendingAction.action) + " for " + pendingAction.booking.name + "?" : ""}
-        confirmLabel={pendingAction ? actionLabel(pendingAction.action) : "Confirm"}
-        tone={pendingAction?.action === "approve" || pendingAction?.action === "complete" ? "default" : "danger"}
+        confirmLabel={pendingAction ? actionLabel(pendingAction.action) : t`Confirm`}
+        tone={pendingAction?.action === "approve" || pendingAction?.action === "complete" || pendingAction?.action === "restore" ? "default" : "danger"}
         pending={action.isPending}
         onCancel={() => setPendingAction(null)}
         onConfirm={() => pendingAction && action.mutate({ bookingId: pendingAction.booking.id, action: pendingAction.action }, { onSuccess: () => setPendingAction(null), onError: () => setPendingAction(null) })}
       />
-      <ConfirmDialog open={confirmDeactivate} title="Deactivate space" message="The public page will hide this space and no new bookings can be submitted or approved." confirmLabel="Deactivate" tone="danger" pending={deactivate.isPending} onCancel={() => setConfirmDeactivate(false)} onConfirm={() => deactivate.mutate(undefined, { onSuccess: () => setConfirmDeactivate(false), onError: () => setConfirmDeactivate(false) })} />
+      <ConfirmDialog open={confirmDeactivate} title={t`Deactivate space`} message={t`The public page will hide this space and no new bookings can be submitted or approved.`} confirmLabel={t`Deactivate`} tone="danger" pending={deactivate.isPending} onCancel={() => setConfirmDeactivate(false)} onConfirm={() => deactivate.mutate(undefined, { onSuccess: () => setConfirmDeactivate(false), onError: () => setConfirmDeactivate(false) })} />
     </>
-  );
-}
-
-function BookingActions({ booking, onAction }: { booking: Booking; onAction: (action: BookingAction) => void }) {
-  const ended = new Date(booking.ends_at) <= new Date();
-  return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {booking.status === "pending" ? <><button className="desk-button-success" type="button" onClick={() => onAction("approve")}>Approve</button><button className="desk-button-danger" type="button" onClick={() => onAction("reject")}>Reject</button></> : null}
-      {booking.status === "confirmed" ? <button className="desk-button-danger" type="button" onClick={() => onAction("cancel")}>Cancel</button> : null}
-      {booking.status === "confirmed" && ended ? <><button className="desk-button-success" type="button" onClick={() => onAction("complete")}>Complete</button><button className="desk-button-warn" type="button" onClick={() => onAction("no-show")}>No-show</button></> : null}
-    </div>
   );
 }

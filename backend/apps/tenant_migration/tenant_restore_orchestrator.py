@@ -235,6 +235,16 @@ def run_target_restore(
                     makerspace=storage_makerspace,
                 )
 
+        if storage_makerspace is not None:
+            from .event_asset_import import publish_raw
+            publish_raw(makerspace=storage_makerspace, ledger=ledger)
+            # Restored stage uploads and finance attachments get this deployment's own
+            # FK-free cleanup locators; source custody rows never travel.
+            from django.db import transaction
+            from .reimbursement_assets_import import register_imported_assets
+            with transaction.atomic():
+                register_imported_assets(storage_makerspace)
+
         _effect(
             ledger, "api-client-reissue", {"approved": True},
             lambda: target.reissue_api_clients(sibling, inputs),

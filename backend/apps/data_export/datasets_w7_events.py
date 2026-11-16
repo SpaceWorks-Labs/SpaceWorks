@@ -1,3 +1,6 @@
+"""EventStaffGrant and EventStaffGrantInvite deliberately have no export dataset.
+Their entire credential/authority rows are classified OmittedModel at both fidelities.
+"""
 from .types import TenantPredicate
 
 EVENT_DATASET_SPECS = {

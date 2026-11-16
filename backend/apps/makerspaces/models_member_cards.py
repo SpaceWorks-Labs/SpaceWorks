@@ -38,6 +38,8 @@ class MemberCard(ScopedPiiModelMixin, models.Model):
     )
     # Printed on the card; per-makerspace sequence, never the QR payload.
     card_number = models.PositiveIntegerField()
+    # O-B4: the number printed from the space's numbering scheme, frozen at issue (blank = legacy display).
+    number_text = models.CharField(max_length=32, blank=True, default="")
     printed_name = models.TextField(blank=True, default="")
     photo_object_key = models.CharField(max_length=300, blank=True, default="")
     photo_content_type = models.CharField(max_length=64, blank=True, default="")
@@ -50,6 +52,16 @@ class MemberCard(ScopedPiiModelMixin, models.Model):
     issued_at = models.DateTimeField(default=timezone.now)
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoked_reason = models.CharField(max_length=32, blank=True, default="")
+    # Release 2 L3: the staff reason for a revocation (scoped PII, never in audit meta),
+    # the holder's public-check opt-ins, and the email cooldown stamp.
+    revoked_note = models.TextField(blank=True, default="")
+    last_emailed_at = models.DateTimeField(null=True, blank=True)
+    verify_show_name = models.BooleanField(default=False)
+    verify_show_photo = models.BooleanField(default=False)
+    verify_consent_at = models.DateTimeField(null=True, blank=True)
+    verify_consent_version = models.CharField(max_length=16, blank=True, default="")
+    # The holder's choice of attachment for "your card" email: the PDF, or PNG images of each side.
+    email_format = models.CharField(max_length=3, choices=(("pdf", "PDF"), ("png", "PNG")), default="pdf")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -62,6 +74,10 @@ class MemberCard(ScopedPiiModelMixin, models.Model):
                 fields=["membership"],
                 condition=models.Q(revoked_at__isnull=True, membership__isnull=False),
                 name="uniq_live_member_card_per_membership",
+            ),
+            models.UniqueConstraint(
+                fields=["makerspace", "number_text"], condition=~models.Q(number_text=""),
+                name="uniq_member_card_number_text",
             ),
             # Photo fields travel as a set: all present (with consent) or all absent.
             models.CheckConstraint(

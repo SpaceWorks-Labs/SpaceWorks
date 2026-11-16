@@ -30,6 +30,8 @@ from .rbac_actions import (
 from .rbac_memberships import (
     _membership_for,
     _membership_is_space_manager,
+    _scope_ids,
+    _staff_rows,
     membership_role,
 )
 from .rbac_borrowers import scope_by_borrower
@@ -40,14 +42,7 @@ from .rbac_organizations import (
     _org_scope_for_action,
     has_any_org_authority,
 )
-from .rbac_superadmin import (
-    _id_in,
-    _is_superadmin,
-    _superadmin_hidden_to_exclude,
-    hide_from_superadmin,
-    superadmin_hidden_block_applies,
-    superadmin_hidden_makerspace_ids,
-)
+from .rbac_superadmin import _id_in, _is_superadmin
 from .rbac_notifications import (
     personal_notification_membership_refused, scope_notification_policy, scope_personal_notifications,
 )
@@ -58,15 +53,11 @@ def resolve_scope(actor):
     if _actor_refused(actor):
         return set()
     if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
-        return _superadmin_visible_ids(actor, None)
+        return _superadmin_visible_ids()
     # Organization grants confer actions, not identity, so they never widen this
-    # action-agnostic scope (or scope_by_makerspace(), which derives from it).
-    scope = set(
-        actor.makerspace_memberships.filter(status="active").values_list(
-            "makerspace_id", flat=True
-        )
-    )
-    return _exclude_archived_ids(scope)
+    # action-agnostic scope (or scope_by_makerspace(), which derives from it). Both
+    # tracks count: a person sees the spaces they belong to and the ones they staff.
+    return _exclude_archived_ids(_scope_ids(actor))
 
 
 def scope_by_makerspace(actor, queryset, makerspace_field="makerspace_id"):
@@ -82,7 +73,7 @@ def scope_by_makerspace(actor, queryset, makerspace_field="makerspace_id"):
 def scope_for_scheduled_work(queryset, *, makerspace_id=None, field="makerspace_id"):
     """Scope internal scheduler work without impersonating a staff User.
 
-    Background work excludes archived, inactive and hard-hidden tenants. Keep
+    Background work excludes archived and inactive tenants. Keep
     not-restored/frozen tenants in the scan so the write gate can count skips.
     This is an internal query boundary, never authorization for an HTTP actor;
     callers must still hold the tenant write gate before modifying scoped rows.
@@ -90,9 +81,7 @@ def scope_for_scheduled_work(queryset, *, makerspace_id=None, field="makerspace_
     from apps.makerspaces.models import Makerspace
     from apps.makerspaces.servability import archived_or_inactive_makerspace_ids
 
-    tenants = Makerspace.objects.filter(
-        superadmin_access_enabled=True,
-    ).exclude(pk__in=archived_or_inactive_makerspace_ids())
+    tenants = Makerspace.objects.exclude(pk__in=archived_or_inactive_makerspace_ids())
     if makerspace_id is not None:
         if type(makerspace_id) is not int or makerspace_id < 1:
             raise ValueError("Scheduled work requires a persisted makerspace id.")
@@ -104,15 +93,13 @@ def makerspaces_for_action(actor, action):
     """Return makerspace ids where actor's membership role grants action, or ALL."""
     if _actor_refused(actor):
         return set()
-    # Organization grants never enter this superadmin branch: hidden-space authority
-    # must continue to come only from an explicit makerspace membership.
     if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
-        return _superadmin_visible_ids(actor, action)
+        return _superadmin_visible_ids()
     if action in ROLE_FORBIDDEN_ACTIONS:
         return set()
     assigned_filter, legacy_roles = _action_scope_filters(action)
     assigned_scope = set(
-        actor.makerspace_memberships.filter(
+        _staff_rows(actor).filter(
             status="active",
             assigned_role__isnull=False,
             assigned_role__makerspace=F("makerspace"),
@@ -120,7 +107,7 @@ def makerspaces_for_action(actor, action):
     )
     legacy_scope = (
         set(
-            actor.makerspace_memberships.filter(
+            _staff_rows(actor).filter(
                 status="active",
                 assigned_role__isnull=True,
                 role__in=legacy_roles,
@@ -183,11 +170,7 @@ def effective_actions(actor, makerspace_id) -> set:
         return set()
     if _id_in(makerspace_id, archived_makerspace_ids()):
         return set()
-    # Organization grants never enter this superadmin branch: hidden-space authority
-    # must continue to come only from an explicit makerspace membership.
     if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
-        if _id_in(makerspace_id, superadmin_hidden_makerspace_ids()):
-            return actions_for_membership(_membership_for(actor, makerspace_id))
         return set(ROLE_GRANTABLE_ACTIONS)
     return actions_for_membership(
         _membership_for(actor, makerspace_id)
@@ -204,14 +187,9 @@ def is_space_manager_identity(actor, makerspace_id) -> bool:
         return False
     if _id_in(makerspace_id, archived_makerspace_ids()):
         return False
-    membership = _membership_for(actor, makerspace_id)
     if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
-        if _id_in(makerspace_id, superadmin_hidden_makerspace_ids()):
-            # In a hard-hidden makerspace a global superadmin is limited to their
-            # explicit membership's role, so only a space-manager membership grants
-            # the identity -- an Inventory/Machine Manager membership does not.
-            return bool(membership and _membership_is_space_manager(membership))
         return True
+    membership = _membership_for(actor, makerspace_id)
     return bool(membership and _membership_is_space_manager(membership))
 
 
@@ -232,17 +210,7 @@ def can(actor, action, makerspace_id=None):
         return False
     if makerspace_id is not None and _id_in(makerspace_id, archived_makerspace_ids()):
         return False
-    # Organization grants never enter this superadmin branch: hidden-space authority
-    # must continue to come only from an explicit makerspace membership.
     if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
-        if makerspace_id is None:
-            return True
-        if _id_in(makerspace_id, superadmin_hidden_makerspace_ids()):
-            # Hard hide: global superpower is withheld for a hidden makerspace.
-            # A superadmin who is an explicit member still gets that role's actions.
-            return action in actions_for_membership(
-                _membership_for(actor, makerspace_id)
-            )
         return True
     if makerspace_id is None:
         return False
@@ -272,9 +240,9 @@ def _exclude_archived_ids(scope):
     return scope - archived if archived else scope
 
 
-def _superadmin_visible_ids(actor, action=None):
-    """Concrete ids a global superadmin may act in, or ALL when unrestricted."""
-    excluded = _superadmin_hidden_to_exclude(actor, action) | archived_makerspace_ids()
+def _superadmin_visible_ids():
+    """Every servable makerspace id for a global superadmin, or ALL when none is archived."""
+    excluded = archived_makerspace_ids()
     if not excluded:
         return ALL
     from apps.makerspaces.models import Makerspace

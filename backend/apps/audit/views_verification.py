@@ -2,8 +2,7 @@
 
 POST always answers 202 (new or deduplicated run) or a bounded refusal; the work runs in
 Celery. Every route resolves the makerspace through ``scope_by_action(VIEW_AUDIT)`` with
-archived and superadmin-hidden spaces excluded, so an out-of-scope space is a 404, never
-a hint that it exists.
+archived spaces excluded, so an out-of-scope space is a 404, never a hint that it exists.
 """
 
 from django.http import Http404
@@ -57,7 +56,6 @@ def _scoped_makerspace(user, makerspace_id):
     spaces = rbac.scope_by_action(
         user, rbac.Action.VIEW_AUDIT, Makerspace.objects.all(), field="id"
     )
-    spaces = rbac.hide_from_superadmin(user, spaces, field="id")
     archived = rbac.archived_makerspace_ids()
     if archived:
         spaces = spaces.exclude(id__in=archived)

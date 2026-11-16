@@ -1,146 +1,38 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { staffRequest } from "../../../lib/api";
-import { WarrantySection } from "../WarrantySection";
-import { invalidateContainerViews } from "../queryInvalidation";
-import { Panel, type Makerspace, useStaffGet } from "./shared";
-import { QrImage } from "./QrImage";
+import { useSearchParams } from "react-router-dom";
+import { ListLayout } from "../../../components/layouts";
+import { ListRow, OverflowMenu, StatusPill } from "../../../components/ui";
 import { featureEnabled } from "../../../lib/features";
-import { KitDefinitionEditor, type KitComponent } from "../../inventory/KitChecklist";
-
-type Container = { id: number; code?: string; label: string; location?: string; is_active?: boolean; kit_components?: KitComponent[] };
-type Contents = {
-  products: { id: number; name: string; available_quantity: number; tracking_mode: string }[];
-  assets: { id: number; asset_tag: string; product: string; status: string }[];
-  children: Container[];
-};
-type History = { scans: { id: string; source: string; context: string; actor: number | null; created_at: string }[] };
-
-// Containers had list + create (in QR tools) but no edit/move/contents/history surface in
-// React - they were only manageable in the Django admin. This panel wires the operations
-// container endpoints (MANAGE_QR for edit/move, VIEW_INVENTORY for contents/history).
+import type { KitComponent } from "../../inventory/KitChecklist";
+import { ContainerCreateModal } from "./ContainerCreateModal";
+import { ContainerDetail } from "./ContainerDetail";
+import { inventoryQueryState } from "./inventoryPresentation";
+import { type Makerspace, useStaffGet } from "./shared";
+export type Container = { id: number; code?: string; label: string; location?: string; is_active?: boolean; kit_components?: KitComponent[] };
 export function ContainersPanel({ makerspace, canEditInventory }: { makerspace: Makerspace; canEditInventory: boolean }) {
-  const containers = useStaffGet<{ results: Container[] }>(["containers", makerspace.id], `/admin/makerspace/${makerspace.id}/containers?page_size=1000`);
-  return (
-    <Panel title="Containers">
-      {containers.isLoading ? <p className="text-sm text-muted">Loading containers...</p> : null}
-      {containers.error instanceof Error ? <p className="text-sm text-danger">{containers.error.message}</p> : null}
-      <div className="grid gap-2">
-        {containers.data?.results?.map((container) => (
-          <ContainerRow key={container.id} container={container} makerspaceId={makerspace.id} canEditInventory={canEditInventory} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")} />
-        ))}
-        {!containers.isLoading && !containers.error && !containers.data?.results?.length ? (
-          <p className="text-sm text-muted">No containers yet. Create one in QR tools.</p>
-        ) : null}
-      </div>
-    </Panel>
-  );
-}
-
-function ContainerRow({ container, makerspaceId, canEditInventory, kitEnabled }: { container: Container; makerspaceId: number; canEditInventory: boolean; kitEnabled: boolean }) {
-  const queryClient = useQueryClient();
-  const [editing, setEditing] = useState(false);
-  const [panel, setPanel] = useState<"contents" | "history" | null>(null);
-  const [label, setLabel] = useState(container.label);
-  const [location, setLocation] = useState(container.location ?? "");
-  const [isActive, setIsActive] = useState(container.is_active ?? true);
-  const [components, setComponents] = useState(container.kit_components ?? []);
-
-  const contents = useStaffGet<Contents>(["container-contents", container.id], `/admin/containers/${container.id}/contents`, panel === "contents");
-  const history = useStaffGet<History>(["container-history", container.id], `/admin/containers/${container.id}/history`, panel === "history");
-
-  const save = useMutation({
-    mutationFn: () =>
-      staffRequest(`/admin/containers/${container.id}/move`, {
-        method: "POST",
-        body: JSON.stringify({ label: label.trim(), location: location.trim(), is_active: isActive,
-          ...(kitEnabled ? { kit_components: components } : {}) }),
-      }),
-    onSuccess: () => {
-      setEditing(false);
-      invalidateContainerViews(queryClient, makerspaceId, container.id);
-    },
-  });
-  const saveError = save.error instanceof Error ? save.error.message : undefined;
-  const togglePanel = (next: "contents" | "history") => setPanel((current) => (current === next ? null : next));
-
-  return (
-    <div className="min-w-0 rounded-md border border-line bg-surface p-3 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <strong className="min-w-0 break-words text-ink">{container.label}</strong>
-        {container.location ? <span className="text-xs text-muted">{container.location}</span> : null}
-        {container.is_active === false ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-xs text-warn-ink">Inactive</span> : null}
-        <div className="desk-actions ml-0 flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
-          <button className="desk-button-ghost" type="button" onClick={() => setEditing((value) => !value)}>{editing ? "Cancel" : "Edit"}</button>
-          <button className="desk-button-ghost" type="button" onClick={() => togglePanel("contents")}>{panel === "contents" ? "Hide contents" : "Contents"}</button>
-          <button className="desk-button-ghost" type="button" onClick={() => togglePanel("history")}>{panel === "history" ? "Hide history" : "History"}</button>
-        </div>
-      </div>
-
-      {editing ? (
-        <div className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] md:items-end">
-          <label className="eyebrow grid min-w-0 gap-1"><span>Label</span><input className="desk-input min-w-0" value={label} onChange={(event) => setLabel(event.target.value)} /></label>
-          <label className="eyebrow grid min-w-0 gap-1"><span>Location</span><input className="desk-input min-w-0" value={location} onChange={(event) => setLocation(event.target.value)} /></label>
-          <label className="eyebrow flex items-center gap-2"><input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} /> Active</label>
-          <button className="desk-button-primary" disabled={!label.trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving..." : "Save"}</button>
-        </div>
-      ) : null}
-      {saveError ? <p className="mt-2 text-danger">{saveError}</p> : null}
-      {editing && kitEnabled ? <KitDefinitionEditor value={components} onChange={setComponents} /> : null}
-
-      {panel === "contents" ? (
-        <div className="mt-3 grid gap-2 rounded-md border border-line bg-bg p-2">
-          {contents.isLoading ? <p className="text-xs text-muted">Loading...</p> : null}
-          <h4 className="title-section">Products</h4>
-          {contents.error instanceof Error ? <p className="text-xs text-danger">{contents.error.message}</p> : null}
-          {!contents.isLoading && !contents.error && contents.data?.products.length ? contents.data.products.map((product) => (
-            <p key={product.id} className="text-xs text-muted">{product.name} - {product.available_quantity} available</p>
-          )) : !contents.isLoading && !contents.error ? <p className="text-xs text-muted">None</p> : null}
-          <h4 className="title-section mt-1">Asset units</h4>
-          {!contents.isLoading && !contents.error && contents.data?.assets.length ? contents.data.assets.map((asset) => (
-            <AssetQrRow key={asset.id} asset={asset} canEditInventory={canEditInventory} />
-          )) : !contents.isLoading && !contents.error ? <p className="text-xs text-muted">None</p> : null}
-          {contents.data?.children.length ? (
-            <p className="mt-1 text-xs text-muted">Sub-containers: {contents.data.children.map((child) => child.label).join(", ")}</p>
-          ) : null}
-        </div>
-      ) : null}
-
-      {panel === "history" ? (
-        <div className="mt-3 rounded-md border border-line bg-bg p-2">
-          {history.isLoading ? <p className="text-xs text-muted">Loading...</p> : null}
-          {history.error instanceof Error ? <p className="text-xs text-danger">{history.error.message}</p> : null}
-          {!history.isLoading && !history.error && history.data?.scans.length ? history.data.scans.map((scan) => (
-            <p key={scan.id} className="font-mono text-xs text-muted">{new Date(scan.created_at).toLocaleString()} - {scan.context || "scan"} - {scan.source === "box_scan" ? "reviewed handover" : "QR scan"}</p>
-          )) : !history.isLoading && !history.error ? <p className="text-xs text-muted">No scan history.</p> : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-// Reprint a single unit's QR without rebuilding a whole batch: POST asset/<id>/qr is a
-// get_or_create, so it returns the existing active QR (or makes one) and we render it.
-function AssetQrRow({ asset, canEditInventory }: { asset: { id: number; asset_tag: string; product: string; status: string }; canEditInventory: boolean }) {
-  const [qrId, setQrId] = useState<number | null>(null);
-  const [showWarranty, setShowWarranty] = useState(false);
-  const show = useMutation({
-    mutationFn: () => staffRequest<{ id: number }>(`/admin/assets/${asset.id}/qr`, { method: "POST", body: JSON.stringify({}) }),
-    onSuccess: (qr) => setQrId(qr.id),
-  });
-  return (
-    <div className="min-w-0 rounded-md border border-line bg-surface p-2">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-        <span className="min-w-0 break-words">{asset.asset_tag} ({asset.status})</span>
-        <button type="button" className="desk-button-ghost" disabled={show.isPending} onClick={() => show.mutate()}>{qrId ? "QR shown" : "Show QR"}</button>
-        <button type="button" className="desk-button-ghost" onClick={() => setShowWarranty((value) => !value)}>
-          {showWarranty ? "Hide warranty" : "Warranty"}
-        </button>
-        {qrId ? <QrImage qrId={qrId} label={asset.asset_tag} /> : null}
-        {show.error instanceof Error ? <span className="text-danger">{show.error.message}</span> : null}
-      </div>
-      {showWarranty ? <div className="mt-2"><WarrantySection hostKind="asset" hostId={asset.id} disabled={!canEditInventory} /></div> : null}
-    </div>
-  );
+ const [params, setParams] = useSearchParams();
+ const containers = useStaffGet<{ results: Container[] }>(["containers", makerspace.id], `/admin/makerspace/${makerspace.id}/containers?page_size=1000`);
+ const search = params.get("q") ?? "";
+ const status = params.get("view") ?? "all";
+ const rows = (containers.data?.results ?? []).filter(row => row.label.toLowerCase().includes(search.toLowerCase()) && (status === "all" || (status === "active" ? row.is_active !== false : row.is_active === false)));
+ const selected = containers.data?.results.find(row => String(row.id) === params.get("container"));
+ const href = (view: string) => { const next = new URLSearchParams(params); next.set("view", view); return `?${next}`; };
+ const [createOpen, setCreateOpen] = useState(false);
+ const create = { label: t`New container`, icon: "Plus" as const, onClick: () => setCreateOpen(true) };
+ const openContainer = (id: number, tab?: string) => setParams(current => { current.set("container", String(id)); if (tab) current.set("containerTab", tab); else current.delete("containerTab"); return current; });
+ return <ListLayout header={{ title: t`Containers`, subtitle: t`Boxes, bins and shelves with QR labels.`, primary: create }}
+   state={inventoryQueryState(containers, "containers")} isEmpty={!rows.length} filtered={Boolean(search || status !== "all")}
+   empty={{ message: t`No containers yet. Create a labelled box, bin or shelf.`, action: create }}
+   filteredEmpty={{ message: t`Nothing matches these filters.`, action: { label: t`Clear filters`, onClick: () => setParams(current => { current.delete("q"); current.delete("view"); return current; }) } }}
+   tabs={["all", "active", "inactive"].map(key => ({ key, label: key[0].toUpperCase() + key.slice(1), href: href(key) }))} activeTab={status}
+   filters={{ search: { label: t`Search containers`, value: search, onChange: value => setParams(current => { current.set("q", value); return current; }) } }}
+   body={{ kind: "rows", rows: rows.map(container => <ListRow key={container.id} title={container.label} identity={{ kind: "code", code: container.code || String(container.id) }}
+     meta={[container.code, container.location].filter(Boolean).join(" · ")} onClick={() => openContainer(container.id)}
+     right={<div className="flex items-center gap-2"><StatusPill label={container.is_active === false ? t`Inactive` : t`Active`} tone={container.is_active === false ? "neutral" : "success"} />
+       <OverflowMenu label={t`Actions for ${container.label}`} actions={[{ label: t`Edit`, onClick: () => openContainer(container.id, "details") }, { label: t`Scan history`, onClick: () => openContainer(container.id, "history") }]} /></div>} />) }}
+   detail={<><ContainerCreateModal makerspaceId={makerspace.id} open={createOpen} onClose={() => setCreateOpen(false)} onCreated={created => { setCreateOpen(false); openContainer(created.id, "details"); }} />
+     {selected ? <ContainerDetail key={selected.id} container={selected} makerspaceId={makerspace.id} canEditInventory={canEditInventory} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")}
+       warrantyEnabled={featureEnabled(makerspace.enabled_features ?? [], "inventory.warranty")}
+     onClose={() => setParams(current => { current.delete("container"); current.delete("containerTab"); return current; })} /> : null}</>} />;
 }

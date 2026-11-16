@@ -14,7 +14,11 @@ from apps.operations.views_dashboard_counts import DashboardSerializer, build_da
 
 @extend_schema(
     tags=["Dashboard"],
-    summary="Staff operations dashboard counts",
+    summary="Staff operations counts, action-scoped widgets and handover queues",
+    description=("Preserves the existing counters and adds report-backed widgets with chart specs. "
+                 "Widgets require their own actions and source modules plus reports; machine data "
+                 "uses assigned machine types. Handover-only actors receive queue tiles only. "
+                 "Native staff sessions use local membership authority, without organization grants."),
     request=None,
     responses={
         200: DashboardSerializer,
@@ -37,7 +41,8 @@ class DashboardView(APIView):
             pk=makerspace_id,
         )
         if _is_guest_only(request.user, makerspace.id):
-            raise PermissionDenied()
+            from .dashboard_handover import queue_only_dashboard
+            return Response(queue_only_dashboard(request.user, makerspace))
         if not (
             rbac.can(request.user, rbac.Action.VIEW_INVENTORY, makerspace.id)
             or rbac.can(request.user, rbac.Action.MANAGE_PRINTING, makerspace.id)
@@ -47,6 +52,9 @@ class DashboardView(APIView):
             or rbac.can(request.user, rbac.Action.MANAGE_MEMBERS, makerspace.id)
             or rbac.can(request.user, rbac.Action.MANAGE_MACHINES, makerspace.id)
             or rbac.can(request.user, rbac.Action.VIEW_FINANCE, makerspace.id)
+            # Decision 242(i): the Shop Manager and the Technician get a dashboard with their area's tiles.
+            or rbac.can(request.user, rbac.Action.MANAGE_SHOP, makerspace.id)
+            or rbac.can(request.user, rbac.Action.WORK_REPAIRS, makerspace.id)
         ):
             raise PermissionDenied()
         manages_machines = rbac.can(
@@ -67,7 +75,7 @@ class DashboardView(APIView):
         machine_only = role_scope.is_machine_only(request.user, makerspace.id) and not (
             manages_events or manages_bookings or can_view_finance
         )
-        return Response(
+        counts = (
             build_dashboard(
                 makerspace,
                 actor=request.user,
@@ -93,6 +101,15 @@ class DashboardView(APIView):
                 ) or can_view_finance,
             )
         )
+        if rbac.can(request.user, rbac.Action.RECORD_PAYMENT, makerspace.id):
+            from apps.payments.models import Payment
+
+            counts["payments_to_record"] = rbac.scope_by_makerspace(
+                request.user, Payment.objects.filter(makerspace=makerspace, status=Payment.Status.PENDING),
+            ).count()
+        from .dashboard_attention import build_attention
+        counts["attention"] = build_attention(request.user, makerspace)
+        return Response(counts)
 
 
 def _is_guest_only(user, makerspace_id):

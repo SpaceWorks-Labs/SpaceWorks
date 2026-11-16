@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.admin_api.serializers_role_sets import MembershipRoleSetMixin
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, inline_serializer
 from apps.accounts import rbac
@@ -30,7 +32,7 @@ class WitnessWaiverRequestSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict) or data:
             raise serializers.ValidationError(
-                {"detail": "This endpoint does not accept request fields."}
+                {"detail": gettext("This endpoint does not accept request fields.")}
             )
         return {}
 
@@ -42,7 +44,7 @@ class WitnessWaiverResponseSerializer(serializers.Serializer):
     witnessed_at = serializers.DateTimeField()
 
 
-class AdminMembershipSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
+class AdminMembershipSerializer(MembershipRoleSetMixin, PaymentSummaryMixin, serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     assigned_role = serializers.SerializerMethodField()
@@ -50,9 +52,12 @@ class AdminMembershipSerializer(PaymentSummaryMixin, serializers.ModelSerializer
     waiver_required = serializers.SerializerMethodField()
     vouches = serializers.SerializerMethodField()
 
+    role_ids = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+
     class Meta:
         model = MakerspaceMembership
-        fields = ("id", "status", "user", "assigned_role", "can_refer", "can_verify", "verified_at", "activated_at", "revoked_at", "revocation_reason", "waiver_accepted_at", "waiver_version_accepted", "waiver_current", "waiver_required", "payment", "vouches")
+        fields = ("id", "status", "user", "assigned_role", "role_ids", "roles", "can_refer", "can_verify", "verified_at", "activated_at", "revoked_at", "revocation_reason", "waiver_accepted_at", "waiver_version_accepted", "waiver_current", "waiver_required", "payment", "vouches")
 
     @extend_schema_field(VouchSerializer(many=True))
     def get_vouches(self, obj):
@@ -110,7 +115,7 @@ class MembershipCapabilitiesSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs:
-            raise serializers.ValidationError("Provide at least one capability.")
+            raise serializers.ValidationError(gettext("Provide at least one capability."))
         return attrs
 
 
@@ -124,7 +129,8 @@ class MembershipRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = MembershipRequest
         fields = ("id", "kind", "state", "invite_email", "user", "assigned_role", "decision_note", "created_at", "decided_at",
-                  "application_answers", "vouches", "admission_payment", "expires_at")
+                  "application_answers", "vouches", "admission_payment", "expires_at",
+                  "changes_note", "changes_requested_at", "changes_rounds")
 
     @extend_schema_field(AdmissionPaymentSerializer(allow_null=True))
     def get_admission_payment(self, obj):

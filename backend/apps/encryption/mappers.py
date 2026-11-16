@@ -6,11 +6,16 @@ from django.db import connection, models, transaction
 from apps.encryption.crypto import decrypt_with_key_loader, encrypt, is_envelope
 from apps.encryption.registry import field_for, fields_for, makerspace_id_for
 from apps.encryption.services import get_dek, get_or_create_active_dek
+from apps.encryption.tenant_preparation import mandatory_write_context, prepared_tenant_key
+
+
+def _encrypts(item):
+    return settings.PII_ENCRYPTION_ENABLED or item.encryption_required
 
 
 class ScopedPiiQuerySet(models.QuerySet):
     def _guard(self, names):
-        if settings.PII_ENCRYPTION_ENABLED and any(field_for(self.model, name) for name in names):
+        if any(item and _encrypts(item) for item in (field_for(self.model, name) for name in names)):
             raise RuntimeError("Mapped PII fields require model.save().")
 
     def update(self, **kwargs):
@@ -22,7 +27,7 @@ class ScopedPiiQuerySet(models.QuerySet):
         return super().bulk_update(objs, fields, **kwargs)
 
     def bulk_create(self, objs, **kwargs):
-        if settings.PII_ENCRYPTION_ENABLED and fields_for(self.model):
+        if any(_encrypts(item) for item in fields_for(self.model)):
             raise RuntimeError("Mapped PII models require model.save().")
         return super().bulk_create(objs, **kwargs)
 
@@ -58,20 +63,35 @@ class ScopedPiiModelMixin(models.Model):
                     cache = self.__dict__.get(cache_name)
                     if cache is not None:
                         cache.pop(name, None)
+                # ORM hydration assigns fields while _state.adding is True.
+                # Later explicit assignments are fresh plaintext, not legacy DB
+                # values. Concrete save() methods must be able to normalize and
+                # validate them before this mixin encrypts the write.
+                if not self._state.adding and not is_envelope(value):
+                    self.__dict__.setdefault("_pii_plain_values", {})[name] = value
         super().__setattr__(name, value)
 
     def __getattribute__(self, name):
         value = super().__getattribute__(name)
-        if name.startswith("_") or self.__dict__.get("_pii_writing") or not settings.PII_ENCRYPTION_ENABLED:
+        if name.startswith("_") or self.__dict__.get("_pii_writing"):
             return value
         field = field_for(self, name)
         if field is None or value in ("", None):
             return value
+        if not _encrypts(field) and not is_envelope(value):
+            return value
+        from .preparation import require_prepared_for_programme
+        require_prepared_for_programme(makerspace_id_for(self, field))
         plain = self.__dict__.setdefault("_pii_plain_values", {})
         if name in plain:
             return plain[name]
         if not is_envelope(value):
-            if settings.PII_ENCRYPTION_DUAL_READ:
+            # Validation and model normalization precede the encrypted INSERT.
+            # Strict mode rejects persisted legacy plaintext; a new instance's
+            # caller-supplied values have not crossed the storage boundary yet.
+            if self._state.adding:
+                return value
+            if settings.PII_ENCRYPTION_DUAL_READ and not field.encryption_required:
                 plain[name] = value
                 return value
             from apps.encryption.crypto import LegacyPlaintextRejected
@@ -79,17 +99,42 @@ class ScopedPiiModelMixin(models.Model):
         makerspace_id = makerspace_id_for(self, field)
         decrypted = decrypt_with_key_loader(
             value, makerspace_id=makerspace_id, table=self._meta.db_table,
-            pk=self.pk, field=name, load_dek=lambda version: get_dek(makerspace_id, version),
+            pk=self.pk, field=name, load_dek=lambda version: get_dek(makerspace_id, version, mandatory=field.encryption_required),
         ).decode("utf-8")
         plain[name] = decrypted
         self.__dict__.setdefault("_pii_raw_values", {})[name] = value
         self.__dict__.setdefault("_pii_original_plain_values", {})[name] = decrypted
         return decrypted
 
-    def refresh_from_db(self, *args, **kwargs):
-        result = super().refresh_from_db(*args, **kwargs)
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        fields = None if fields is None else list(fields)
+        # Django copies attributes from a freshly hydrated instance. Mapped
+        # attributes are authenticated/decrypted on that read, then __setattr__
+        # caches the fresh plaintext here. Clear stale entries BEFORE that copy;
+        # clearing afterwards makes strict reads reject these verified values.
         for cache_name in ("_pii_plain_values", "_pii_raw_values", "_pii_original_plain_values"):
-            self.__dict__.pop(cache_name, None)
+            if fields is None:
+                self.__dict__.pop(cache_name, None)
+            else:
+                cache = self.__dict__.get(cache_name, {})
+                for name in fields:
+                    cache.pop(name, None)
+        result = super().refresh_from_db(using=using, fields=fields, **kwargs)
+        # The copy goes through getattr, which decrypts mapped values. Put the stored
+        # envelopes back for the refreshed mapped fields (and drop their now-stale
+        # plaintext cache), or a later read would see persisted plaintext and, for
+        # mandatory fields, refuse it as legacy data.
+        mapped = [item.field_name for item in fields_for(self)
+                  if fields is None or item.field_name in fields]
+        if mapped and self.pk is not None:
+            rows = (kwargs.get("from_queryset") or type(self)._base_manager).using(using or self._state.db)
+            stored = rows.filter(pk=self.pk).values(*mapped).first()
+            if stored:
+                for cache_name in ("_pii_plain_values", "_pii_raw_values", "_pii_original_plain_values"):
+                    cache = self.__dict__.get(cache_name, {})
+                    for name in mapped:
+                        cache.pop(name, None)
+                self.__dict__.update(stored)
         return result
 
     def _reserve_pk(self):
@@ -131,10 +176,16 @@ class ScopedPiiModelMixin(models.Model):
         update_fields = kwargs.get("update_fields")
         update_fields = None if update_fields is None else set(update_fields)
         is_new = self._state.adding
+        if settings.PII_ENCRYPTION_ENABLED and self._requires_mapped_write_fence(update_fields, is_new=is_new):
+            # Only a write of mapped columns needs key custody; a status-only
+            # update under event locks touches no envelope and needs no keys.
+            from .preparation import require_prepared_for_programme
+            require_prepared_for_programme(self._mapped_write_fence_makerspace_id())
         fence_required = self._requires_mapped_write_fence(
             update_fields, is_new=is_new
         )
-        if not settings.PII_ENCRYPTION_ENABLED or not fields_for(self):
+        mapped = fields_for(self)
+        if not any(_encrypts(item) for item in mapped):
             if not fence_required:
                 return super().save(*args, **kwargs)
             with transaction.atomic():
@@ -145,7 +196,7 @@ class ScopedPiiModelMixin(models.Model):
 
         # Encryption and the fence share this transaction so a close waits for the
         # complete mapped INSERT/UPDATE, not merely the preflight query.
-        with transaction.atomic():
+        with mandatory_write_context(self, mapped), transaction.atomic():
             if fence_required:
                 from apps.encryption.write_fence import assert_mapped_write_allowed
 
@@ -154,9 +205,11 @@ class ScopedPiiModelMixin(models.Model):
                 self._reserve_pk()
             from apps.encryption.blind_index import active_generation, sync_event_hash, upsert_index
 
-            generation = active_generation()
+            generation = active_generation() if any(item.index_kind != "none" and _encrypts(item) for item in mapped) else None
             encrypted, restore = {}, {}
             for item in self._mapped_values_for_save(update_fields, is_new=is_new):
+                if not _encrypts(item):
+                    continue
                 raw = self.__dict__.get(item.field_name, "")
                 if is_envelope(raw):
                     # Loaded ciphertext not reassigned in memory: prefer the cached decrypt.
@@ -173,10 +226,15 @@ class ScopedPiiModelMixin(models.Model):
                     encrypted[item.field_name] = raw_saved
                 else:
                     if is_envelope(plaintext):
-                        plaintext = decrypt_with_key_loader(plaintext, makerspace_id=makerspace_id, table=self._meta.db_table, pk=self.pk, field=item.field_name, load_dek=lambda version: get_dek(makerspace_id, version)).decode("utf-8")
+                        plaintext = decrypt_with_key_loader(plaintext, makerspace_id=makerspace_id, table=self._meta.db_table, pk=self.pk, field=item.field_name, load_dek=lambda version: get_dek(makerspace_id, version, mandatory=item.encryption_required)).decode("utf-8")
                     if plaintext not in ("", None):
-                        active = get_or_create_active_dek(makerspace_id)
-                        encrypted[item.field_name] = encrypt(plaintext.encode("utf-8"), active.dek, key_version=active.key.version, makerspace_id=makerspace_id, table=self._meta.db_table, pk=self.pk, field=item.field_name)
+                        if item.encryption_required:
+                            active = prepared_tenant_key(makerspace_id)
+                            key_version = active.version
+                        else:
+                            active = get_or_create_active_dek(makerspace_id)
+                            key_version = active.key.version
+                        encrypted[item.field_name] = encrypt(plaintext.encode("utf-8"), active.dek, key_version=key_version, makerspace_id=makerspace_id, table=self._meta.db_table, pk=self.pk, field=item.field_name)
                     else:
                         encrypted[item.field_name] = plaintext
                 restore[item.field_name] = plaintext
@@ -200,5 +258,6 @@ class ScopedPiiModelMixin(models.Model):
             self.__dict__.setdefault("_pii_raw_values", {}).update(encrypted)
             self.__dict__.setdefault("_pii_original_plain_values", {}).update(restore)
             for item in self._mapped_values_for_save(update_fields, is_new=is_new):
-                upsert_index(self, item, restore.get(item.field_name, ""), generation)
+                if _encrypts(item) and item.index_kind != "none":
+                    upsert_index(self, item, restore.get(item.field_name, ""), generation)
             return result

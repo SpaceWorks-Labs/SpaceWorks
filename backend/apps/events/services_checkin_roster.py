@@ -60,7 +60,7 @@ def issue_roster(
             "expires_at": lease["expires_at"],
         },
     )
-    return {
+    payload = {
         "lease_token": lease_token,
         "lease_id": lease["lease_id"],
         "server_time": timezone.now(),
@@ -77,3 +77,8 @@ def issue_roster(
         },
         "registrations": rows,
     }
+    from .badge_prints import desk_print_on
+    if desk_print_on(locked.makerspace):
+        from .badge_desk import design_bundle
+        payload["badges"] = design_bundle(locked)
+    return payload

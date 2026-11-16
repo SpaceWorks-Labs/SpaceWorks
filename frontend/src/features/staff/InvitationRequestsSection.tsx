@@ -1,7 +1,8 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { EmptyState, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import {
   declineInvitationRequest,
   inviteFromRequest,
@@ -11,6 +12,7 @@ import {
   type InvitationRequest,
 } from "./membershipPlansApi";
 import { Panel } from "./panels/shared";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Role = { id: number; name: string };
 
@@ -44,31 +46,27 @@ export function InvitationRequestsSection({ makerspaceId, roles }: { makerspaceI
   const pendingCount = rows.filter((row) => row.status === "pending").length;
 
   return (
-    <Panel title="Invitation requests">
+    <Panel title={t`Invitation requests`}>
       <p className="mb-3 text-sm text-muted">
-        People who asked to be invited from the public page. Inviting sends the same membership invitation a manager types by hand.
-        {pendingCount ? ` ${pendingCount} pending.` : ""}
+        {t`People who asked to be invited from the public page. Inviting sends the same membership invitation a manager types by hand.${pendingCount ? ` ${pendingCount} pending.` : ""}`}
       </p>
-      {requests.isLoading ? <p className="text-sm text-muted">Loading invitation requests…</p> : null}
+      {requests.isLoading ? <LogoLoader label={t`Loading invitation requests…`} size={48} className="min-h-16 py-3" /> : null}
       {requests.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(requests.error, "Could not load invitation requests.")}</p> : null}
-      {requests.data?.length === 0 ? <p className="text-sm text-muted">No invitation requests.</p> : null}
+      {requests.data?.length === 0 ? <EmptyState message={t`No invitation requests yet. New requests appear here.`} /> : null}
       {rows.map((row) => {
         const roleId = roleByRequest[row.id] ?? roles[0]?.id ?? null;
         return (
-          <div key={row.id} className="flex flex-wrap items-start justify-between gap-3 border-t border-line py-3">
-            <div className="min-w-0">
-              <p className="font-semibold text-ink">{row.name || row.email}</p>
-              <p className="text-xs text-muted">
-                {row.email}{row.phone ? ` · ${row.phone}` : ""} · {new Date(row.created_at).toLocaleDateString()}
-              </p>
-              {row.message ? <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{row.message}</p> : null}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={row.status === "pending" ? "warn" : row.status === "invited" ? "success" : "neutral"}>{row.status}</Badge>
+          <ListRow key={row.id} title={row.name || row.email} identity={{ kind: "avatar", name: row.name || row.email, seed: row.email }}
+            meta={<>
+                <span className="[overflow-wrap:anywhere]">{row.email}</span>{row.phone ? ` · ${row.phone}` : ""} · <RelativeTime date={row.created_at} />
+              {row.message ? <span className="mt-1 block whitespace-pre-wrap">{row.message}</span> : null}
+            </>}
+            right={<div className="flex flex-wrap items-center gap-2">
+              <StatusPill tone={row.status === "pending" ? "warn" : row.status === "invited" ? "success" : "neutral"} label={row.status} />
               {row.status === "pending" ? (
                 <>
                   <select
-                    aria-label={`Role for ${row.name || row.email}`}
+                    aria-label={t`Role for ${row.name || row.email}`}
                     className="desk-input"
                     value={roleId ?? ""}
                     onChange={(event) => setRoleByRequest((current) => ({ ...current, [row.id]: Number(event.target.value) }))}
@@ -81,15 +79,12 @@ export function InvitationRequestsSection({ makerspaceId, roles }: { makerspaceI
                     disabled={!roleId || invite.isPending}
                     onClick={() => roleId && invite.mutate({ id: row.id, roleId })}
                   >
-                    Invite
-                  </button>
+                    {t`Invite`}</button>
                   <button className="desk-button" type="button" disabled={decline.isPending} onClick={() => decline.mutate(row.id)}>
-                    Decline
-                  </button>
+                    {t`Decline`}</button>
                 </>
               ) : null}
-            </div>
-          </div>
+            </div>} />
         );
       })}
       {error ? <p className="mt-2 text-sm text-danger" role="alert">{planErrorText(error, "Could not update the request.")}</p> : null}

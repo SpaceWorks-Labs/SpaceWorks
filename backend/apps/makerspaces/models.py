@@ -68,6 +68,7 @@ def presence_presets(makerspace):
 
 from apps.makerspaces.models_makerspace import Makerspace  # noqa: E402,F401
 from apps.makerspaces.models_memberships import MakerspaceMembership  # noqa: E402,F401
+from apps.makerspaces.models_additional_roles import MembershipAdditionalRole  # noqa: E402,F401
 from apps.makerspaces.models_roles import (  # noqa: E402,F401
     MakerspaceRole,
     MakerspaceWaiver,
@@ -77,17 +78,59 @@ from apps.makerspaces.models_roles import (  # noqa: E402,F401
 from apps.makerspaces.models_profiles import (  # noqa: E402,F401
     MemberProfile,
     MemberProject,
+    PublicHandle,
+    PublicHandleRedirect,
+    ProfileTimelineEntry,
+)
+from apps.makerspaces.models_account_profile import (  # noqa: E402,F401
+    AccountProfile,
+    AccountProject,
+    AccountTimelineEntry,
+    ProfileAchievement,
 )
 from apps.makerspaces.models_member_cards import MemberCard  # noqa: E402,F401
+from .models_page_cleanup import PublicPageObjectCleanup  # noqa: E402,F401
+from apps.makerspaces.models_public_pages import (  # noqa: E402,F401
+    MakerspacePublicPage, MakerspacePublicPageRevision, MakerspacePublicPageAsset,
+    MakerspacePublicPageRevisionAsset, MakerspacePublicPageRevisionMember,
+)
 from apps.makerspaces.models_membership_plans import (  # noqa: E402,F401
     MembershipPlan,
     MembershipTerm,
 )
+from apps.makerspaces.models_membership_terms import MembershipTermStatusEvent  # noqa: E402,F401
+from apps.makerspaces.models_membership_records import (  # noqa: E402,F401
+    MembershipRecord, MembershipTitle, MembershipTitleAssignment,
+)
+from apps.makerspaces.models_membership_privacy import (  # noqa: E402,F401
+    MembershipConsent, MembershipErasureRequest,
+)
+from apps.makerspaces.models_membership_invites import MembershipInviteLink  # noqa: E402,F401
+from apps.makerspaces.models_membership_imports import (  # noqa: E402,F401
+    ImportedMember, MembershipImportBatch,
+)
+from apps.makerspaces.models_membership_summary import MembershipSummaryOptOut  # noqa: E402,F401
 from apps.makerspaces.models_admission import (  # noqa: E402,F401
     MakerspaceMembershipSettings,
     MembershipVouch,
 )
 from apps.makerspaces.models_loan_policy import MakerspaceLoanPolicy  # noqa: E402,F401
+from apps.makerspaces.models_guest_passes import (  # noqa: E402,F401
+    DayPassProduct,
+    GuestPass,
+    GuestPassPolicy,
+)
+from apps.makerspaces.models_community_policy import CommunityPolicy  # noqa: E402,F401
+from apps.makerspaces.models_member_units import (  # noqa: E402,F401
+    ImportedMemberUnit, MemberUnit, MemberUnitSettings, MembershipRequestUnit, MembershipUnit, PlanUnit,
+    StaffUnitScope,
+)
+from apps.makerspaces.models_minors import (  # noqa: E402,F401
+    GuardianConsent,
+    GuardianConsentTerms,
+    MinorProfile,
+)
+from apps.makerspaces.models_volunteer import VolunteerCredit, VolunteerHourEntry  # noqa: E402,F401
 from apps.makerspaces.models_space_packs import SpacePackProfile  # noqa: E402,F401
 from apps.makerspaces.models_invitation_requests import (  # noqa: E402,F401
     InvitationRequest,
@@ -107,3 +150,10 @@ from apps.makerspaces.models_station_leases import (  # noqa: E402,F401
     StationOperatorLease,
     StationSessionRevocation,
 )
+from apps.makerspaces.models_security import MakerspaceSecurityLock, MakerspaceSecurityPolicy  # noqa: E402,F401
+from apps.makerspaces.models_settings_authority import (  # noqa: E402,F401
+    ModuleSettingLock,
+    ModuleSettingsGrant,
+)
+# Release 2 L3: member-card settings (auto-issue, email on issue, public check page).
+from apps.makerspaces.models_member_card_settings import MemberCardSettings  # noqa: E402,F401

@@ -1,7 +1,8 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, ConfirmDialog } from "../../../components/ui";
+import { ConfirmDialog, EmptyState, OverflowMenu, RelativeTime, StatusPill } from "../../../components/ui";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 import { emptyScheduleForm, ReportScheduleForm, scheduleToForm } from "./ReportScheduleForm";
 import {
@@ -18,8 +19,9 @@ import {
   type ReportScheduleInput,
 } from "./reportSchedulesApi";
 import { Panel } from "./shared";
+import { LogoLoader } from "../../../components/LogoLoader";
 
-const when = (value: string | null) => (value ? new Date(value).toLocaleString() : "never");
+const when = (value: string | null) => (value ? <RelativeTime date={value} /> : "never");
 
 /** Recurring exports. `reports` is the catalog already filtered to exportable + available. */
 export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: number; reports: ReportCatalogItem[] }) {
@@ -62,56 +64,55 @@ export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: numbe
   });
   const title = (key: string) => reports.find((report) => report.key === key)?.title ?? key;
   const destinationLabel = (id: number | null) =>
-    id == null ? null : destinations.data?.find((destination) => destination.id === id)?.label ?? `destination #${id}`;
+    id == null ? null : destinations.data?.find((destination) => destination.id === id)?.label ?? t`destination #${id}`;
   const error = save.error ?? toggle.error ?? remove.error ?? run.error;
   const chatDestinations = (destinations.data ?? []).filter((destination) => destination.is_active);
 
   return (
-    <Panel title="Scheduled reports">
+    <Panel title={t`Scheduled reports`}>
       <p className="mb-3 text-sm text-muted">
-        Generate an export on a cadence and deliver it to a chat destination, by email, or both. Files expire after the retention window.
-      </p>
-      {schedules.isLoading ? <p className="text-sm text-muted">Loading schedules…</p> : null}
+        {t`Generate an export on a cadence and deliver it to a chat destination, by email, or both. Files expire after the retention window.`}</p>
+      {schedules.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
       {schedules.isError ? <p className="text-sm text-danger" role="alert">{scheduleErrorText(schedules.error, "Could not load schedules.")}</p> : null}
-      {schedules.data?.length === 0 ? <p className="text-sm text-muted">No schedules yet.</p> : null}
+      {schedules.data?.length === 0 ? <EmptyState message={t`No schedules yet. Create your first scheduled report.`} /> : null}
       {schedules.data?.map((schedule) => (
         <div key={schedule.id} className="border-t border-line py-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-semibold text-ink">{title(schedule.report_key)}</p>
               <p className="text-xs text-muted">
-                {schedule.cadence} · {schedule.format.toUpperCase()} · grain {schedule.grain}
-                {schedule.filters?.window_days ? ` · last ${schedule.filters.window_days} days` : ""}
+                {t`${schedule.cadence} · ${schedule.format.toUpperCase()} · grain ${schedule.grain}`}
+                {schedule.filters?.window_days ? t` · last ${schedule.filters.window_days} days` : ""}
                 {destinationLabel(schedule.destination) ? ` · ${destinationLabel(schedule.destination)}` : ""}
                 {schedule.recipient_emails.length ? ` · ${schedule.recipient_emails.join(", ")}` : ""}
-                {schedule.recipient_roles?.length ? ` · roles: ${schedule.recipient_roles.join(", ")}` : ""}
-                {schedule.recipient_actions?.length ? ` · actions: ${schedule.recipient_actions.join(", ")}` : ""}
-                {schedule.condition?.non_empty ? " · non-empty only" : ""}
+                {schedule.recipient_roles?.length ? t` · roles: ${schedule.recipient_roles.join(", ")}` : ""}
+                {schedule.recipient_actions?.length ? t` · actions: ${schedule.recipient_actions.join(", ")}` : ""}
+                {schedule.condition?.non_empty ? t` · non-empty only` : ""}
                 {schedule.condition?.metric ? ` · ${schedule.condition.metric} ${schedule.condition.operator} ${schedule.condition.value} ${schedule.condition.currency ?? ""}` : ""}
               </p>
-              <p className="text-xs text-muted">Next run {when(schedule.next_run_at)} · last run {when(schedule.last_run_at)}</p>
+              <p className="text-xs text-muted">{t`Next run `}{when(schedule.next_run_at)} {t` · last run `}{when(schedule.last_run_at)}</p>
               {schedule.last_delivery?.download_url ? (
                 <a className="text-xs underline" href={schedule.last_delivery.download_url} target="_blank" rel="noreferrer">
-                  Download last delivery
-                </a>
+                  {t`Download last delivery`}</a>
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={schedule.is_active ? "success" : "neutral"}>{schedule.is_active ? "Active" : "Paused"}</Badge>
-              <button className="desk-button" type="button" disabled={run.isPending} onClick={() => run.mutate(schedule.id)}>Run now</button>
-              <button className="desk-button" type="button" onClick={() => { setCreating(false); setEditing(schedule); }}>Edit</button>
-              <button className="desk-button" type="button" disabled={toggle.isPending} onClick={() => toggle.mutate(schedule)}>
-                {schedule.is_active ? "Pause" : "Resume"}
-              </button>
-              <button className="desk-button-danger" type="button" onClick={() => setDeleting(schedule)}>Delete</button>
+              <StatusPill tone={schedule.is_active ? "success" : "neutral"} label={schedule.is_active ? t`Active` : t`Paused`} />
+              <button className="desk-button" type="button" disabled={run.isPending && run.variables === schedule.id} onClick={() => run.mutate(schedule.id)}>{run.isPending && run.variables === schedule.id ? t`Running…` : t`Run now`}</button>
+              <OverflowMenu label={t`Actions for ${title(schedule.report_key)}`} actions={[
+                { label: t`Edit`, onClick: () => { setCreating(false); setEditing(schedule); } },
+                { label: schedule.is_active ? t`Pause` : t`Resume`, disabled: toggle.isPending && toggle.variables?.id === schedule.id,
+                  disabledReason: toggle.isPending && toggle.variables?.id === schedule.id ? t`Updating this schedule.` : undefined, onClick: () => toggle.mutate(schedule) },
+                { label: t`Delete`, tone: "danger", onClick: () => setDeleting(schedule) },
+              ]} />
             </div>
           </div>
           {runResult?.id === schedule.id ? (
             <p className="mt-2 text-sm text-ink" role="status">
-              Run {runResult.delivery.status}.{" "}
+              {t`Run ${runResult.delivery.status}.${" "}`}
               {runResult.delivery.download_url ? (
-                <a className="underline" href={runResult.delivery.download_url} target="_blank" rel="noreferrer">Download the file</a>
-              ) : runResult.delivery.error || "No file was produced."}
+                <a className="underline" href={runResult.delivery.download_url} target="_blank" rel="noreferrer">{t`Download the file`}</a>
+              ) : runResult.delivery.error || t`No file was produced.`}
             </p>
           ) : null}
           {editing?.id === schedule.id ? (
@@ -142,17 +143,16 @@ export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: numbe
             onCancel={() => setCreating(false)}
           />
         ) : (
-          <button className="desk-button-primary" type="button" disabled={!reports.length} onClick={() => { setEditing(null); setCreating(true); }}>
-            New schedule
-          </button>
+          <button className="desk-button-primary" type="button" disabled={!reports.length} title={!reports.length ? t`Choose an available schedulable report.` : undefined} onClick={() => { setEditing(null); setCreating(true); }}>
+            {t`New schedule`}</button>
         )}
       </div>
       {error ? <p className="mt-2 text-sm text-danger" role="alert">{scheduleErrorText(error, "Could not update the schedule.")}</p> : null}
       <ConfirmDialog
         open={Boolean(deleting)}
-        title="Delete schedule"
-        message={deleting ? `Delete the ${title(deleting.report_key)} schedule? Its stored deliveries are removed too.` : ""}
-        confirmLabel="Delete schedule"
+        title={t`Delete schedule`}
+        message={deleting ? t`Delete the ${title(deleting.report_key)} schedule? Its stored deliveries are removed too.` : ""}
+        confirmLabel={t`Delete schedule`}
         tone="danger"
         pending={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting.id)}

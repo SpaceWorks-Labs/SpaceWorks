@@ -27,33 +27,42 @@ SECTION_FIELDS = {
 }
 
 
-def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
+def build_fablab_health(makerspace_id, *, limit=None, date_range=None, actor=None):
     aggregate = makerspace_id is None
     now = timezone.now()
-    today = timezone.localdate()
+    from .reports_maintenance import _space_today
+    today = _space_today(makerspace_id)  # m13
     base = eligible_makerspaces() if aggregate else Makerspace.objects.filter(pk=makerspace_id)
-    spaces = list(base.values("id", "enabled_modules").order_by("id"))
-    records = {row["id"]: _empty_record(row, aggregate) for row in spaces}
+    spaces = list(base.values("id", "enabled_modules", "enabled_features").order_by("id"))
+    records = {row["id"]: _empty_record(row) for row in spaces}
     _run_section(spaces, records, "events", lambda ids: _event_rows(ids, date_range))
     _run_section(spaces, records, "bookings", lambda ids: _booking_rows(ids, date_range, now))
-    _run_section(spaces, records, "machines", lambda ids: _machine_rows(ids, date_range))
-    _run_section(spaces, records, "maintenance", lambda ids: _maintenance_rows(ids, date_range, today))
+    # A type-scoped Machine Manager reads machine and maintenance figures for their types only (224a).
+    from apps.machines.report_actor_scope import actor_machine_scope
+    scope = actor_machine_scope(actor, makerspace_id)
+    type_ids = None if scope is None else (set(scope[0]), set(scope[1]))
+    _run_section(spaces, records, "machines", lambda ids: _machine_rows(ids, date_range, type_ids))
+    _run_section(spaces, records, "maintenance", lambda ids: _maintenance_rows(ids, date_range, today, type_ids))
     ordered = [records[row["id"]] for row in spaces]
     if limit is not None:
         ordered = ordered[:limit]
-    return ReportResult((("makerspace_id",) + FIELDS) if aggregate else FIELDS, ordered)
+    # The health chart uses this real tenant dimension on local previews too.
+    return ReportResult(("makerspace_id", *FIELDS), ordered)
 
 
-def _empty_record(space, aggregate):
+def _empty_record(space):
     record = {}
     modules = set(space["enabled_modules"] or [])
+    features = set(space.get("enabled_features") or [])
     for section, metrics in SECTION_FIELDS.items():
         enabled = runtime_active(section) and section in modules
+        if section == "maintenance":
+            # The `machines.maintenance` capability since #97, not a module key.
+            enabled = runtime_active(section) and "machines" in modules and "machines.maintenance" in features
         record[f"{section}_enabled"] = enabled
         record[f"{section}_available"] = False
         record.update({metric: None for metric in metrics})
-    if aggregate:
-        record["makerspace_id"] = space["id"]
+    record["makerspace_id"] = space["id"]
     return record
 
 
@@ -97,9 +106,11 @@ def _event_rows(ids, date_range):
     completed = period & Q(events__status=Event.Status.COMPLETED)
     attended = Q(events__registrations__status=EventRegistration.Status.ATTENDED)
     registered = Q(events__registrations__status=EventRegistration.Status.REGISTERED)
+    # Annotation names must not shadow the `events` relation: an `events=` annotation
+    # turns every later `events__registrations` into a lookup on an IntegerField.
     rows = list(Makerspace.objects.filter(id__in=ids).values("id").annotate(
-        events=Count("events", filter=period, distinct=True),
-        registrations=Count("events__registrations", filter=period),
+        event_count=Count("events", filter=period, distinct=True),
+        registration_count=Count("events__registrations", filter=period),
         attended=Count("events__registrations", filter=period & attended),
         completed_attended=Count("events__registrations", filter=completed & attended),
         completed_registered=Count("events__registrations", filter=completed & registered),
@@ -108,8 +119,8 @@ def _event_rows(ids, date_range):
     for row in rows:
         denominator = row["completed_attended"] + row["completed_registered"]
         result.append({
-            "makerspace_id": row["id"], "events_in_period": row["events"],
-            "events_registrations": row["registrations"], "events_attended": row["attended"],
+            "makerspace_id": row["id"], "events_in_period": row["event_count"],
+            "events_registrations": row["registration_count"], "events_attended": row["attended"],
             "events_completed_attendance_rate_percent": round(row["completed_attended"] / denominator * 100, 2) if denominator else None,
             # Private inputs are retained in ReportResult.records but omitted from
             # FIELDS, so legacy single-space responses and exports do not change.
@@ -160,24 +171,27 @@ def _booking_rows(ids, date_range, now):
     return result
 
 
-def _machine_rows(ids, date_range):
+def _machine_rows(ids, date_range, type_ids=None):
     period = _period_q("machines__usage_entries__created_at", date_range)
+    kind = Q() if type_ids is None else Q(machines__machine_type_id__in=type_ids[0]) | Q(machines__id__in=type_ids[1])
+    period &= kind
     rows = list(Makerspace.objects.filter(id__in=ids).values("id").annotate(
-        active=Count("machines", filter=Q(machines__is_active=True), distinct=True),
+        active=Count("machines", filter=Q(machines__is_active=True) & kind, distinct=True),
         hours=Coalesce(Sum("machines__usage_entries__hours", filter=period), Value(Decimal("0.00")), output_field=DecimalField(max_digits=20, decimal_places=2)),
     ))
     return [{"makerspace_id": row["id"], "machines_active": row["active"], "machines_usage_hours": row["hours"]} for row in rows]
 
 
-def _maintenance_rows(ids, date_range, today):
+def _maintenance_rows(ids, date_range, today, type_ids=None):
     from apps.maintenance.models import MaintenanceLog, MaintenanceSchedule
 
     period = _period_q("performed_at", date_range)
-    logs = MaintenanceLog.objects.filter(machine__makerspace_id=OuterRef("pk")).filter(period).values("machine__makerspace_id").annotate(count=Count("id"), total=Sum("cost"))
-    schedules = MaintenanceSchedule.objects.filter(machine__makerspace_id=OuterRef("pk"), is_active=True, next_due__lt=today).values("machine__makerspace_id").annotate(count=Count("id"))
+    kind = Q() if type_ids is None else Q(machine__machine_type_id__in=type_ids[0]) | Q(machine_id__in=type_ids[1])
+    logs = MaintenanceLog.objects.filter(machine__makerspace_id=OuterRef("pk")).filter(period).filter(kind).values("machine__makerspace_id").annotate(count=Count("id"), total=Sum("cost"))
+    schedules = MaintenanceSchedule.objects.filter(machine__makerspace_id=OuterRef("pk"), is_active=True, next_due__lt=today).filter(kind).values("machine__makerspace_id").annotate(count=Count("id"))
     rows = list(Makerspace.objects.filter(id__in=ids).values("id").annotate(
         logs=Coalesce(Subquery(logs.values("count")[:1]), Value(0)),
-        cost=Coalesce(Subquery(logs.values("total")[:1], output_field=DecimalField(max_digits=20, decimal_places=2)), Value(Decimal("0.00"))),
+        cost=Coalesce(Subquery(logs.values("total")[:1], output_field=DecimalField(max_digits=21, decimal_places=3)), Value(Decimal("0.00"))),
         overdue=Coalesce(Subquery(schedules.values("count")[:1]), Value(0)),
     ))
     return [{"makerspace_id": row["id"], "maintenance_logs": row["logs"], "maintenance_total_cost": row["cost"], "maintenance_overdue_schedules": row["overdue"]} for row in rows]

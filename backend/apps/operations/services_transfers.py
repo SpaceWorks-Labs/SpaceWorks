@@ -1,10 +1,14 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
+from apps.accounts import rbac
 from apps.audit import services as audit
+from apps.boxes.models import Box
 from apps.inventory import availability
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
+from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 from apps.operations.models import InventoryAdjustment, StockTransfer, StockTransferLine
 from apps.operations.services_shared import _container
@@ -14,13 +18,27 @@ from apps.operations.services_transfer_splits import move_quantity_stock
 def apply_stock_transfer(actor, makerspace, data):
     with transaction.atomic():
         destination_makerspace_id = data.get("destination_makerspace_id") or makerspace.id
+        # Fence both tenants before any product locks; opposite-direction moves
+        # acquire the same ordered locks and serialize with API product creators.
+        action = (rbac.Action.TRANSFER_STOCK if destination_makerspace_id != makerspace.pk
+                  else rbac.Action.EDIT_INVENTORY)
+        spaces = list(rbac.scope_by_action(actor, action, Makerspace.objects.all(), field="id").select_for_update().filter(
+            pk__in={makerspace.pk, destination_makerspace_id},
+        ).order_by("pk"))
+        locked_spaces = {space.pk: space for space in spaces}
+        if {makerspace.pk, destination_makerspace_id} - locked_spaces.keys():
+            raise NotFound()
+        makerspace = locked_spaces[makerspace.pk]
+        from apps.managed_hosting.extra_quotas import check_extra_quota_locked
+        check_extra_quota_locked(makerspace, "stock_transfers_monthly")  # decision 328a: refuses only a NEW transfer
         is_cross = destination_makerspace_id != makerspace.id
-        source = _container(data.get("source_container_id"), makerspace.id)
+        source = _transfer_container(data.get("source_container_id"), makerspace.id, "source_container_id")
         # For a cross-makerspace move the destination container lives in the
         # destination makerspace; intra-makerspace keeps it in the same one.
-        destination = _container(
+        destination = _transfer_container(
             data.get("destination_container_id"),
             destination_makerspace_id if is_cross else makerspace.id,
+            "destination_container_id",
         )
         transfer = StockTransfer.objects.create(
             makerspace=makerspace,
@@ -54,6 +72,21 @@ def apply_stock_transfer(actor, makerspace, data):
         return transfer
 
 
+def _transfer_container(container_id, makerspace_id, field):
+    try:
+        return _container(container_id, makerspace_id)
+    except Box.DoesNotExist:
+        raise ValidationError({field: gettext("Select a container in the right makerspace.")}) from None
+
+
+def _line_target(queryset, field, pk, makerspace):
+    """The line's product/asset in THIS makerspace, or a typed 400 (never a 500 for a foreign or unknown id)."""
+    try:
+        return queryset.get(pk=pk, makerspace=makerspace)
+    except queryset.model.DoesNotExist:
+        raise ValidationError({field: gettext("Select an item in this makerspace.")}) from None
+
+
 def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destination, line_data):
     """Relocate a product/asset between containers within one makerspace."""
     product = None
@@ -61,15 +94,15 @@ def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destinatio
     split_created = False
     quantity = line_data.get("quantity") or 1
     if line_data.get("asset_id"):
-        asset = InventoryAsset.objects.select_for_update().select_related("product").get(
-            pk=line_data["asset_id"],
-            makerspace=makerspace,
+        asset = _line_target(
+            InventoryAsset.objects.select_for_update().select_related("product"),
+            "asset_id", line_data["asset_id"], makerspace,
         )
         if source and asset.box_id != source.id:
-            raise ValidationError({"asset_id": "Asset is not in the source container."})
+            raise ValidationError({"asset_id": gettext("Asset is not in the source container.")})
         from_status = line_data.get("from_status") or ""
         if from_status and asset.status != from_status:
-            raise ValidationError({"from_status": "Asset is not currently in this status."})
+            raise ValidationError({"from_status": gettext("Asset is not currently in this status.")})
         to_status = line_data.get("to_status") or ""
         if to_status and to_status != asset.status:
             try:
@@ -80,12 +113,11 @@ def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destinatio
         asset.save(update_fields=["box", "updated_at"])
         product = asset.product
     else:
-        product = InventoryProduct.objects.select_for_update().get(
-            pk=line_data["product_id"],
-            makerspace=makerspace,
+        product = _line_target(
+            InventoryProduct.objects.select_for_update(), "product_id", line_data["product_id"], makerspace,
         )
         if source and product.box_id != source.id:
-            raise ValidationError({"product_id": "Product is not in the source container."})
+            raise ValidationError({"product_id": gettext("Product is not in the source container.")})
         destination_product, split_created = move_quantity_stock(
             product,
             destination,
@@ -125,19 +157,18 @@ def _apply_cross_makerspace_line(
     scope here — move quantity stock instead."""
     if line_data.get("asset_id"):
         raise ValidationError(
-            {"asset_id": "Individual asset units cannot be moved across makerspaces; transfer quantity stock instead."}
+            {"asset_id": gettext("Individual asset units cannot be moved across makerspaces; transfer quantity stock instead.")}
         )
     quantity = line_data.get("quantity") or 1
-    src = InventoryProduct.objects.select_for_update().get(
-        pk=line_data["product_id"],
-        makerspace=source_makerspace,
+    src = _line_target(
+        InventoryProduct.objects.select_for_update(), "product_id", line_data["product_id"], source_makerspace,
     )
     if src.tracking_mode == TrackingMode.INDIVIDUAL:
         raise ValidationError(
-            {"product_id": "Individual-tracked products cannot be moved across makerspaces yet."}
+            {"product_id": gettext("Individual-tracked products cannot be moved across makerspaces yet.")}
         )
     if quantity > src.available_quantity:
-        raise ValidationError({"quantity": "Cannot transfer more than the available stock."})
+        raise ValidationError({"quantity": gettext("Cannot transfer more than the available stock.")})
 
     dest_queryset = InventoryProduct.objects.select_for_update().filter(
         makerspace_id=dest_makerspace_id,
@@ -151,9 +182,11 @@ def _apply_cross_makerspace_line(
         # Crediting quantity onto an individual-tracked product would create phantom
         # units with no backing InventoryAsset/QR rows. Refuse instead of corrupting.
         raise ValidationError(
-            {"product_id": "Destination already has an individual-tracked product with this name."}
+            {"product_id": gettext("Destination already has an individual-tracked product with this name.")}
         )
     if dest is None:
+        destination_space = Makerspace.objects.get(pk=dest_makerspace_id)
+        limits.check_quota(destination_space, "products", adding=1)
         dest = InventoryProduct.objects.create(
             makerspace_id=dest_makerspace_id,
             name=src.name,

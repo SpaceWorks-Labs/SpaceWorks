@@ -1,0 +1,69 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/artifact.request.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "binding_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "captured_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "command_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "content_type": {
+      "maxLength": 64,
+      "minLength": 3,
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "timelapse",
+        "thumbnail",
+        "preview",
+        "failure_snapshot",
+        "log_bundle",
+        "audio_recording"
+      ],
+      "type": "string"
+    },
+    "operation_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "service_request_id": {
+      "maximum": 1000000000000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "session_id": {
+      "maximum": 1000000000000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "size_bytes": {
+      "maximum": 268435456,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "operation_id",
+    "binding_id",
+    "kind",
+    "content_type",
+    "size_bytes"
+  ],
+  "type": "object"
+}

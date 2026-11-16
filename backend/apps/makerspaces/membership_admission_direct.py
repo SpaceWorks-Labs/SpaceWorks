@@ -1,4 +1,5 @@
 """Default pricing for core staff-created memberships without bypassing gates."""
+from django.utils.translation import gettext
 from apps.audit import services as audit
 from apps.accounts import rbac
 from rest_framework.exceptions import PermissionDenied
@@ -12,10 +13,13 @@ def prepare_direct_admission(actor, makerspace, user, role):
     if not module_enabled(makerspace, "membership") or not policy.configured:
         return None
     if policy.join_mode != "open" and not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk):
-        raise PermissionDenied("A membership manager must decide this admission.")
-    paid = policy.joining_fee > 0 or (policy.default_plan and policy.default_plan.amount > 0)
+        raise PermissionDenied(gettext("A membership manager must decide this admission."))
+    from apps.payments.availability import charge_tracking_enabled
+    # #184 G8: with membership charges off joining is free, so there is nothing to pay first.
+    paid = charge_tracking_enabled(makerspace, "membership") and (
+        policy.joining_fee > 0 or (policy.default_plan and policy.default_plan.amount > 0))
     if (policy.payment_timing == "before_activation" and paid) or vouching_on(makerspace, policy) or application_schema_for(makerspace, policy):
-        raise AdmissionError("membership_application_required", "Use the admission application to complete this makerspace's join conditions.")
+        raise AdmissionError("membership_application_required", gettext("Use the admission application to complete this makerspace's join conditions."))
     row = MembershipRequest.objects.create(
         makerspace=makerspace, user=user, kind="request", state="requested",
         requested_by=actor, assigned_role=role, admission_managed=True,
@@ -29,9 +33,11 @@ def prepare_direct_admission(actor, makerspace, user, role):
 def finish_direct_admission(actor, row, membership):
     from apps.makerspaces.membership_admission_payments import charge_admission
     from apps.makerspaces.membership_plan_services import create_term
-    charge_admission(row, actor, settings_for(row.makerspace))
+    from apps.makerspaces.membership_plan_policy import plan_policy
+    charge_admission(row, actor, plan_policy(row.makerspace, row.selected_plan, settings_for(row.makerspace)))
     if row.selected_plan_id:
-        create_term(actor, membership, row.selected_plan)
+        create_term(actor, membership, row.selected_plan, price=row.first_term_amount,
+                    joining_fee=row.joining_fee, admission_request=row)
 
 
 def admit_walk_in(actor, makerspace, user, raw_answers=None):
@@ -43,12 +49,12 @@ def admit_walk_in(actor, makerspace, user, raw_answers=None):
 
     policy = ensure_join_allowed(makerspace)
     if policy.join_mode == "invite_only" and not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk):
-        raise PermissionDenied("A membership manager must invite this person.")
+        raise PermissionDenied(gettext("A membership manager must invite this person."))
     row = MembershipRequest.objects.create(
         makerspace=makerspace, user=user, kind="request", state="requested",
         requested_by=actor, assigned_role=_member_role(makerspace),
     )
-    _prepare(row, user, policy, raw_answers)
+    _prepare(row, user, policy, raw_answers, collect=False)  # staff add: no applicant extras
     audit.record(actor, "membership.requested", makerspace=makerspace, target=row)
     from apps.makerspaces.membership_notifications import notify_membership_request_pending
     notify_membership_request_pending(row)

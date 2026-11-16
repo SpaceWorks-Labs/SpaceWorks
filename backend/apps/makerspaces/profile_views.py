@@ -1,4 +1,7 @@
-"""Member-facing profile and directory endpoints.
+"""Member-facing directory endpoints and the base guard for per-space member routes.
+
+The per-space profile read/write now lives in `profile_legacy_aliases` (deprecated aliases onto the
+account profile, decision 304); the directory stays per space.
 
 Every one requires an active membership of the makerspace in the path AND the
 `membership` module. The directory is member-visible, never public: a space's roster is
@@ -15,11 +18,7 @@ from apps.accounts.claim_sessions import claim_context
 from apps.makerspaces import profile_services
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.member_activity_service import active_membership
-from apps.makerspaces.profile_serializers import (
-    DirectorySerializer,
-    ProfileReadSerializer,
-    ProfileWriteSerializer,
-)
+from apps.makerspaces.profile_serializers import DirectorySerializer, ProfileReadSerializer
 from apps.presence.guard import MemberPresenceRequired
 
 ERRORS = {
@@ -40,32 +39,6 @@ class MemberProfileBaseView(APIView):
             raise MemberPresenceRequired()
         require_module(membership.makerspace, "membership")
         return membership
-
-
-class MemberProfileView(MemberProfileBaseView):
-    @extend_schema(
-        tags=["Member profile"], summary="Retrieve the caller's own profile",
-        request=None, responses={200: ProfileReadSerializer, **ERRORS},
-    )
-    def get(self, request, makerspace_id):
-        membership = self.membership(request, makerspace_id)
-        return Response(
-            ProfileReadSerializer(profile_services.read_profile(membership)).data
-        )
-
-    @extend_schema(
-        tags=["Member profile"], summary="Update the caller's own profile",
-        request=ProfileWriteSerializer,
-        responses={200: ProfileReadSerializer, **ERRORS},
-    )
-    def put(self, request, makerspace_id):
-        membership = self.membership(request, makerspace_id)
-        serializer = ProfileWriteSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        profile_services.save_profile(membership, serializer.validated_data)
-        return Response(
-            ProfileReadSerializer(profile_services.read_profile(membership)).data
-        )
 
 
 class MemberDirectoryView(MemberProfileBaseView):
@@ -101,6 +74,7 @@ class MemberDirectoryDetailView(MemberProfileBaseView):
         payload = profile_services.visible_profile(
             membership.makerspace,
             membership_id,
+            viewer=request.user,
             local_activity_only=claim_context(request.user) is not None,
         )
         if payload is None:

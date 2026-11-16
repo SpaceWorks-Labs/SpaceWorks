@@ -1,7 +1,15 @@
+from django.utils.translation import gettext
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.hardware_requests.display import requester_label
+from apps.hardware_requests.due_policy import closed_notice
 from apps.inventory.models import TrackingMode
+
+
+class ReturnDueNoticeSerializer(serializers.Serializer):
+    code = serializers.ChoiceField(choices=["space_closed"])
+    next_open_at = serializers.DateTimeField(allow_null=True)
 
 
 class RequestItemInputSerializer(serializers.Serializer):
@@ -10,26 +18,10 @@ class RequestItemInputSerializer(serializers.Serializer):
 
 
 class RequestSubmitSerializer(serializers.Serializer):
-    CONTACT_FIELDS = ("contact_name", "contact_email", "contact_phone")
+    """A signed-in borrow request. Identity is always account-derived, so any stray
+    contact fields an old client still sends are ignored as unknown keys."""
 
     website = serializers.CharField(required=False, allow_blank=True, write_only=True)
-    contact_name = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        max_length=200,
-        help_text="Required for an account-less submission.",
-    )
-    contact_email = serializers.EmailField(
-        required=False,
-        allow_blank=True,
-        max_length=254,
-        help_text="Required for an account-less submission; normalized to lowercase.",
-    )
-    contact_phone = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        max_length=32,
-    )
     requested_for = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -41,36 +33,51 @@ class RequestSubmitSerializer(serializers.Serializer):
         allow_empty=False,
         max_length=20,
     )
+    # Lane L12 (loans.reservations / loans.waitlist).
+    pickup_from = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    pickup_until = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    waitlist_entry_id = serializers.IntegerField(required=False, allow_null=True, default=None, min_value=1)
 
-    def to_internal_value(self, data):
-        if not self.context.get("anonymous_submission", False):
-            # Authenticated identity remains account-derived. Removing these fields
-            # before child validation makes them genuinely ignored, including an
-            # oversized spoof value that must not turn into a validation side channel.
-            data = data.copy()
-            for field_name in self.CONTACT_FIELDS:
-                data.pop(field_name, None)
-        return super().to_internal_value(data)
+    def validate(self, attrs):
+        attrs["website"] = attrs.get("website", "")
+        product_ids = [item["product_id"] for item in attrs["items"]]
+        if len(product_ids) != len(set(product_ids)):
+            raise serializers.ValidationError(
+                {"items": gettext("Duplicate product_id values are not allowed.")}
+            )
+        return attrs
+
+
+class ContactRequestSubmitSerializer(RequestSubmitSerializer):
+    """A borrow request with no account, for a space without member accounts (#80).
+
+    All three contact fields are required; the email must carry the one-time code sent to
+    it. The name is the borrower's public name; phone and email are staff-only and stored
+    encrypted on the request.
+    """
+
+    contact_name = serializers.CharField(max_length=200, trim_whitespace=True)
+    contact_email = serializers.EmailField(max_length=254)
+    contact_phone = serializers.CharField(max_length=32, trim_whitespace=True)
+    email_code = serializers.RegexField(r"^\d{6}$", write_only=True)
 
     def validate_contact_email(self, value):
         return value.strip().lower()
 
-    def validate(self, attrs):
-        attrs["website"] = attrs.get("website", "")
-        if self.context.get("anonymous_submission", False):
-            errors = {}
-            if not attrs.get("contact_name", "").strip():
-                errors["contact_name"] = "This field is required."
-            if not attrs.get("contact_email", "").strip():
-                errors["contact_email"] = "This field is required."
-            if errors:
-                raise serializers.ValidationError(errors)
-        product_ids = [item["product_id"] for item in attrs["items"]]
-        if len(product_ids) != len(set(product_ids)):
-            raise serializers.ValidationError(
-                {"items": "Duplicate product_id values are not allowed."}
-            )
-        return attrs
+
+class PublicRequestSubmitSchemaSerializer(RequestSubmitSerializer):
+    """OpenAPI shape only: the contact fields are required where `request_access` is
+    `contact`, and ignored on the signed-in path."""
+
+    contact_name = serializers.CharField(max_length=200, required=False)
+    contact_email = serializers.EmailField(max_length=254, required=False)
+    contact_phone = serializers.CharField(max_length=32, required=False)
+    email_code = serializers.RegexField(r"^\d{6}$", required=False, write_only=True)
+
+
+class ContactCodeRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+    website = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
 
 class RequestSubmitResponseSerializer(serializers.Serializer):
@@ -145,6 +152,8 @@ class AdminRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     makerspace_id = serializers.IntegerField(read_only=True)
     requester_username = serializers.CharField(read_only=True)
+    # Open item A26: the borrower's account id, so staff can open the borrower history drawer.
+    requester_id = serializers.IntegerField(read_only=True)
     requester_name = serializers.CharField(read_only=True)
     # Readable staff-facing label (Check-In email/phone), never the internal
     # checkin_<hash>. Additive - requester_username stays for the existing contract.
@@ -165,8 +174,12 @@ class AdminRequestSerializer(serializers.Serializer):
     accepted_at = serializers.DateTimeField(read_only=True)
     issued_at = serializers.DateTimeField(read_only=True)
     return_due_at = serializers.DateTimeField(read_only=True)
+    # Warning only: a staff-entered due is never moved; see hardware_requests/due_policy.py.
+    return_due_notice = serializers.SerializerMethodField()
     return_reminder_sent_at = serializers.DateTimeField(read_only=True)
     renewal_count = serializers.IntegerField(read_only=True)
+    pickup_from = serializers.DateTimeField(read_only=True, allow_null=True)
+    pickup_until = serializers.DateTimeField(read_only=True, allow_null=True)
     closed_at = serializers.DateTimeField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
@@ -183,6 +196,12 @@ class AdminRequestSerializer(serializers.Serializer):
 
     def get_requester_display(self, obj) -> str:
         return requester_label(obj)
+
+    @extend_schema_field(ReturnDueNoticeSerializer(allow_null=True))
+    def get_return_due_notice(self, obj):
+        if obj.status not in {"accepted", "issued", "partially_returned"}:
+            return None
+        return closed_notice(obj.makerspace, obj.return_due_at)
 
 
 from .serializers_handover import (

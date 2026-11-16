@@ -1,3 +1,4 @@
+from apps.admin_api.serializers_role_sets import MembershipRoleSetMixin, RoleSetInputSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
@@ -15,23 +16,26 @@ class MembershipRoleSummarySerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class MembershipListSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
+class MembershipListSerializer(MembershipRoleSetMixin, PaymentSummaryMixin, serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     payment = serializers.SerializerMethodField()
     makerspace_id = serializers.IntegerField(source="makerspace.id", read_only=True)
     makerspace_slug = serializers.SlugField(source="makerspace.slug", read_only=True)
     assigned_role = MembershipRoleSummarySerializer(allow_null=True, read_only=True)
 
+    role_ids = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+
     class Meta:
         model = MakerspaceMembership
         fields = (
             "id", "user", "makerspace_id", "makerspace_slug", "role",
-            "assigned_role", "status", "created_at", "payment",
+            "assigned_role", "role_ids", "roles", "status", "created_at", "payment",
         )
         read_only_fields = fields
 
 
-class MembershipCreateSerializer(serializers.Serializer):
+class MembershipCreateSerializer(RoleSetInputSerializer):
     # Bound the account fields to the User column limits so an oversized value is a
     # clean 400 at the boundary instead of a PostgreSQL DataError -> 500 when a NEW
     # account is inserted (P2).
@@ -46,7 +50,6 @@ class MembershipCreateSerializer(serializers.Serializer):
         required=False, allow_blank=True, max_length=User._meta.get_field("last_name").max_length
     )
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    role_id = serializers.IntegerField()
 
     def validate_password(self, value):
         if not value:
@@ -64,5 +67,5 @@ class MembershipCreateSerializer(serializers.Serializer):
         return value
 
 
-class MembershipRoleAssignSerializer(serializers.Serializer):
-    role_id = serializers.IntegerField()
+class MembershipRoleAssignSerializer(RoleSetInputSerializer):
+    pass

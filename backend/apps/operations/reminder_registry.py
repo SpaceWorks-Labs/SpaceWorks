@@ -39,13 +39,27 @@ def _production_sources():
         from apps.maintenance.reminders_meters import SOURCE as METER_SOURCE
         sources.append(METER_SOURCE)
         sources.append(ReminderSource(
-            "maintenance.due", "maintenance", machines.discover_maintenance,
+            "maintenance.due", "machines", machines.discover_maintenance,
             machines.build_maintenance, "maintenance.reminders", machines.dispatch_maintenance,
         ))
+        # GAP2 M2: item and room maintenance, each behind its own parent's reminder switch.
+        from apps.maintenance.reminders_subjects import sources as subject_sources
+        sources.extend(subject_sources())
     if runtime_active("events"):
         from apps.events.reminders import EVENT_REMINDER_SOURCE
 
         sources.append(EVENT_REMINDER_SOURCE)
+        from apps.events.reminders_programme import PROGRAMME_REMINDER_SOURCES
+        sources.extend(PROGRAMME_REMINDER_SOURCES)
+        from apps.events.staged_forms.reminders import STAGE_REMINDER_SOURCE
+        from apps.events.staged_forms.rsvp_reminders import RSVP_REMINDER_SOURCE
+        sources.extend((STAGE_REMINDER_SOURCE, RSVP_REMINDER_SOURCE))
+        if runtime_active("event_reimbursements"):
+            from apps.event_reimbursements.reminders import AWARD_REMINDER_SOURCE, CLAIM_REMINDER_SOURCE
+            sources.extend((AWARD_REMINDER_SOURCE, CLAIM_REMINDER_SOURCE))
+    # Payee-details reminders belong to the permanent core payout ledger.
+    from apps.payments.event_payouts.reminders import PAYOUT_DETAILS_SOURCE
+    sources.append(PAYOUT_DETAILS_SOURCE)
     if runtime_active("bookings"):
         from apps.bookings.reminders import BOOKING_REMINDER_SOURCE
 

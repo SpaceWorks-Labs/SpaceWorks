@@ -44,9 +44,9 @@ PII_SEARCH_HASH_KEY=<contents of protected pii_search_hash_key>
 PII_DEK_CACHE_TTL_SECONDS=300
 ```
 
-Managed or self-hosted AWS KMS wrapping remains opt-in too. Install
-`backend/requirements-kms.txt`, give the process identity KMS encrypt/decrypt
-access, and use a KMS alias where possible:
+Managed or self-hosted AWS KMS wrapping remains opt-in too. boto3 ships in
+`backend/requirements.txt`, so no extra install is needed. Give the process identity
+KMS encrypt/decrypt access, and use a KMS alias where possible:
 
 ```dotenv
 PII_ENCRYPTION_ENABLED=False

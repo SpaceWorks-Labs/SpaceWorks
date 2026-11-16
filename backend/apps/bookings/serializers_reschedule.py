@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -7,5 +8,5 @@ class BookingRescheduleSerializer(serializers.Serializer):
 
     def validate(self, values):
         if values['ends_at'] <= values['starts_at']:
-            raise serializers.ValidationError({'ends_at': 'End must be after start.'})
+            raise serializers.ValidationError({'ends_at': gettext('End must be after start.')})
         return values

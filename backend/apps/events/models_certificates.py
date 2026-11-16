@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -11,6 +12,29 @@ from apps.events.models_registration import EventRegistration
 
 
 class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
+    class Kind(models.TextChoices):
+        ATTENDANCE = "attendance", "Attendance"
+        PARTICIPANT = "participant", "Participant"
+        FINALIST = "finalist", "Finalist"
+        WINNER = "winner", "Winner"
+        VOLUNTEER_THANKS = "volunteer_thanks", gettext_noop("Volunteer thanks")
+        MENTOR_THANKS = "mentor_thanks", gettext_noop("Mentor thanks")
+        JUDGE_THANKS = "judge_thanks", gettext_noop("Judge thanks")
+        ORGANISER_THANKS = "organiser_thanks", gettext_noop("Organiser thanks")
+
+    event = models.ForeignKey("events.Event", on_delete=models.PROTECT, related_name="certificates")
+    recipient_member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                        null=True, blank=True, related_name="event_certificates")
+    role_assignment = models.ForeignKey("events.EventRoleAssignment", on_delete=models.PROTECT,
+                                       null=True, blank=True, related_name="certificates")
+    kind = models.CharField(max_length=24, choices=Kind.choices, default=Kind.ATTENDANCE)
+    award = models.ForeignKey("events.HackathonPrize", on_delete=models.PROTECT,
+                             null=True, blank=True, related_name="certificates")
+    result_revision = models.ForeignKey("events.EventResultRevision", on_delete=models.PROTECT,
+                                       null=True, blank=True, related_name="certificates")
+    public_verification_enabled = models.BooleanField(default=False)
+    # C9: the holder may show their name on the public verification page and share image.
+    holder_name_public = models.BooleanField(default=False)
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         RENDERING = "rendering", "Rendering"
@@ -19,26 +43,34 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         REVOKED = "revoked", "Revoked"
 
     class RevocationReason(models.TextChoices):
-        ATTENDANCE_CORRECTED = "attendance_corrected", "Attendance corrected"
-        EVENT_CANCELLED = "event_cancelled", "Event cancelled"
-        STAFF_REVOKED = "staff_revoked", "Staff revoked"
+        ATTENDANCE_CORRECTED = "attendance_corrected", gettext_noop("Attendance corrected")
+        EVENT_CANCELLED = "event_cancelled", gettext_noop("Event cancelled")
+        STAFF_REVOKED = "staff_revoked", gettext_noop("Staff revoked")
 
     response = models.ForeignKey(
         EventFeedbackResponse,
         on_delete=models.PROTECT,
         related_name="certificates",
+        null=True, blank=True,
     )
     registration = models.ForeignKey(
         EventRegistration,
         on_delete=models.PROTECT,
         related_name="attendance_certificates",
+        null=True, blank=True,
     )
     serial = models.UUIDField(default=uuid4, unique=True, editable=False)
     revision = models.PositiveIntegerField()
+    template_revision = models.ForeignKey(
+        "events.EventCertificateTemplateRevision", on_delete=models.PROTECT,
+        null=True, blank=True, related_name="certificates",
+    )
+    layout_snapshot = models.JSONField(default=dict, blank=True)
     recipient_name = models.TextField()
     event_title = models.CharField(max_length=200)
     event_starts_at = models.DateTimeField()
     event_ends_at = models.DateTimeField()
+    event_timezone_name = models.CharField(max_length=64, default="UTC")
     issuer_name = models.CharField(max_length=200)
     object_key = models.CharField(max_length=512, unique=True)
     content_type = models.CharField(max_length=64, default="application/pdf")
@@ -51,6 +83,9 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
     )
     issued_at = models.DateTimeField(auto_now_add=True)
     rendered_at = models.DateTimeField(null=True, blank=True)
+    render_token = models.UUIDField(null=True, blank=True, editable=False)
+    render_started_at = models.DateTimeField(null=True, blank=True, editable=False)
+    render_attempts = models.PositiveIntegerField(default=0, editable=False)
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoked_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -66,16 +101,31 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
     )
 
     class Meta:
-        ordering = ["registration_id", "revision"]
+        ordering = ["event_id", "id"]
         constraints = [
+            models.CheckConstraint(condition=(
+                Q(registration__isnull=False, role_assignment__isnull=True)
+                | Q(registration__isnull=True, role_assignment__isnull=False, response__isnull=True)
+            ), name="event_certificate_exact_subject"),
             models.UniqueConstraint(
-                fields=["registration", "revision"],
-                name="uniq_event_certificate_revision",
+                fields=["registration", "kind", "award", "revision"],
+                condition=Q(registration__isnull=False), nulls_distinct=False,
+                name="event_cert_reg_revision_v2",
             ),
             models.UniqueConstraint(
-                fields=["registration"],
-                condition=~Q(status="revoked"),
-                name="uniq_live_event_certificate",
+                fields=["role_assignment", "kind", "award", "revision"],
+                condition=Q(role_assignment__isnull=False), nulls_distinct=False,
+                name="event_cert_role_revision_v2",
+            ),
+            models.UniqueConstraint(
+                fields=["registration", "kind", "award"],
+                condition=Q(registration__isnull=False) & ~Q(status="revoked"), nulls_distinct=False,
+                name="event_cert_reg_live_v2",
+            ),
+            models.UniqueConstraint(
+                fields=["role_assignment", "kind", "award"],
+                condition=Q(role_assignment__isnull=False) & ~Q(status="revoked"), nulls_distinct=False,
+                name="event_cert_role_live_v2",
             ),
         ]
 
@@ -84,25 +134,44 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         if self.response_id and self.registration_id:
             if self.response.registration_id != self.registration_id:
                 raise ValidationError(
-                    {"response": "Response and certificate registration must match."}
+                    {"response": gettext("Response and certificate registration must match.")}
                 )
         if self.content_type != "application/pdf":
-            raise ValidationError({"content_type": "Certificates must be PDF files."})
+            raise ValidationError({"content_type": gettext("Certificates must be PDF files.")})
+        if bool(self.registration_id) == bool(self.role_assignment_id):
+            raise ValidationError(gettext("A certificate has exactly one registration or role subject."))
+        subject = self.registration if self.registration_id else self.role_assignment
+        if subject.event_id != self.event_id or subject.member_id != self.recipient_member_id:
+            raise ValidationError(gettext("Certificate event and recipient must match its subject."))
+        if self.award_id and self.award.event_id != self.event_id:
+            raise ValidationError(gettext("Award belongs to another event."))
+        if self.result_revision_id and self.result_revision.event_id != self.event_id:
+            raise ValidationError(gettext("Results belong to another event."))
+        if self.template_revision_id and self.template_revision.event_id != self.event_id:
+            raise ValidationError({"template_revision": gettext("Template belongs to another event.")})
 
     def save(self, *args, **kwargs):
+        # Older internal attendance callers provide the immutable registration.
+        # Populate the new direct ownership columns from that exact subject once.
+        if self._state.adding and self.registration_id and not self.event_id:
+            self.event_id = self.registration.event_id
+            self.recipient_member_id = self.registration.member_id
+            self.event_timezone_name = self.registration.event.timezone_name
         if self.pk:
             original = type(self).objects.get(pk=self.pk)
             issuance_fields = (
                 "response_id", "registration_id", "serial", "revision",
                 "recipient_name", "event_title", "event_starts_at",
                 "event_ends_at", "issuer_name", "object_key", "content_type",
-                "issued_at",
+                "issued_at", "template_revision_id", "layout_snapshot",
+                "event_id", "recipient_member_id", "role_assignment_id", "kind", "award_id", "result_revision_id",
+                "event_timezone_name",
             )
             if any(
                 getattr(self, field) != getattr(original, field)
                 for field in issuance_fields
             ):
-                raise ValidationError("Certificate issuance snapshots are immutable.")
+                raise ValidationError(gettext("Certificate issuance snapshots are immutable."))
             allowed = {
                 self.Status.PENDING: {self.Status.RENDERING},
                 self.Status.FAILED: {self.Status.RENDERING},
@@ -111,10 +180,10 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
                 self.Status.REVOKED: set(),
             }
             if self.status != original.status and self.status not in allowed[original.status]:
-                raise ValidationError({"status": "Invalid certificate transition."})
+                raise ValidationError({"status": gettext("Invalid certificate transition.")})
             if original.status == self.Status.ACTIVE:
                 frozen = ("size_bytes", "sha256", "rendered_at")
                 if any(getattr(self, field) != getattr(original, field) for field in frozen):
-                    raise ValidationError("An active certificate artifact is immutable.")
+                    raise ValidationError(gettext("An active certificate artifact is immutable."))
         self.full_clean(validate_unique=False, validate_constraints=False)
         return super().save(*args, **kwargs)

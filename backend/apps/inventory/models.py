@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.postgres.indexes import GinIndex
@@ -6,11 +7,12 @@ from django.db import models
 
 from apps.makerspaces.models import Makerspace
 from apps.inventory.kit_validators import validate_kit_definition
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PublicAvailabilityMode(models.TextChoices):
-    EXACT_COUNT = "exact_count", "Exact Count"
-    STATUS_ONLY = "status_only", "Status Only"
+    EXACT_COUNT = "exact_count", gettext_noop("Exact Count")
+    STATUS_ONLY = "status_only", gettext_noop("Status Only")
     HIDDEN = "hidden", "Hidden"
 
 
@@ -52,6 +54,9 @@ from .models_watch import InventoryWatch  # noqa: F401
 
 
 class InventoryProduct(models.Model):
+    unit_cost = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True, validators=[MinValueValidator(0)])
+    cost_currency = models.CharField(max_length=3, blank=True)
+    cost_unit = models.CharField(max_length=16, blank=True)
     borrowing_terms = models.TextField(blank=True, max_length=2000)
     loan_days = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(365)])
     max_renewals = models.PositiveIntegerField(null=True, blank=True, validators=[MaxValueValidator(100)])
@@ -82,6 +87,15 @@ class InventoryProduct(models.Model):
     supplier = models.CharField(max_length=200, blank=True)
     reorder_point = models.PositiveIntegerField(default=0)
     reorder_quantity = models.PositiveIntegerField(default=0)
+    # Take-and-go stock (screws, glue): logged as used, never lent, auto-restocked at
+    # its reorder point. Quantity-tracked only (CHECK below).
+    is_consumable = models.BooleanField(default=False)
+    # Public expected-back date while none is free (inventory.expected_back, D16): the
+    # earliest due date only, never who holds it or how many are out.
+    public_show_expected_back = models.BooleanField(default=False)
+    # Decision 221b: lendable only through an event context (an event-linked contextual
+    # request); ordinary requests, self-checkout and direct handouts refuse it.
+    event_only = models.BooleanField(default=False)
     kit_components = models.JSONField(default=list, blank=True, validators=[validate_kit_definition])
     description = models.TextField(blank=True)
     image_key = models.CharField(max_length=300, blank=True, default="")
@@ -112,8 +126,8 @@ class InventoryProduct(models.Model):
     storage_location = models.CharField(max_length=200, blank=True)
     # Per-unit loan deposit in major units, used only when the makerspace's
     # `loan_deposit_mode` is `per_product`. Null means "no deposit for this item".
-    deposit_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True
+    deposit_amount = MoneyDecimalField(
+        max_digits=13, decimal_places=3, null=True, blank=True
     )
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -171,19 +185,25 @@ class InventoryProduct(models.Model):
                 ),
                 name="qty_sum_within_total",
             ),
+            models.CheckConstraint(
+                condition=models.Q(is_consumable=False) | models.Q(tracking_mode="quantity"),
+                name="consumable_quantity_tracked",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.name} ({self.makerspace.slug})"
 
     def clean(self):
+        from .cost_basis import clean_model_price
+        clean_model_price(self, "count")
         if self.box_id and self.box.makerspace_id != self.makerspace_id:
             raise ValidationError(
-                {"box": "Box must belong to the same makerspace as the product."}
+                {"box": gettext("Box must belong to the same makerspace as the product.")}
             )
         if self.category_id and self.category.makerspace_id != self.makerspace_id:
             raise ValidationError(
-                {"category": "Category must belong to the same makerspace."}
+                {"category": gettext("Category must belong to the same makerspace.")}
             )
 
 
@@ -249,3 +269,13 @@ class InventoryAsset(models.Model):
 
     def __str__(self):
         return f"{self.asset_tag} ({self.makerspace.slug})"
+
+from .models_tracking import InventoryStockSnapshot  # noqa: F401
+from .models_equipment_proposals import (  # noqa: F401
+    EquipmentConsumablePlan,
+    EquipmentConsumableUseReceipt,
+    EquipmentKitAllocation,
+    EquipmentKitTemplate,
+    EquipmentKitVersion,
+    EquipmentProposalReceipt,
+)

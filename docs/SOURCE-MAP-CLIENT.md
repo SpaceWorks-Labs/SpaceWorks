@@ -5,7 +5,12 @@ The backend and shared device source map is in [SOURCE-MAP.md](SOURCE-MAP.md).
 Platform monitoring lives in `features/staff/PlatformDashboardPanel.tsx`, with tenant
 usage in `TenantUsagePanel.tsx` and hand-written calls/types in `platformMonitoringApi.ts`.
 `StaffApp.tsx` admits the global dashboard without a selected tenant; `staffAccess.ts`
-and `staffTabs.ts` own its superadmin navigation and the manager usage tab.
+and `staffTabs.ts` own its superadmin navigation and the manager usage tab. Once the superadmin
+chooses a space, `StaffApp` passes `/auth/me` `superadmin_actions` and `getStaffAccess` shows exactly
+that space's Space-Manager tabs beside the platform ones (#115); `useSuperadminSpaceHint.ts` opens a
+space from `?context=platform&space=<slug>` (the `/control/` links). `PlatformSpaceComparison.tsx`
+pivots platform-usage into a per-space table with totals on the platform dashboard; `PlatformChannelUsage.tsx`
+and `panels/ChannelUsagePanel.tsx` show the "Web and app use" channel split (also the space report `channel-usage`).
 
 - `frontend/src/features/inventory/` — public catalog/detail/self-checkout + `ProductCard`/
   `AvailabilityBadge`. `frontend/src/features/staff/` — staff console panels; grouped nav via
@@ -20,10 +25,17 @@ and `staffTabs.ts` own its superadmin navigation and the manager usage tab.
   `frontend/src/features/auth/` + `members/MemberAuthPanel.tsx` — provider-config-driven social/member auth.
   `frontend/src/features/printing|bookings|forms|...` — feature slices. `frontend/src/lib/`,
   `components/ui/`, `types/`, `generated/api.ts`.
+- `frontend/src/features/events/OrganizationEventAdmission.tsx` — signed-in account identity,
+  private per-account/event eligibility query, sign-in/error/loading states and current host consent.
+  `features/staff/EventOrganizationAudience.tsx` explains live candidates and offers explicit
+  target-import review; event/series pickers are feature gated and roster eligibility is advisory.
 - `frontend/src/features/events/` — the standalone anonymous PIN-station route. Its
   `EventCheckInStationPage.tsx` exchanges the event-scoped PIN, then reuses the offline roster/sync API,
   IndexedDB state and operator UI owned by `features/staff/eventCheckInOfflineApi.ts`,
   `eventCheckInOfflineStore.ts` and `OfflineCheckInOperator.tsx`.
+  `MemberEventTicketPage.tsx` owns private ticket details, PNG downloads and calendar links.
+  Staff `EventRegistrationAnswers.tsx` and `eventToolsApi.ts` own answer drafts/mutations and
+  cancellation undo; `EventFeedbackPanel.tsx` offers the server's feedback starter templates.
 - `frontend/src/features/kiosk/` — Station shell, selected offline handover and queue status.
   `offlineQueueStore.ts`/`offlineQueueDb.ts` own atomic encrypted work/commands/evidence,
   cross-context locks, caps and expiry; `offlineEvidence.ts` owns pixel normalization.
@@ -46,8 +58,10 @@ and `staffTabs.ts` own its superadmin navigation and the manager usage tab.
 
 Tenant branding lives in `frontend/src/lib/brandColours.ts` (WCAG maths, both-mode
 foreground/interaction/ink/tint derivation) and `useTenantBranding.ts` (page-scoped
-variables). `features/staff/MakerspaceThemeSettings.tsx` owns the live contrast preview
-and audited settings PATCH. `src/styles/components.css` owns the shared component
+variables). `features/staff/MakerspaceThemeSettings.tsx` is the per-space colour screen
+(audience-grouped surfaces from `lib/colourSurfaces.ts`, presets, picker/hex/eyedropper, light + solid-black
+previews in `features/staff/colours/`, `lib/colourFix.ts` fix suggestions) and the audited settings PATCH.
+`lib/fixtures/themeContrastCases.json` is the TS/Python contrast parity fixture. `src/styles/components.css` owns the shared component
 layer and opaque secondary tint utilities; `src/index.css` owns product tokens, fonts
 and base styles. `lib/theme.ts` owns browser theme preference;
 `components/SupportContact.tsx` renders safe tenant support links.
@@ -61,3 +75,17 @@ Account changes and logout clear these snapshots and any offline card currently
 displayed in another tab. `MemberCardPanel.tsx` refuses retained Query data after
 a failed card refresh; access denial also clears the saved snapshot.
 Neither worker caches API data.
+
+Lane F browser infrastructure: `lib/webAnalytics.ts` and `components/WebAnalytics.tsx`
+project public route templates and enforce credential navigation boundaries. Runtime
+nginx configuration comes from `docker-entrypoint.d/40-web-analytics.sh`.
+`features/auth/ReauthenticationDialog.tsx`, `ReauthenticationReturn.tsx`,
+`PasswordlessMfaProof.tsx`, `reauthenticationApi.ts`, `reauthenticationSocial.ts` and
+`lib/api/reauthentication.ts` own browser step-up and same-session mutation retry.
+`features/auth/GithubAppCallbackPage.tsx` is the browser fallback for the native GitHub app link
+(`/app/auth/github/callback`, decision 361): it keeps the link in memory, scrubs the address bar and is
+excluded from analytics and replay (`lib/analyticsRoutes0120.ts`, `lib/telemetry/replayRoutes.ts`).
+Organization self-creation lives in `features/organizations/OrganizationSelfCreation.tsx`
+and `organizationSelfServiceApi.ts`: session-keyed creation-policy reads, creation/deletion
+and membership-governance mutations, with organization/auth cache invalidation. Staff
+membership/deletion controls reuse the governance endpoints.

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { KioskBootstrap, KioskLease, KioskWorkPackage } from "./kioskApi";
 import type { ReplayEnvelope, ReplayResult } from "./kioskReplayApi";
 
@@ -11,7 +12,7 @@ export const lease: KioskLease = {
 };
 export const work: KioskWorkPackage = {
   kind: "reviewed_request", id: 7, status: "accepted", display_label: "Request #7", person_display: "PRIVATE-HUMAN",
-  box: null, lines: [{ item_id: 5, label: "Drill", quantity: 1, returned: 0 }], return_resolutions: [],
+  box: null, lines: [{ item_id: 5, label: t`Drill`, quantity: 1, returned: 0 }], return_resolutions: [],
   expires_at: "2999-01-01T00:00:00Z", command_age_limit_seconds: 900, evidence_max_bytes: 4 * 1024 * 1024,
 };
 export function draft(requestId = 7): ReplayEnvelope {

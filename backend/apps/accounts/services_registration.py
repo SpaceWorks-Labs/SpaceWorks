@@ -1,5 +1,6 @@
 """Global member signup and email-verification challenge lifecycle."""
 
+from django.utils.translation import gettext_lazy
 import hashlib
 import hmac
 import logging
@@ -16,6 +17,7 @@ from rest_framework import serializers
 
 from apps.accounts import audit_events
 from apps.accounts.models import EmailVerificationChallenge, User
+from apps.accounts.staff_identity import PERSON_KIND, is_person, person_q
 from apps.integrations.email import send_email_verification_otp
 from apps.makerspaces.limits import reserve_platform_otp_quota
 
@@ -23,7 +25,7 @@ logger = logging.getLogger(__name__)
 RESEND_COOLDOWN = timedelta(seconds=60)
 CHALLENGE_TTL = timedelta(minutes=10)
 SELF_REGISTRATION_HOLD_TTL = timedelta(hours=24)
-GENERIC_CONFIRM_ERROR = "Invalid or expired verification code."
+GENERIC_CONFIRM_ERROR = gettext_lazy("Invalid or expired verification code.")
 
 
 class ChallengeCooldown(Exception):
@@ -46,14 +48,18 @@ def _digest(code):
     ).hexdigest()
 
 
-def issue_challenge(user):
-    """Persist a fresh challenge and attempt delivery without exposing delivery state."""
+def issue_challenge(user, requested_handle=None):
+    """Persist a fresh challenge and attempt delivery without exposing delivery state.
+
+    `requested_handle` is the username a NEW sign-up chose (M14); a resend carries the last one over.
+    """
     now = timezone.now()
     with transaction.atomic():
         locked_user = User.objects.select_for_update().get(pk=user.pk)
-        # Staff typed this address as contact data; it is not identity proof. Returning
-        # quietly preserves the endpoint's account-enumeration-safe acknowledgement.
-        if locked_user.is_walk_in:
+        # A walk-in's address is staff-typed contact data, not identity proof, and only a
+        # person verifies (a converted staff address included, #65). Returning quietly
+        # preserves the endpoint's account-enumeration-safe acknowledgement.
+        if not is_person(locked_user) or locked_user.is_walk_in:
             return None
         email = _normalize_email(locked_user.email)
         if EmailVerificationChallenge.objects.filter(
@@ -67,6 +73,10 @@ def issue_challenge(user):
             failed_attempts__lt=5,
             expires_at__gt=now,
         ).update(consumed_at=now)
+        if requested_handle is None:
+            requested_handle = (EmailVerificationChallenge.objects.filter(user=locked_user)
+                                .order_by("-created_at", "-pk").values_list("requested_handle", flat=True)
+                                .first() or "")
         code = _generate_otp()
         challenge = EmailVerificationChallenge.objects.create(
             user=locked_user,
@@ -74,6 +84,7 @@ def issue_challenge(user):
             code_digest=_digest(code),
             expires_at=now + CHALLENGE_TTL,
             last_sent_at=now,
+            requested_handle=requested_handle,
         )
         quota_reserved = reserve_platform_otp_quota()
     sent = False
@@ -108,6 +119,8 @@ def confirm_challenge(user, code):
     refused_walk_in = False
     with transaction.atomic():
         locked_user = User.objects.select_for_update().get(pk=user.pk)
+        if not is_person(locked_user):
+            raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
         email = _normalize_email(locked_user.email)
         # Resolve ONLY the caller's own newest usable challenge for their current email.
         # A foreign user has no matching row, so guessing IDs cannot burn a victim's attempts.
@@ -149,6 +162,10 @@ def confirm_challenge(user, code):
                     consumed_at__isnull=True,
                 ).update(consumed_at=now)
                 user.email_verified_at = now
+                if locked_user.self_registered_at is not None:
+                    # M14: the sign-up's username is claimed only now that the address is proven.
+                    from apps.makerspaces.public_profile_handles import claim_requested_handle
+                    claim_requested_handle(locked_user, challenge.requested_handle)
                 audit_events.record_auth_event(
                     locked_user,
                     "member.email_verified",
@@ -165,7 +182,7 @@ def confirm_challenge(user, code):
     return challenge
 
 
-def register_member(display_name, email, phone, password):
+def register_member(display_name, email, phone, password, handle=""):
     """Create a global member or quietly resend verification for an existing one."""
     email = _normalize_email(email)
     # Validate the password BEFORE the existence lookup so a weak password always
@@ -175,11 +192,17 @@ def register_member(display_name, email, phone, password):
     try:
         validate_password(password)
     except DjangoValidationError as exc:
-        raise serializers.ValidationError({"password": list(exc.messages)}) from exc
+        from apps.accounts.password_breach import error_body
+        raise serializers.ValidationError(error_body("password", exc)) from exc
+    # The chosen username's GRAMMAR is checked here, before the lookup, for the same reason; whether
+    # it is free is decided only when the email is confirmed (M14), so this request never claims it.
+    from apps.makerspaces.public_profile_handles import normalize_handle
+    handle = normalize_handle(handle) if handle else ""
+    created = False
     now = timezone.now()
     with transaction.atomic():
         user = (
-            User.objects.select_for_update().filter(email__iexact=email).first()
+            User.objects.select_for_update().filter(person_q(), email__iexact=email).first()
         )
         if _self_registration_is_releasable(user, now):
             _release_self_registration(user, now)
@@ -191,6 +214,7 @@ def register_member(display_name, email, phone, password):
                 with transaction.atomic():
                     user = User(
                         username=f"member_{uuid.uuid4().hex}",
+                        account_kind=PERSON_KIND,
                         display_name=display_name,
                         email=email,
                         phone=phone,
@@ -200,10 +224,14 @@ def register_member(display_name, email, phone, password):
                     )
                     user.set_password(password)
                     user.save()
+                    created = True
+                    # Decision 308 asks for the username at sign-up; SECURITY-REVIEW M14 moves the CLAIM
+                    # to email confirmation. Claiming it here would let anyone learn whether an address
+                    # is registered: "taken" afterwards only for a brand-new account.
             except IntegrityError:
                 user = (
                     User.objects.select_for_update()
-                    .filter(email__iexact=email)
+                    .filter(person_q(), email__iexact=email)
                     .first()
                 )
 
@@ -220,56 +248,12 @@ def register_member(display_name, email, phone, password):
     )
     if user and user.is_active and user.email_verified_at is None:
         try:
-            issue_challenge(user)
+            issue_challenge(user, handle if created else None)
         except ChallengeCooldown:
             pass
     return user
 
 
-def _self_registration_is_releasable(user, now):
-    """Whether a stale unverified signup may be discarded so its email is reusable.
-
-    An unproven email is not on its own proof that the record is abandoned. Releasing
-    DEACTIVATES the account, so it must be refused whenever the row carries any other
-    credential or authority -- a linked social identity, a verified phone number, or a
-    makerspace membership somebody granted. Post-P3-ii an unverified session is
-    verification-only and cannot reach the link endpoints, but migration 0022 stamps
-    `self_registered_at` onto pre-existing rows, and those predate that restriction. This
-    is the walk-in lesson in reverse: enumerate every signal that the record is a real
-    account BEFORE discarding it, rather than closing each path as someone points at it.
-    """
-    if not (
-        user
-        and user.self_registered_at is not None
-        and user.email_verified_at is None
-        and user.self_registered_at <= now - SELF_REGISTRATION_HOLD_TTL
-    ):
-        return False
-    from apps.accounts.models_social import SocialIdentity
-    from apps.makerspaces.models import MakerspaceMembership
-
-    if user.phone_e164 and user.phone_verified_at is not None:
-        return False
-    if SocialIdentity.objects.filter(user=user).exists():
-        return False
-    if MakerspaceMembership.objects.filter(user=user).exists():
-        return False
-    return True
-
-
-def _release_self_registration(user, now):
-    """Deactivate a stale unverified signup so its unproven email can be reused."""
-    email = _normalize_email(user.email)
-    EmailVerificationChallenge.objects.filter(
-        user=user, consumed_at__isnull=True
-    ).update(consumed_at=now)
-    user.email = ""
-    user.is_active = False
-    user.set_unusable_password()
-    user.save(update_fields=["email", "is_active", "password"])
-    audit_events.record_auth_event(
-        user,
-        "member.signup_expired",
-        target=user,
-        meta={"email_hash": audit_events.fingerprint(email)},
-    )
+from .services_registration_release import (  # noqa: E402 - re-export after the shared helpers
+    _release_self_registration, _self_registration_is_releasable,
+)

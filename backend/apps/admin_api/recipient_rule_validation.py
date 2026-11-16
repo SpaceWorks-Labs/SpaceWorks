@@ -4,7 +4,6 @@ from django.db.models import Q
 
 from apps.admin_api.recipient_rule_common import (
     RuleValidationError,
-    memberships_for,
 )
 from apps.integrations.models_recipients import NotificationRecipientKind
 from apps.inventory.models import Category
@@ -45,29 +44,9 @@ def _resolve_targets(makerspace, scope, *, delegated, reach):
 
 
 def _delegated_identities(makerspace, actor):
-    """The role and user ids a delegated actor may name, as the picker offers them.
+    from .recipient_rule_identities import delegated_identities
 
-    Validated as well as offered. An endpoint that accepts identities its own editor never
-    presents is the inverse of a list that 403s on click: the console shows the actor their
-    own role and their teammates, so the API must refuse anything else rather than let a
-    narrow grant direct another team's alerts at an arbitrary colleague.
-    """
-    membership = (
-        MakerspaceMembership.objects.filter(
-            makerspace=makerspace, user=actor, status="active"
-        )
-        .select_related("assigned_role")
-        .first()
-    )
-    role_id = membership.assigned_role_id if membership else None
-    if role_id is None:
-        return frozenset(), frozenset()
-    user_ids = frozenset(
-        memberships_for(makerspace, assigned_role_id=role_id).values_list(
-            "user_id", flat=True
-        )
-    )
-    return frozenset({role_id}), user_ids
+    return delegated_identities(makerspace, actor)
 
 
 def prepare_rules(makerspace, rules, *, delegated, reach, actor=None):
@@ -98,7 +77,7 @@ def prepare_rules(makerspace, rules, *, delegated, reach, actor=None):
                 raise RuleValidationError("A named recipient needs a user.")
             if role_id is not None:
                 raise RuleValidationError("A named recipient cannot also name a role.")
-            if not MakerspaceMembership.objects.filter(
+            if not MakerspaceMembership.both_tracks().filter(
                 makerspace=makerspace, user_id=user_id, status="active"
             ).exists():
                 raise RuleValidationError(

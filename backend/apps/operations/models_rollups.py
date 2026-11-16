@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -10,15 +11,15 @@ ALLOWED_DIMENSION_KEYS = frozenset({
 
 def validate_rollup_dimensions(value):
     if not isinstance(value, dict):
-        raise ValidationError("Rollup dimensions must be an object.")
+        raise ValidationError(gettext("Rollup dimensions must be an object."))
     unknown = set(value) - ALLOWED_DIMENSION_KEYS
     if unknown:
-        raise ValidationError(f"Unsupported rollup dimension keys: {sorted(unknown)}.")
+        raise ValidationError(gettext('Unsupported rollup dimension keys: {value}.').format(value=sorted(unknown)))
     for key, item in value.items():
         if isinstance(item, (dict, list)):
-            raise ValidationError(f"Rollup dimension {key!r} must be scalar.")
+            raise ValidationError(gettext('Rollup dimension {key!r} must be scalar.').format(key=key))
         if isinstance(item, str) and len(item) > 64:
-            raise ValidationError(f"Rollup dimension {key!r} is too long.")
+            raise ValidationError(gettext('Rollup dimension {key!r} is too long.').format(key=key))
 
 
 class ReportMetricRollup(models.Model):

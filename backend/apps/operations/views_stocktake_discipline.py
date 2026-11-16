@@ -1,10 +1,10 @@
+from django.utils.translation import gettext
 from collections.abc import Mapping
 
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, generics
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -24,14 +24,15 @@ def space_for(actor, pk):
     require_module(space, "stocktake")
     require_action(actor, rbac.Action.EDIT_INVENTORY, pk)
     if not feature_enabled(space, "stocktake.discipline"):
-        raise ValidationError({"detail": "Stocktake discipline is disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off("stocktake.discipline", "Stocktake discipline is turned off.")
     return space
 
 
 class StrictModelSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         if not isinstance(data, Mapping):
-            raise serializers.ValidationError("Expected an object.")
+            raise serializers.ValidationError(gettext("Expected an object."))
         unknown = set(data) - {name for name, field in self.fields.items() if not field.read_only}
         if unknown:
             raise serializers.ValidationError({name: "Unexpected field." for name in sorted(unknown)})
@@ -64,7 +65,7 @@ class ScheduleSerializer(StrictModelSerializer):
 
     def validate_container(self, value):
         if value and value.makerspace_id != self.context["space"].pk:
-            raise serializers.ValidationError("Container belongs to another makerspace.")
+            raise serializers.ValidationError(gettext("Container belongs to another makerspace."))
         return value
 
 

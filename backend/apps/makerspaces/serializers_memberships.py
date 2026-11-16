@@ -1,13 +1,22 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
 class MembershipRequestCreateSerializer(serializers.Serializer):
     application_answers = serializers.JSONField(required=False, allow_null=True)
+    # X8: a publicly listed plan the applicant chose (`membership.public_plans`), and
+    # X11: a multi-use invite link's code (`membership.admission_tools`).
+    plan_id = serializers.IntegerField(required=False, allow_null=True)
+    invite_code = serializers.CharField(required=False, allow_blank=True, max_length=64)
+    # Parity O-B1: the unit code from `?unit=CODE` (`membership.units`); inert while units are off.
+    unit_code = serializers.CharField(required=False, allow_blank=True, max_length=6)
+    # Parity O-B2: {phone, state_code, photo:{object_key, content_type, consent}} per the plan's `join_fields` modes.
+    join_fields = serializers.JSONField(required=False, allow_null=True)
     website = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     def validate_website(self, value):
         if value:
-            raise serializers.ValidationError("Invalid request.")
+            raise serializers.ValidationError(gettext("Invalid request."))
         return value
 
 
@@ -84,5 +93,5 @@ class WaiverPublishSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs.get("clear") and (not attrs.get("body") or not attrs.get("version")):
-            raise serializers.ValidationError("Body and version are required unless clearing the waiver.")
+            raise serializers.ValidationError(gettext("Body and version are required unless clearing the waiver."))
         return attrs

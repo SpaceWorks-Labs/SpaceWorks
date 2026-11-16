@@ -196,15 +196,15 @@ def reissue_approved_client(*, makerspace, record, delivery_store):
                 secret=existing.get_secret(),
             )
         return existing
-    delivery = delivery_store.get_or_prepare(
-        provenance=provenance,
-        kind="api_client",
-        target=record["source_client_ref"],
-        secret_factory=lambda: secrets.token_urlsafe(32),
-    )
-    raw_secret = delivery["secret"]
     with transaction.atomic():
         limits.check_quota(makerspace, "api_clients", adding=1)
+        delivery = delivery_store.get_or_prepare(
+            provenance=provenance,
+            kind="api_client",
+            target=record["source_client_ref"],
+            secret_factory=lambda: secrets.token_urlsafe(32),
+        )
+        raw_secret = delivery["secret"]
         client, _ = ApiClient.issue(
             label=record["label"],
             scopes=record["target_scopes"],

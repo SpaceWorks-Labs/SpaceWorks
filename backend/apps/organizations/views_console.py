@@ -5,6 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.reauthentication import require_recent_reauth
 from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.openapi_errors import errors
 from apps.organizations.models import Organization, OrganizationMakerspace
@@ -66,6 +67,7 @@ class OrganizationLinksView(APIView):
     @extend_schema(tags=["Admin organizations"], request=OrganizationLinkWriteSerializer,
                    responses={200: OrganizationLinkSerializer, **WRITE_ERRORS})
     def post(self, request, pk):
+        require_recent_reauth(request)
         serializer = OrganizationLinkWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         row = change_link(request.user, pk, **serializer.validated_data)
@@ -77,5 +79,6 @@ class OrganizationLinkDeleteView(APIView):
 
     @extend_schema(tags=["Admin organizations"], request=None, responses={204: None, **WRITE_ERRORS})
     def delete(self, request, pk, makerspace_id):
+        require_recent_reauth(request)
         change_link(request.user, pk, makerspace_id)
         return Response(status=204)

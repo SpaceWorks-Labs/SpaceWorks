@@ -20,10 +20,7 @@ from apps.events.models import EventRegistration
 from .tenant_dump_envelope import TENANT_DEKS_MEMBER
 from .tenant_dump_errors import TenantDumpTargetError
 from .tenant_dump_target_identities import FORBIDDEN_IDENTITY_ENV_NAMES
-from .tenant_dump_target_protocol import (
-    encode_challenge_request,
-    encode_install_request,
-)
+from .tenant_dump_target_protocol import encode_install_request
 
 
 HELPER_MODULE = "apps.tenant_migration.tenant_dump_target_helper"
@@ -71,19 +68,6 @@ def install_target_deks(
     if versions != expected:
         _refuse("The target DEK helper returned an invalid result.", "helper_result")
     return tuple(versions)
-
-
-def decrypt_target_recipient_challenge(identity, encrypted_challenge):
-    """Use the mounted identity in the bounded child; return only the public nonce."""
-    request = encode_challenge_request(
-        identity=identity,
-        ciphertext=encrypted_challenge,
-    )
-    result = _run_helper(request)
-    nonce = result.get("submitted_nonce") if isinstance(result, dict) else None
-    if not isinstance(nonce, str) or not nonce:
-        _refuse("The target recipient proof helper failed.", "challenge_decrypt")
-    return nonce
 
 
 def assert_source_cryptographic_state_absent():

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -6,16 +7,15 @@ from rest_framework.views import APIView
 
 from apps.admin_api.exports import csv_response, xlsx_response
 from apps.admin_api.permissions import IsActiveStaff
-from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.procurement import access
 from apps.procurement.models import ToBuyItem
 from apps.procurement.serializers import ToBuyItemSerializer
 from apps.procurement.views_common import (
-    MODULE_KEY,
     PROCUREMENT_ERROR_RESPONSES,
     STATUS_PARAM,
     apply_status_filter,
+    require_tobuy,
 )
 
 
@@ -39,12 +39,12 @@ class ToBuyExportView(APIView):
         },
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        require_module(get_object_or_404(Makerspace, pk=makerspace_id), MODULE_KEY)
+        require_tobuy(get_object_or_404(Makerspace, pk=makerspace_id))
         if not access.viewable_kinds(request.user, makerspace_id):
             raise PermissionDenied()
         fmt = request.query_params.get("format", "csv")
         if fmt not in {"csv", "xlsx"}:
-            raise ValidationError({"format": "Use csv or xlsx."})
+            raise ValidationError({"format": gettext("Use csv or xlsx.")})
         items = access.scope_items(ToBuyItem.objects.all(), request.user, makerspace_id)
         items = (
             apply_status_filter(items, request)

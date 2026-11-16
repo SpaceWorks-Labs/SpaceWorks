@@ -1,5 +1,7 @@
 from rest_framework.throttling import SimpleRateThrottle
 
+from config.throttles import FixedWindowRateThrottle
+
 
 class MemberImagePresignThrottle(SimpleRateThrottle):
     """Per-member cap on profile image presign requests.
@@ -40,3 +42,48 @@ class MemberImagePresignThrottle(SimpleRateThrottle):
         if user is None or not user.is_authenticated:
             return None
         return self.cache_format % {"scope": self.scope, "ident": user.pk}
+
+
+# --- Decision 336b/c (SECFIX-C): profile lookups and username checks. Exported for reuse.
+
+class _AccountKeyed(FixedWindowRateThrottle):
+    """Per signed-in account; anonymous requests are counted per IP only when ``per_ip``."""
+
+    per_ip = False
+
+    def get_cache_key(self, request, view):
+        user = getattr(request, "user", None)
+        if getattr(user, "is_authenticated", False) and getattr(user, "pk", None) is not None:
+            return self.cache_format % {"scope": self.scope, "ident": f"user:{user.pk}"}
+        if not self.per_ip:
+            return None
+        return self.cache_format % {"scope": self.scope, "ident": f"ip:{self.get_ident(request)}"}
+
+
+class ProfileLookupThrottle(_AccountKeyed):
+    """Signed-in profile reads by account id or handle (H5: no walking `/by-account/1..N/`).
+
+    Anonymous handle reads are left to the existing `public_read` budget: they see only
+    open-web-consented profiles, which are published on purpose.
+    """
+
+    scope = "profile_lookup"
+
+
+class ProfileLookupDailyThrottle(ProfileLookupThrottle):
+    scope = "profile_lookup_daily"
+
+
+class HandleCheckThrottle(_AccountKeyed):
+    """Username availability checks (M15): per account when signed in, otherwise per IP."""
+
+    scope = "handle_check"
+    per_ip = True
+
+
+class HandleCheckDailyThrottle(HandleCheckThrottle):
+    scope = "handle_check_daily"
+
+
+PROFILE_LOOKUP_THROTTLES = (ProfileLookupThrottle, ProfileLookupDailyThrottle)
+HANDLE_CHECK_THROTTLES = (HandleCheckThrottle, HandleCheckDailyThrottle)

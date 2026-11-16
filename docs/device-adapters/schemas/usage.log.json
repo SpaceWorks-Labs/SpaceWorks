@@ -1,0 +1,106 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/usage.log.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_minutes": {
+      "maximum": 100000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "binding_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "consumptions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "machine_consumable_id": {
+            "maximum": 2147483648,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "quantity": {
+            "maximum": 1000000000,
+            "minimum": 0.01,
+            "type": "number"
+          }
+        },
+        "required": [
+          "machine_consumable_id",
+          "quantity"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "ended_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "error_code": {
+      "format": "code",
+      "maxLength": 48,
+      "type": "string"
+    },
+    "idle_minutes": {
+      "maximum": 100000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "operation_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "completed",
+        "failed",
+        "stopped",
+        "timeout"
+      ],
+      "type": "string"
+    },
+    "session_id": {
+      "maximum": 4611686018427387904,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "started_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "stop_reason": {
+      "enum": [
+        "member",
+        "staff",
+        "device",
+        "max_length",
+        "idle_timeout",
+        "deadman",
+        "offline",
+        "interlock",
+        "closing"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "operation_id",
+    "binding_id",
+    "started_at",
+    "ended_at",
+    "active_minutes",
+    "idle_minutes",
+    "outcome"
+  ],
+  "type": "object"
+}

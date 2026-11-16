@@ -7,6 +7,7 @@ direct manager), and the SAME predicate filters the list — a row that lists an
 on click is the failure mode `docs/INVARIANTS.md` calls out under Machine scoping.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -16,6 +17,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
@@ -55,7 +57,7 @@ def _resolved_type(user, pk):
     return row
 
 
-class CertificationTypeListCreateView(APIView):
+class CertificationTypeListCreateView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
@@ -110,7 +112,7 @@ class CertificationTypeListCreateView(APIView):
             ),
         )
         if machine_type.makerspace_id not in (None, makerspace_id):
-            raise ValidationError({"machine_type": "Unknown machine type."})
+            raise ValidationError({"machine_type": gettext("Unknown machine type.")})
         if not access.can_create_machine(request.user, makerspace_id, machine_type):
             raise PermissionDenied()
         with certification_type_write():
@@ -129,7 +131,7 @@ class CertificationTypeListCreateView(APIView):
         )
 
 
-class CertificationTypeDetailView(APIView):
+class CertificationTypeDetailView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(

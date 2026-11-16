@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace
 from apps.operations import live
+from apps.operations.live_scope import redactor_for
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,8 @@ def subscribed_channels(user):
     """Every channel this session may hear: its own user channel plus each visible makerspace."""
     channels = [live.user_channel(user.pk)]
     # scope_by_makerspace is the one authority: superadmin => every makerspace, staff => their
-    # memberships (archived/hidden excluded), a plain member => none.
+    # memberships (archived excluded), a community member => their spaces; live_scope strips
+    # actor/target ids from hints outside the reader's areas.
     scoped = rbac.scope_by_makerspace(user, Makerspace.objects.all(), makerspace_field="pk")
     channels.extend(
         live.makerspace_channel(pk) for pk in scoped.order_by("pk").values_list("pk", flat=True)
@@ -41,7 +43,7 @@ def subscribed_channels(user):
     return channels
 
 
-def _event_stream(pubsub, deadline):
+def _event_stream(pubsub, deadline, redact=None):
     """Yield SSE frames until the deadline, a Redis failure or the client going away.
 
     A Redis outage mid-stream ends the stream *cleanly*: the generator returns, the
@@ -63,6 +65,11 @@ def _event_stream(pubsub, deadline):
                 data = message["data"]
                 if isinstance(data, bytes):
                     data = data.decode("utf-8", "replace")
+                if redact is not None:
+                    channel = message.get("channel") or ""
+                    if isinstance(channel, bytes):
+                        channel = channel.decode("utf-8", "replace")
+                    data = redact(channel, data)
                 yield f"event: change\ndata: {data}\n\n"
             if time.monotonic() - last_beat >= HEARTBEAT_SECONDS:
                 yield ": keep-alive\n\n"
@@ -137,7 +144,7 @@ class LiveStreamView(APIView):
             return _unavailable("Live updates are temporarily unavailable.")
         deadline = time.monotonic() + getattr(settings, "LIVE_MAX_STREAM_SECONDS", MAX_STREAM_SECONDS)
         response = StreamingHttpResponse(
-            _event_stream(pubsub, deadline), content_type="text/event-stream"
+            _event_stream(pubsub, deadline, redactor_for(request.user)), content_type="text/event-stream"
         )
         response["Cache-Control"] = "no-cache"
         response["X-Accel-Buffering"] = "no"

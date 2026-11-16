@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone as dt_timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -26,7 +27,7 @@ def _timezone(name):
         return ZoneInfo(name)
     except (ZoneInfoNotFoundError, ValueError, TypeError) as exc:
         raise serializers.ValidationError(
-            {"recurrence_timezone": "Use a valid IANA timezone name."},
+            {"recurrence_timezone": gettext("Use a valid IANA timezone name.")},
             code="invalid_recurrence_timezone",
         ) from exc
 
@@ -37,13 +38,13 @@ def normalize_rule(value):
         text = text[6:]
     if not text or "\n" in text or "\r" in text:
         raise serializers.ValidationError(
-            {"recurrence_rule": "Provide one RFC 5545 RRULE body."},
+            {"recurrence_rule": gettext("Provide one RFC 5545 RRULE body.")},
             code="invalid_recurrence_rule",
         )
     names = {part.partition("=")[0] for part in text.split(";")}
     if names & FORBIDDEN_PARTS or any("=" not in part for part in text.split(";")):
         raise serializers.ValidationError(
-            {"recurrence_rule": "DTSTART, RDATE, and EXDATE are not allowed."},
+            {"recurrence_rule": gettext("DTSTART, RDATE, and EXDATE are not allowed.")},
             code="invalid_recurrence_rule",
         )
     return text
@@ -64,7 +65,7 @@ def parsed_rule(*, rule, local_date, local_time, timezone_name):
         parsed = rrulestr(normalized, dtstart=anchor, forceset=False)
     except (TypeError, ValueError, OverflowError) as exc:
         raise serializers.ValidationError(
-            {"recurrence_rule": "This recurrence rule is invalid."},
+            {"recurrence_rule": gettext("This recurrence rule is invalid.")},
             code="invalid_recurrence_rule",
         ) from exc
     return normalized, parsed, anchor
@@ -80,13 +81,13 @@ def validate_series_recurrence(series):
     first = parsed.after(anchor, inc=True)
     if first is None:
         raise serializers.ValidationError(
-            {"recurrence_rule": "The rule does not produce an occurrence."},
+            {"recurrence_rule": gettext("The rule does not produce an occurrence.")},
             code="empty_recurrence_rule",
         )
     buffer = list(parsed.xafter(anchor, count=MAX_FUTURE_OCCURRENCES + 1, inc=True))
     if len(buffer) > MAX_FUTURE_OCCURRENCES and buffer[-1] - buffer[0] < MIN_EXTENSION_BUFFER:
         raise serializers.ValidationError(
-            {"recurrence_rule": "This rule is too dense for the hourly extension window."},
+            {"recurrence_rule": gettext("This rule is too dense for the hourly extension window.")},
             code="recurrence_too_dense",
         )
     return normalized
@@ -115,7 +116,7 @@ def occurrences(series, *, now):
         candidates += 1
         if candidates > MAX_CANDIDATES:
             raise serializers.ValidationError(
-                {"recurrence_rule": "The recurrence is too dense to expand safely."},
+                {"recurrence_rule": gettext("The recurrence is too dense to expand safely.")},
                 code="recurrence_candidate_limit",
             )
         local_value = local_value.astimezone(zone).replace(fold=0)

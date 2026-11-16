@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -7,18 +8,21 @@ from django.db import models
 from django.db.models import F, Q
 
 from apps.forms_schema.validation import validate_form_schema
+from apps.payments.money_model import MoneyDecimalField
 
 
 class BookableSpace(models.Model):
     class Kind(models.TextChoices):
-        DEV_ROOM = "dev_room", "Development room"
+        DEV_ROOM = "dev_room", gettext_noop("Development room")
         BENCH = "bench", "Bench"
-        MEETING = "meeting", "Meeting room"
+        MEETING = "meeting", gettext_noop("Meeting room")
         OTHER = "other", "Other"
+        # Machine time booking (`machines.time_booking`): one machine's time.
+        MACHINE = "machine", gettext_noop("Machine time")
 
     class ApprovalMode(models.TextChoices):
-        INSTANT = 'instant', 'Instant confirmation'
-        APPROVE = 'approve', 'Staff approval required'
+        INSTANT = 'instant', gettext_noop('Instant confirmation')
+        APPROVE = 'approve', gettext_noop('Staff approval required')
 
     public_token = models.UUIDField(
         default=uuid4,
@@ -60,14 +64,16 @@ class BookableSpace(models.Model):
         default=None,
         validators=[validate_form_schema],
     )
+    # Fixed field bindings/geometry only; no PII, artwork or credentials.
+    pass_template = models.JSONField(blank=True, default=dict)
     requester_notifications_enabled = models.BooleanField(
         null=True,
         blank=True,
         default=None,
     )
-    payment_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    payment_amount = MoneyDecimalField(
+        max_digits=13,
+        decimal_places=3,
         default=0,
         validators=[MinValueValidator(0)],
     )
@@ -101,6 +107,16 @@ class BookableSpace(models.Model):
     # `machines` free of a reverse accessor into an app it does not require.
     machine_type = models.ForeignKey(
         "machines.MachineType",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # Machine time booking (machines D1, MI-43; `machines.time_booking`): this bookable
+    # resource IS one machine's time. Same nullable, reverse-free shape as `machine_type`
+    # so bookings never requires machines; set, it also fixes `machine_type`.
+    machine = models.ForeignKey(
+        "machines.Machine",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -158,7 +174,7 @@ class BookableSpace(models.Model):
     def save(self, *args, **kwargs):
         self.name = (self.name or "").strip()
         if not self.name:
-            raise ValidationError({"name": "This field may not be blank."})
+            raise ValidationError({"name": gettext("This field may not be blank.")})
         if self.pk:
             original = type(self).objects.only("public_token", "makerspace_id").get(
                 pk=self.pk

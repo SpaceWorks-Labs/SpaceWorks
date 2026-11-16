@@ -1,0 +1,314 @@
+{
+  "contract_version": 3,
+  "enabled": false,
+  "page_size": 24,
+  "command": {
+    "operation_id": "11111111-1111-4111-8111-111111111111",
+    "expected_version": 4
+  },
+  "aggregate": {
+    "id": 81,
+    "event_id": 42,
+    "version": 5,
+    "state": "applied",
+    "allowed_actions": [
+      "withdraw"
+    ]
+  },
+  "list": {
+    "count": 0,
+    "next": null,
+    "previous": null,
+    "results": []
+  },
+  "job": {
+    "job_id": 901,
+    "state": "queued",
+    "status_url": "/api/v1/admin/events/42/badges/print-jobs/901/"
+  },
+  "errors": [
+    {
+      "status": 400,
+      "body": {
+        "code": "invalid_admission_input",
+        "detail": "Invalid admission input.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 401,
+      "body": {
+        "code": "not_authenticated",
+        "detail": "Not authenticated.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 403,
+      "body": {
+        "code": "permission_denied",
+        "detail": "Permission denied.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 404,
+      "body": {
+        "code": "not_found",
+        "detail": "Not found.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "stale_version",
+        "detail": "This item changed.",
+        "fields": {},
+        "current_version": 5
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "capacity_full",
+        "detail": "Capacity full.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "team_locked",
+        "detail": "Team locked.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "invalid_transition",
+        "detail": "Invalid transition.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "lease_lost",
+        "detail": "Lease lost.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "idempotency_conflict",
+        "detail": "Idempotency conflict.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 410,
+      "body": {
+        "code": "asset_expired",
+        "detail": "Asset expired.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 413,
+      "body": {
+        "code": "file_too_large",
+        "detail": "File too large.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 413,
+      "body": {
+        "code": "storage_budget_exceeded",
+        "detail": "Storage budget exceeded.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 416,
+      "body": {
+        "code": "invalid_range",
+        "detail": "Invalid range.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 423,
+      "body": {
+        "code": "source_frozen",
+        "detail": "Source frozen.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 423,
+      "body": {
+        "code": "pii_write_fenced",
+        "detail": "Pii write fenced.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 429,
+      "body": {
+        "code": "throttled",
+        "detail": "Throttled.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "code": "storage_unavailable",
+        "detail": "Storage unavailable.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "code": "saved_details_unavailable",
+        "detail": "Saved details unavailable.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "code": "account_key_unavailable",
+        "detail": "Account key unavailable.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "code": "event_pii_unavailable",
+        "detail": "Event pii unavailable.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "account_key_preparing",
+        "detail": "Account key preparing.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "account_key_changed",
+        "detail": "Account key changed.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "save_preparation_expired",
+        "detail": "Save preparation expired.",
+        "fields": {}
+      }
+    }
+  ],
+  "error_policy": {
+    "unknown_foreign_hidden": 404,
+    "expired_only_if_otherwise_authorized": true,
+    "unauthorized_current_version": false
+  },
+  "permissions": {
+    "existing": [
+      "edit_details",
+      "manage_registrations",
+      "manage_invitations",
+      "check_in",
+      "publish_schedule"
+    ],
+    "programme": [
+      "review_applications",
+      "manage_hackathon",
+      "manage_team",
+      "mentor_queue",
+      "judge",
+      "view_sponsor_track",
+      "manage_volunteers"
+    ],
+    "full_manager": null,
+    "view": "view",
+    "co_organizer_delegates_manage_team": false
+  },
+  "capabilities": {
+    "events.hackathons": {
+      "parent": "events",
+      "default": false
+    },
+    "events.mentoring": {
+      "parent": "events.hackathons",
+      "default": false
+    },
+    "events.mentor_rounds": {
+      "parent": "events.mentoring",
+      "default": false
+    },
+    "events.volunteering": {
+      "parent": "events",
+      "default": false
+    },
+    "events.project_gallery": {
+      "parent": "events.hackathons",
+      "default": false
+    }
+  },
+  "lock_order": [
+    "source_gate_lock_only_connection",
+    "pii_global_shared_fence",
+    "tenant_fences_ascending_id",
+    "account_fences_ascending_id",
+    "series_then_events_in_shipped_order_sorted",
+    "makerspaces_sorted_id",
+    "authority_memberships_grants",
+    "capacity_ticket_config_parent",
+    "domain_parents",
+    "children_sorted_pk"
+  ],
+  "account_only_lock_order": [
+    "source_gate",
+    "pii_global_fence",
+    "account_fences_sorted",
+    "user",
+    "account_key",
+    "details_assets_sorted"
+  ],
+  "forbidden_under_event_locks": [
+    "KMS",
+    "key_provisioning",
+    "User_row_locks",
+    "AccountPiiKey_row_locks",
+    "storage",
+    "scanner",
+    "ffprobe",
+    "chat",
+    "email"
+  ],
+  "receipt": {
+    "unique": [
+      "event",
+      "actor",
+      "operation_uuid"
+    ],
+    "retention_days": 30,
+    "header": "Idempotency-Key",
+    "changed_digest": "idempotency_conflict",
+    "credential_responses_persisted": false
+  }
+}

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -35,9 +36,9 @@ QR_MUTATION_ERRORS = {
                   {"type": "array", "items": {"type": "string"}}],
     }, description=description)
     for code, description in (
-        (400, "Invalid input, disabled module, or non-draft print batch."),
+        (400, "Invalid input, or non-draft print batch."),
         (401, "Authentication required."), (403, "QR management permission required."),
-        (404, "Batch or inventory target not in scope."), (423, "Tenant frozen for migration."),
+        (404, "Batch or inventory target not in scope, or the module is turned off."), (423, "Tenant frozen for migration."),
     )
 }
 
@@ -79,6 +80,11 @@ class QrPrintBatchDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return rbac.scope_by_action(self.request.user, rbac.Action.MANAGE_QR, QrPrintBatch.objects.prefetch_related("items__qr_code"))
 
+    def get_object(self):
+        batch = super().get_object()
+        require_module(batch.makerspace, "qr_print_batches")
+        return batch
+
 
 class QrPrintBatchItemView(APIView):
     permission_classes = [IsActiveStaff]
@@ -93,7 +99,7 @@ class QrPrintBatchItemView(APIView):
         serializer.is_valid(raise_exception=True)
         qr = get_object_or_404(QrCode, pk=serializer.validated_data["qr_code_id"], makerspace=batch.makerspace)
         if qr.target_type not in {QrCode.TargetType.PRODUCT, QrCode.TargetType.ASSET}:
-            raise ValidationError("QR print batches only accept inventory item or unit QR codes.")
+            raise ValidationError(gettext("QR print batches only accept inventory item or unit QR codes."))
         item = services.add_qr_to_batch(
             batch,
             qr,
@@ -155,11 +161,13 @@ class AssetQrView(APIView):
     def post(self, request, pk, *args, **kwargs):
         asset = get_object_or_404(rbac.scope_by_action(request.user, rbac.Action.MANAGE_QR, InventoryAsset.objects.all()), pk=pk)
         require_module(asset.makerspace, "asset_units")
-        qr, _ = QrCode.objects.get_or_create(
+        qr, created = QrCode.objects.get_or_create(
             makerspace=asset.makerspace,
             target_type=QrCode.TargetType.ASSET,
             target_id=asset.id,
             status=QrCode.Status.ACTIVE,
             defaults={"created_by": request.user},
         )
+        if created:  # A new active QR identity, audited like the tool and box QR paths.
+            audit.record(request.user, "qr.asset_created", makerspace=asset.makerspace, target=qr)
         return Response(QrCodeSerializer(qr).data, status=status.HTTP_201_CREATED)

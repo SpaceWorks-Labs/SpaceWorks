@@ -32,8 +32,6 @@ class NeedsFixShelfListView(generics.ListAPIView):
         makerspace_id = self.request.query_params.get("makerspace")
         if makerspace_id:
             qs = qs.filter(makerspace_id=makerspace_id)
-        else:
-            qs = rbac.hide_from_superadmin(self.request.user, qs, "makerspace_id")
         return qs.order_by("name")
 
 
@@ -62,7 +60,7 @@ class NeedsFixActionView(APIView):
             ),
             pk=pk,
         )
-        require_module(product.makerspace_id, "staff_admin")
+        require_module(product.makerspace_id, "public_inventory")
         require_action(request.user, rbac.Action.EDIT_INVENTORY, product.makerspace_id)
         serializer = NeedsFixActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -1,3 +1,6 @@
+import { t } from "@lingui/core/macro";
+import { ListRow, StatusPill, OverflowMenu } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -11,6 +14,7 @@ import {
   type ConsumableMeasurement,
   type MachineConsumable,
 } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function ConsumablesTab({ machineId, canEdit, canOperate }: {
   machineId: number;
@@ -65,12 +69,8 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
 
   return (
     <section className="grid gap-3">
-      <h3 className="title-section">Consumables</h3>
-      {consumables.isLoading ? <p className="text-sm text-muted">Loading consumables...</p> : null}
-      {consumables.error instanceof Error ? <p className="text-sm text-danger">{consumables.error.message}</p> : null}
-      {!consumables.isLoading && !consumables.error && !items.length ? (
-        <p className="text-sm text-muted">No consumables linked.</p>
-      ) : null}
+      <h3 className="title-section">{t`Consumables`}</h3>
+      <MachineTabContent query={consumables} resource={t`consumables`} empty={!items.length} message={t`No consumables linked. Add the first consumable.`}>
       <div className="grid gap-2">
         {items.map((item) => (
           <ConsumableRow key={item.id} item={item} machineId={machineId} canOperate={canOperate}
@@ -78,52 +78,47 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
             onLogged={refresh} />
         ))}
       </div>
+      </MachineTabContent>
       {canEdit ? (
         <form className="grid gap-2 rounded-md border border-line bg-bg p-3"
           onSubmit={(event) => { event.preventDefault(); link.mutate(); }}>
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="eyebrow grid gap-1">Measurement
-              <select className="desk-input" value={measurement}
+            <label className="eyebrow grid gap-1">{t`Measurement`}<select className="desk-input" value={measurement}
                 onChange={(event) => setMeasurement(event.target.value as ConsumableMeasurement)}>
-                <option value="count">Count (inventory)</option>
-                <option value="grams">Grams (local ledger)</option>
+                <option value="count">{t`Count (inventory)`}</option>
+                <option value="grams">{t`Grams (local ledger)`}</option>
               </select>
             </label>
             {measurement === "count" ? (
-              <label className="eyebrow grid gap-1">Inventory product
-                <select className="desk-input" value={productId} onChange={(event) => setProductId(event.target.value)} required>
-                  <option value="">Select a product</option>
+              <label className="eyebrow grid gap-1">{t`Inventory product`}<select className="desk-input" value={productId} onChange={(event) => setProductId(event.target.value)} required>
+                  <option value="">{t`Select a product`}</option>
                   {eligible.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.available} available)</option>)}
                 </select>
               </label>
             ) : (
-              <label className="eyebrow grid gap-1">Label
-                <input className="desk-input" maxLength={200} value={label}
+              <label className="eyebrow grid gap-1">{t`Label`}<input className="desk-input" maxLength={200} value={label}
                   onChange={(event) => setLabel(event.target.value)} required />
               </label>
             )}
             {measurement === "grams" ? (
-              <label className="eyebrow grid gap-1">Starting grams
-                <input className="desk-input" type="number" min="0" step="0.01" value={remaining}
+              <label className="eyebrow grid gap-1">{t`Starting grams`}<input className="desk-input" type="number" min="0" step="0.01" value={remaining}
                   onChange={(event) => setRemaining(event.target.value)} />
               </label>
             ) : null}
-            <label className="eyebrow grid gap-1">Low threshold ({measurement})
-              <input className="desk-input" type="number" min="0" step={measurement === "count" ? "1" : "0.01"}
+            <label className="eyebrow grid gap-1">{t`Low threshold (${measurement})`}<input className="desk-input" type="number" min="0" step={measurement === "count" ? "1" : "0.01"}
                 value={lowThreshold} onChange={(event) => setLowThreshold(event.target.value)} />
             </label>
           </div>
-          <label className="eyebrow grid gap-1">Note
-            <input className="desk-input" maxLength={255} value={note} onChange={(event) => setNote(event.target.value)} />
+          <label className="eyebrow grid gap-1">{t`Note`}<input className="desk-input" maxLength={255} value={note} onChange={(event) => setNote(event.target.value)} />
           </label>
           <button className="desk-button-primary justify-self-start" type="submit"
             disabled={link.isPending || (measurement === "count" ? !productId : !label.trim())}>
-            {link.isPending ? "Linking..." : measurement === "count" ? "Link product" : "Add grams consumable"}
+            {link.isPending ? <><BoxArt size={16} mono />{t`Linking...`}</> : measurement === "count" ? t`Link product` : t`Add grams consumable`}
           </button>
         </form>
       ) : null}
       {[link.error, unlink.error].map((error, index) => error instanceof Error
-        ? <p key={index} className="text-sm text-danger">{error.message}</p> : null)}
+        ? <p key={index} role="alert" className="text-sm text-danger">{error.message}</p> : null)}
     </section>
   );
 }
@@ -147,27 +142,21 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
   });
 
   return (
-    <div className="rounded-md border border-line bg-bg p-3 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <strong className="text-ink">{item.product_name ?? item.label}</strong>
-        <span className="font-mono text-muted">{item.measurement === "count" ? `${item.available ?? 0} available` : `${item.remaining ?? "0.00"} g remaining`}</span>
-        {isLow ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-xs font-medium text-warn-ink">Low</span> : null}
-        {canEdit ? <button className="desk-button-danger ml-auto" type="button" disabled={removing} onClick={onRemove}>Unlink</button> : null}
-      </div>
-      {item.note ? <p className="mt-1 text-muted">{item.note}</p> : null}
+    <div className="grid gap-3">
+      <ListRow title={item.product_name ?? item.label} meta={<>{item.measurement === "count" ? `${item.available ?? 0} available` : t`${item.remaining ?? "0.00"} g remaining`}{item.note ? <span className="block">{item.note}</span> : null}</>}
+        right={<div className="flex flex-wrap gap-2">{isLow ? <StatusPill label={t`Low`} tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: t`Unlink`, tone: "danger", disabled: removing, disabledReason: t`Wait for the current change to finish.`, onClick: onRemove }]} /> : null}</div>} />
       {canOperate ? (
         <form className="mt-2 flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); log.mutate(); }}>
-          <label className="eyebrow grid gap-1">Use ({item.measurement})
-            <input className="desk-input w-32" type="number" min={item.measurement === "count" ? "1" : "0.01"}
+          <label className="eyebrow grid gap-1">{t`Use (${item.measurement})`}<input className="desk-input w-32" type="number" min={item.measurement === "count" ? "1" : "0.01"}
               step={item.measurement === "count" ? "1" : "0.01"} value={quantity}
               onChange={(event) => setQuantity(event.target.value)} required />
           </label>
           <button className="desk-button-primary" type="submit" disabled={log.isPending || !quantity}>
-            {log.isPending ? "Logging..." : "Log consumption"}
+            {log.isPending ? <><BoxArt size={16} mono />{t`Logging...`}</> : t`Log consumption`}
           </button>
         </form>
       ) : null}
-      {log.error instanceof Error ? <p className="mt-2 text-sm text-danger">{log.error.message}</p> : null}
+      {log.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{log.error.message}</p> : null}
     </div>
   );
 }

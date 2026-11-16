@@ -23,6 +23,10 @@ def finalize_upload(evidence, max_bytes):
     """Validate and promote one staged upload without locking across S3 calls."""
     from apps.evidence import storage
 
+    from apps.makerspaces.models_storage_reservations import StorageQuotaReservation
+    reserved = StorageQuotaReservation.objects.filter(object_key=evidence.object_key).first()
+    if reserved is not None:
+        max_bytes = min(max_bytes, reserved.size_bytes)
     claim_token, completed = _claim(evidence.pk)
     if completed is not None:
         storage.delete_object(storage.staging_key(evidence.object_key))
@@ -58,22 +62,30 @@ def finalize_upload(evidence, max_bytes):
 
 
 def charge_storage_once(evidence, size):
-    """Charge PUT-backed evidence once, at the consuming workflow's DB boundary."""
-    if settings.STORAGE_PRESIGN_METHOD != "put":
-        return
-
-    from apps.makerspaces.limits import add_storage
+    """Charge finalized evidence once for either upload transport at the workflow boundary."""
+    from apps.makerspaces.limits import charge_upload
+    from apps.makerspaces.models import Makerspace
 
     with transaction.atomic():
-        state = EvidenceUploadFinalization.objects.select_for_update().get(
+        Makerspace.objects.select_for_update(no_key=True).get(pk=evidence.makerspace_id)
+        # Older and POST-backed evidence can reach this boundary with validated
+        # bytes but no sidecar. Lock the immutable identity before creating it,
+        # matching promotion/retention lock order and serializing first charges.
+        EvidencePhoto.objects.select_for_update().get(pk=evidence.pk)
+        state, _ = EvidenceUploadFinalization.objects.select_for_update().get_or_create(
             evidence_id=evidence.pk,
-            status=EvidenceUploadFinalization.Status.FINALIZED,
+            defaults={"status": EvidenceUploadFinalization.Status.FINALIZED,
+                      "size_bytes": size, "content_type": evidence.content_type},
         )
         if state.quota_charged:
             return
-        add_storage(evidence.makerspace, size)
+        charge_upload(evidence.makerspace, size, kind="evidence", object_key=evidence.object_key)  # decision 284: split evidence byte limit
         state.quota_charged = True
-        state.save(update_fields=["quota_charged", "updated_at"])
+        state.status = EvidenceUploadFinalization.Status.FINALIZED
+        state.size_bytes = size
+        state.content_type = state.content_type or evidence.content_type
+        state.claim_token = None
+        state.save(update_fields=["quota_charged", "status", "size_bytes", "content_type", "claim_token", "updated_at"])
 
 
 def _claim(evidence_id):

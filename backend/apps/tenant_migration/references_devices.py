@@ -27,6 +27,10 @@ from .references_7c import LABEL_SNAPSHOT_FIELDS
 
 SOURCE_LOCAL_SNAPSHOT_FIELDS |= LABEL_SNAPSHOT_FIELDS
 
+# Adapter access/usage rows keep the machine session they referred to as a source-local number.
+SOURCE_LOCAL_SNAPSHOT_FIELDS |= frozenset(
+    (label, "session_id_snapshot") for label in ("devices.AdapterAccessLog", "devices.AdapterUsageLog"))
+
 
 def validate_source_snapshot_fields(error_class, *, raw_scalar_references, exported_fields):
     for label, name in sorted(SOURCE_LOCAL_SNAPSHOT_FIELDS):
@@ -35,6 +39,8 @@ def validate_source_snapshot_fields(error_class, *, raw_scalar_references, expor
             raise error_class(f"source snapshot became a relation: {label}.{name}")
         if (label, name) in raw_scalar_references:
             raise error_class(f"source snapshot is declared as a remapped scalar: {label}.{name}")
+        if label not in exported_fields:
+            continue  # an omitted model (adapter rows) never travels, so there is nothing to carry verbatim
         if name not in exported_fields.get(label, "").split():
             raise error_class(f"source snapshot is not exported verbatim: {label}.{name}")
     actual = {

@@ -1,4 +1,5 @@
 """Atomic result receipt + command update: a matching replay cannot queue twice."""
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -30,12 +31,12 @@ def report_result(principal, label_id, *, operation_id, outcome, result_code, no
             label = LabelPrintCommand.objects.get(pk=previous.label_command_id)
             if (label.pk != label_id or label.device_id != device.pk
                     or previous.outcome != outcome or previous.result_code != result_code):
-                raise LabelConflict("Operation ID has already been used for another payload.")
+                raise LabelConflict(gettext("Operation ID has already been used for another payload."))
             # Key rotation/revocation must also invalidate cached result authority.
             if label.command.device_key_version != device.key_version:
-                raise PermissionDenied("Command belongs to a previous device key.")
+                raise PermissionDenied(gettext("Command belongs to a previous device key."))
             if label.command.status == DeviceCommand.Status.CANCELLED:
-                raise LabelConflict("Command has been cancelled.")
+                raise LabelConflict(gettext("Command has been cancelled."))
             return previous
         label, command = owned_label(device, label_id)
         if locked_batch(label, device) is None:
@@ -43,7 +44,7 @@ def report_result(principal, label_id, *, operation_id, outcome, result_code, no
             cancel_label(makerspace, device, command, label=label)
             error = LabelGone()
         elif label.result in [LabelPrintCommand.Result.SUCCEEDED, LabelPrintCommand.Result.FAILED]:
-            raise LabelConflict("A terminal command cannot accept another result.")
+            raise LabelConflict(gettext("A terminal command cannot accept another result."))
         else:
             result = outcome
             if outcome == LabelPrintCommand.Result.RETRYABLE_FAILED:

@@ -2,53 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { publicOrganizationKeys } from "../organizations/publicOrganizationsApi";
+import { refreshOrganizationAuthority } from "../organizations/refreshOrganizationAuthority";
 
-export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
-export type OrganizationSummary = {
-  id: number;
-  slug: string;
-  name: string;
-  governance_actions: string[];
-  granted_actions: string[];
-};
-export type OrganizationDetail = OrganizationSummary & {
-  description: string;
-  website: string;
-  logo_url: string | null;
-  public_profile_enabled: boolean;
-  is_active: boolean;
-  legal_name?: string;
-  registration_number?: string;
-  contact_email?: string;
-  billing_email?: string;
-};
-export type OrganizationMember = {
-  id: number;
-  user_id: number;
-  username: string;
-  display_name: string;
-  email: string;
-  status: "active" | "suspended";
-  governance_actions: string[];
-  granted_actions: string[];
-  created_at: string;
-  updated_at: string;
-};
-export type OrganizationInvitation = {
-  id: number;
-  organization_id: number;
-  governance_actions: string[];
-  granted_actions: string[];
-  expires_at: string;
-  redeemed_at: string | null;
-  revoked_at: string | null;
-  created_by_id: number | null;
-  redeemed_by_id: number | null;
-  created_at: string;
-  state: "active" | "expired" | "revoked" | "redeemed";
-};
-export type CreatedInvitation = OrganizationInvitation & { token: string; redeem_path: string };
-export type OrganizationLink = { id: number; makerspace_id: number; makerspace_name: string; relationship: "owner" | "manager" | "affiliate" };
+export type Page<T> = import("../publicPages/pageTypes").Collection<T>;
+export type OrganizationSummary = import("../../generated/api").OrganizationSummary;
+type ApiDetail = import("../../generated/api").OrganizationDetail;
+type SensitiveFields = "legal_name" | "registration_number" | "contact_email" | "billing_email";
+// The serializer omits these fields for readers without profile-governance authority.
+export type OrganizationDetail = Omit<ApiDetail, SensitiveFields> & Partial<Pick<ApiDetail, SensitiveFields>>;
+type Actions = { governance_actions: string[]; granted_actions: string[] };
+// These two model JSON fields are validated action lists; OpenAPI currently emits unknown.
+export type OrganizationMember = Omit<import("../../generated/api").OrganizationMembership, keyof Actions> & Actions;
+export type OrganizationInvitation = Omit<import("../../generated/api").OrganizationInvitation, keyof Actions> & Actions;
+export type CreatedInvitation = Omit<import("../../generated/api").OrganizationInvitationCreated, keyof Actions> & Actions;
+export type OrganizationLink = import("../../generated/api").OrganizationLink;
 
 export function useOrganizationLinks(id: number, enabled: boolean, page = 1) {
   return useQuery({ queryKey: ["organizations", id, "links", page], enabled,
@@ -63,25 +30,29 @@ export function useChangeOrganizationLink(id: number) {
   const client = useQueryClient();
   return useMutation({ mutationFn: ({ makerspace_id, relationship }: { makerspace_id: number; relationship?: OrganizationLink["relationship"] }) =>
     staffRequest(`/admin/organizations/${id}/makerspaces/${relationship ? "" : `${makerspace_id}/`}`, { method: relationship ? "POST" : "DELETE", ...(relationship ? { body: JSON.stringify({ makerspace_id, relationship }) } : {}) }),
-    onSuccess: () => Promise.all([
-      client.invalidateQueries({ queryKey: organizationKeys.all }),
-      client.invalidateQueries({ queryKey: ["public-organization"] }),
-      client.invalidateQueries({ queryKey: ["staff", "me"] }),
-    ]) });
+    onSuccess: () => refreshOrganizationAuthority(client) });
 }
+
+type OrganizationFilters = { page?: number; search?: string; active?: boolean };
 
 export const organizationKeys = {
   all: ["organizations"] as const,
-  list: (page: number) => ["organizations", "list", page] as const,
+  list: (filters: number | OrganizationFilters = {}) => {
+    const { page = 1, search = "", active }: OrganizationFilters = typeof filters === "number" ? { page: filters } : filters;
+    return ["organizations", "list", { page, search, active }] as const;
+  },
   detail: (id: number) => ["organizations", id] as const,
   memberships: (id: number, page: number) => ["organizations", id, "memberships", page] as const,
   invitations: (id: number, page: number) => ["organizations", id, "invitations", page] as const,
 };
 
-export function useOrganizations(page = 1) {
+export function useOrganizations(filters: number | OrganizationFilters = {}) {
+  const { page = 1, search = "", active }: OrganizationFilters = typeof filters === "number" ? { page: filters } : filters;
+  const params = new URLSearchParams({ page: String(page), search });
+  if (active !== undefined) params.set("active", String(active));
   return useQuery({
-    queryKey: organizationKeys.list(page),
-    queryFn: () => staffRequest<Page<OrganizationSummary>>(`/admin/organizations/?page=${page}`),
+    queryKey: organizationKeys.list({ page, search, active }),
+    queryFn: () => staffRequest<Page<OrganizationSummary>>(`/admin/organizations/?${params}`),
   });
 }
 
@@ -112,7 +83,7 @@ export function useOrganizationInvitations(id: number, page: number, enabled: bo
 export function useUpdateOrganization(id: number, slug: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Partial<Pick<OrganizationDetail, "name" | "slug" | "description" | "website" | "public_profile_enabled">>) =>
+    mutationFn: (payload: Partial<Pick<OrganizationDetail, "name" | "slug" | "description" | "website" | "public_profile_enabled" | "is_discoverable">>) =>
       staffRequest<OrganizationDetail>(`/admin/organizations/${id}/`, { method: "PATCH", body: JSON.stringify(payload) }),
     onSuccess: async (updated) => Promise.all([
       client.invalidateQueries({ queryKey: organizationKeys.all }),
@@ -126,7 +97,7 @@ export function useUpdateOrganization(id: number, slug: string) {
 export function useCreateOrganizationInvitation(id: number) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { governance_actions: string[]; granted_actions: string[]; expires_in_days: number }) =>
+    mutationFn: (payload: { governance_actions: string[]; granted_actions: string[]; expires_in_days: number; invitee_email?: string }) =>
       staffRequest<CreatedInvitation>(`/admin/organizations/${id}/invitations/`, { method: "POST", body: JSON.stringify(payload) }),
     onSuccess: () => client.invalidateQueries({ queryKey: ["organizations", id, "invitations"] }),
   });

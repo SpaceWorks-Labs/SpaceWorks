@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+{% if state.mode == "enforce" %}
+<p><strong>{% translate "Enforced." %}</strong> {% translate "The database refuses a query that reads or writes another makerspace's rows inside a request or job bound to a space. Views still scope every query through the Auth module; this is the backstop." %}</p>
+{% elif state.mode == "report" %}
+<p class="errornote"><strong>{% translate "Report-only." %}</strong> {% translate "The app connects to the database as the role that owns the tables, so cross-space rows are only reported (audit action" %} <code>{% translate "rls.report_only_violation" %}</code>{% translate "), never refused. Connect the app as a separate narrow role (the bundled compose" %} <code>{% translate "spaceworks_app" %}</code>{% translate ") to enforce it." %}</p>
+{% elif state.mode == "inactive" %}
+<p class="errornote"><strong>{% translate "Inactive." %}</strong> {% translate "The app connects as a superuser or a BYPASSRLS role, which PostgreSQL never restricts. Connect it as a narrow role that owns nothing, holds no BYPASSRLS and is not a superuser." %}</p>
+{% else %}
+<p class="errornote"><strong>{% translate "Off." %}</strong> <code>{% translate "TENANT_RLS_MODE=off" %}</code> {% translate "is set on this deployment." %}</p>
+{% endif %}
+<p>{% translate "Configured mode:" %} <code>{{ state.configured }}</code>.{% if state.contract %} {% translate "Runtime role" %} <code>{{ state.contract.role }}</code>{% blocktranslate trimmed with superuser=state.contract.superuser|yesno bypassrls=state.contract.bypassrls|yesno owns_scoped_tables=state.contract.owns_scoped_tables|yesno %}: superuser {{ superuser }}, BYPASSRLS {{ bypassrls }}, owns policed tables {{ owns_scoped_tables }}.{% endblocktranslate %}{% endif %}</p>
+<p>{% blocktranslate trimmed with scoped=scoped gaps=gaps|length %}Makerspace-scoped tables policed: {{ scoped }}. Missing or stale policies: {{ gaps }}{% endblocktranslate %}{% if gaps %} {% blocktranslate trimmed with gaps=gaps|join:", " %}({{ gaps }}; run{% endblocktranslate %} <code>{% translate "manage.py rls_sync" %}</code>){% endif %}.{% if unresolvable %} {% blocktranslate trimmed with unresolvable=unresolvable|length %}Uncompilable: {{ unresolvable }}.{% endblocktranslate %}{% endif %}</p>
+
+<h2>{% translate "Cross-space capabilities" %}</h2>
+<table><thead><tr><th scope="col">{% translate "Capability" %}</th><th scope="col">{% translate "Path" %}</th></tr></thead>
+<tbody>{% for name, text in capabilities %}<tr><td><code>{{ name }}</code></td><td>{{ text }}</td></tr>{% endfor %}</tbody></table>
+<h2>{% translate "Routes and tasks holding one" %}</h2>
+<table><thead><tr><th scope="col">{% translate "Route or task" %}</th><th scope="col">{% translate "Capability" %}</th></tr></thead>
+<tbody>{% for name, cap in routes %}<tr><td><code>{{ name }}</code></td><td>{{ cap }}</td></tr>{% endfor %}
+{% for name, cap in tasks %}<tr><td><code>{{ name }}</code></td><td>{{ cap }}</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

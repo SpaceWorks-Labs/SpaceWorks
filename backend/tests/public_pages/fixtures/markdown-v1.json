@@ -1,0 +1,47 @@
+[
+  {
+    "text": "Paragraphs\n\n- list\n**bold**",
+    "builder_valid": true,
+    "legacy_valid": true
+  },
+  {
+    "text": "[Link](https://example.test/path_(detail))",
+    "builder_valid": true,
+    "legacy_valid": true
+  },
+  {
+    "text": "[Old](http://example.test)",
+    "builder_valid": false,
+    "legacy_valid": true
+  },
+  {
+    "text": "<script>alert(1)</script>",
+    "builder_valid": false,
+    "legacy_valid": false
+  },
+  {
+    "text": "![Image](https://example.test/a.png)",
+    "builder_valid": false,
+    "legacy_valid": false
+  },
+  {
+    "text": "[Bad](java%73cript:alert(1))",
+    "builder_valid": false,
+    "legacy_valid": false
+  },
+  {
+    "text": "[Bad](https://user:secret@example.test)",
+    "builder_valid": false,
+    "legacy_valid": false
+  },
+  {
+    "text": "Punctuation [unfinished and ??",
+    "builder_valid": true,
+    "legacy_valid": true
+  },
+  {
+    "text": "[Bad](https://example.test/%0Ahidden)",
+    "builder_valid": false,
+    "legacy_valid": false
+  }
+]

@@ -83,9 +83,9 @@ Only a membership manager can satisfy an approval or invite-only decision gate.
 
 ## Notifications, scheduler and portability
 
-Application receipt uses the F3 MEMBERSHIP staff family. Decisions, awaiting-payment
+Application receipt uses the MEMBERSHIP staff notification family. Decisions, awaiting-payment
 and payment-due notices resolve the applicant's owned account address, respecting
-existing delivery gates and preferences. F1 schedules one deduplicated reminder one
+existing delivery gates and preferences. The reminder sweeper schedules one deduplicated reminder one
 day before expiry. Admission expiry and settlement retries run every five minutes in
 Celery beat and the beatless scheduler. Turning membership off suspends these flows.
 
@@ -98,10 +98,7 @@ the permanently core payment ledger.
 The applicant export takes an explicit tenant write boundary because its GET route
 records an audit row. A frozen source refuses it with a typed 423 response.
 
-## Coordinator verification
+## Verification
 
-Run the isolated database tests listed in `LANE-PROGRESS.md`, migration drift checks,
-OpenAPI generation and browser QA before integrating. The sandbox has no Django,
-Docker or Postgres access; database tests and migration execution were not performed.
-Frontend focused tests and TypeScript checking were run. No generated OpenAPI/client
-files were edited by this lane.
+Before changing this area, run the isolated database tests, the migration drift checks,
+OpenAPI generation and browser QA.

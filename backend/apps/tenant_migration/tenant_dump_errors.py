@@ -14,7 +14,7 @@ class TenantDumpVerificationError(TenantDumpBuildError):
 
 
 class TenantDumpCustodyError(TenantDumpBuildError):
-    """Tenant recipient custody cannot admit or publish this capture."""
+    """The one-shot tenant or platform recipients cannot seal this capture."""
 
 
 class TenantDumpPublicationRefused(TenantDumpBuildError):

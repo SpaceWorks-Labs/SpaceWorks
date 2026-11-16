@@ -6,11 +6,13 @@ window: the newest verified deployment copy, and the newest verified copy of eac
 tenant's run-produced archive, are never pruned from a destination. If backups stop
 running, retention must not quietly empty the only offsite copy left.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Exists, Max, OuterRef, Q
 from django.utils import timezone
 
 from apps.audit import services as audit
@@ -49,8 +51,8 @@ def protected_upload_ids():
 
 
 def prune_offsite_copies(limit=100):
-    protected = protected_upload_ids()
-    rows = list(
+    protected = () if bounded.active() else protected_upload_ids()
+    rows = (
         BackupDestinationUpload.objects.select_related("destination")
         .filter(
             state=BackupDestinationUpload.State.BYTES_VERIFIED,
@@ -59,8 +61,20 @@ def prune_offsite_copies(limit=100):
         .exclude(pk__in=protected)
         .order_by("expires_at", "pk")[:limit]
     )
+    if bounded.active():
+        rows.query.clear_limits()
+        newer = BackupDestinationUpload.objects.filter(
+            destination_id=OuterRef("destination_id"), scope_snapshot=OuterRef("scope_snapshot"),
+            state=BackupDestinationUpload.State.BYTES_VERIFIED,
+        ).filter(Q(makerspace_id_snapshot=OuterRef("makerspace_id_snapshot")) |
+                 Q(makerspace_id_snapshot__isnull=True, scope_snapshot="deployment"))
+        newer = newer.filter(Q(archive_completed_at_snapshot__gt=OuterRef("archive_completed_at_snapshot")) |
+            Q(archive_completed_at_snapshot=OuterRef("archive_completed_at_snapshot"), pk__gt=OuterRef("pk")))
+        rows = rows.annotate(has_newer=Exists(newer)).filter(has_newer=True)[:bounded.limit(limit)]
+    else:
+        rows = list(rows)
     pruned = 0
-    for row in rows:
+    for row in bounded.page(rows, "offsite-retention"):
         destination = row.destination
         try:
             s3 = offsite_client.destination_client(destination)

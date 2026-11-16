@@ -1,10 +1,11 @@
+from django.utils.translation import gettext_noop
 from django.db import models
 
 
 class RoadmapItem(models.Model):
     class Status(models.TextChoices):
         SHIPPED = "shipped", "Shipped"
-        IN_PROGRESS = "in_progress", "In progress"
+        IN_PROGRESS = "in_progress", gettext_noop("In progress")
         PLANNED = "planned", "Planned"
 
     title = models.CharField(max_length=200)

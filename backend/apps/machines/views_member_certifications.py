@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts import rbac
 from apps.makerspaces.guards import require_module
@@ -35,7 +36,7 @@ class MemberCertificationPageSerializer(serializers.Serializer):
     results = MemberCertificationSerializer(many=True)
 
 
-class MemberCertificationsView(APIView):
+class MemberCertificationsView(RetiredCertificationView, APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=["Member certifications"], summary="List your own certification history",

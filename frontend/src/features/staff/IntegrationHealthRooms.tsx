@@ -1,4 +1,6 @@
-import { Badge } from "../../components/ui";
+import { t } from "@lingui/core/macro";
+import { StatusPill as Badge } from "../../components/ui";
+import { channelLabel } from "../notifications/channelCatalog";
 
 // The backend has reported per-room delivery health since the destinations work
 // (`integrations/health.py` -> `chat_destinations`); the console never rendered it, so the
@@ -31,14 +33,6 @@ export type ChatDestinationsHealth = {
   legacy_deliveries?: Record<string, LegacyChannelHealth>;
 };
 
-const CHANNEL_LABELS: Record<string, string> = {
-  telegram: "Telegram",
-  slack: "Slack",
-  mattermost: "Mattermost",
-  discord: "Discord",
-  webhook: "Signed webhook",
-};
-
 export function IntegrationHealthRooms({
   section,
   formatTime,
@@ -49,14 +43,14 @@ export function IntegrationHealthRooms({
   const rooms = section?.destinations ?? [];
   const legacy = Object.entries(section?.legacy_deliveries ?? {});
   if (!rooms.length && !legacy.length) {
-    return <p className="text-sm text-muted">No chat or webhook rooms are configured.</p>;
+    return <p className="text-sm text-muted">{t`No chat or webhook rooms are configured.`}</p>;
   }
   return (
-    <ul className="grid gap-2 sm:grid-cols-2">
+    <ul className="grid gap-2 @lg:grid-cols-2">
       {rooms.map((room) => (
         <RoomRow
           key={`room-${room.id}`}
-          title={`${CHANNEL_LABELS[room.channel] ?? room.channel} - ${room.label}`}
+          title={`${channelLabel(room.channel)} - ${room.label}`}
           configured={room.configured}
           inactive={!room.is_active}
           health={room}
@@ -66,7 +60,7 @@ export function IntegrationHealthRooms({
       {legacy.map(([channel, health]) => (
         <RoomRow
           key={`legacy-${channel}`}
-          title={`${CHANNEL_LABELS[channel] ?? channel} (space-wide)`}
+          title={t`${channelLabel(channel)} (space-wide)`}
           configured={health.configured}
           inactive={false}
           health={health}
@@ -95,21 +89,21 @@ function RoomRow({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 break-words font-semibold text-ink">{title}</p>
         {!configured ? (
-          <Badge tone="neutral">Not configured</Badge>
+          <Badge label="" tone="neutral">{t`Not configured`}</Badge>
         ) : inactive ? (
-          <Badge tone="neutral">Inactive</Badge>
+          <Badge label="" tone="neutral">{t`Inactive`}</Badge>
         ) : health.failed > 0 ? (
-          <Badge tone="danger">{`${health.failed} failed`}</Badge>
+          <Badge label="" tone="danger">{`${health.failed} failed`}</Badge>
         ) : (
-          <Badge tone="success">Healthy</Badge>
+          <Badge label="" tone="success">{t`Healthy`}</Badge>
         )}
       </div>
       <p className="mt-1 text-xs text-muted">
-        {health.last_sent_at ? `Last sent ${formatTime(health.last_sent_at)}` : "Never sent"}
+        {health.last_sent_at ? t`Last sent ${formatTime(health.last_sent_at)}` : t`Never sent`}
       </p>
       {health.last_failure ? (
         <p className="mt-2 break-words text-danger">
-          {`Last delivery failed ${formatTime(health.last_failure.at)}: ${health.last_failure.error || "no detail"}`}
+          {t`Last delivery failed ${formatTime(health.last_failure.at)}: ${health.last_failure.error || "no detail"}`}
         </p>
       ) : null}
     </li>

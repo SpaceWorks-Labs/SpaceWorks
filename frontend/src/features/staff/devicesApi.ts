@@ -1,6 +1,6 @@
 import { staffRequest } from "../../lib/api";
 
-export type DeviceKind = "printer" | "label_printer" | "generic";
+export type DeviceKind = "printer" | "label_printer" | "generic" | "adapter";
 export type Device = {
   id: string; makerspace: number; name: string; kind: DeviceKind;
   status: "pending" | "active" | "revoked";

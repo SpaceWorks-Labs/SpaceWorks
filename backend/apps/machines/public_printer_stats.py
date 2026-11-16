@@ -8,7 +8,7 @@ from apps.inventory.public_image_storage import public_url
 from apps.machines.models import MachineServiceRequest, MachineUsageEntry
 from apps.machines.printer_capabilities import resolve_global_printer_type
 
-PRINT_STATUS_KEYS = ("pending", "accepted", "printing", "completed", "collected", "failed", "rejected")
+PRINT_STATUS_KEYS = ("pending", "accepted", "printing", "completed", "collected", "failed", "rejected", "cancelled")
 COMPLETED = (MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.COLLECTED)
 
 

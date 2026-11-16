@@ -7,11 +7,10 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.machines.models import MachineType
-from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.procurement.serializers import ToBuyMachineTypeOptionsSerializer
 from apps.procurement import access
-from apps.procurement.views_common import KIND_PARAM, MODULE_KEY, PROCUREMENT_ERROR_RESPONSES
+from apps.procurement.views_common import KIND_PARAM, PROCUREMENT_ERROR_RESPONSES, require_tobuy
 
 
 @extend_schema(tags=["Procurement"])
@@ -27,7 +26,7 @@ class ToBuyMachineTypeOptionsView(APIView):
         },
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        # Scoped like every other makerspace lookup, so an archived or hard-hidden space
+        # Scoped like every other makerspace lookup, so an archived space
         # is a 404 rather than a 403 that confirms it exists.
         queryset = Makerspace.objects.all()
         visibility = rbac.resolve_scope(request.user)
@@ -43,7 +42,7 @@ class ToBuyMachineTypeOptionsView(APIView):
             queryset,
             pk=makerspace_id,
         )
-        require_module(makerspace, MODULE_KEY)
+        require_tobuy(makerspace)
         if not access.can_use(request.user, makerspace_id):
             raise PermissionDenied()
         requested_kind = request.query_params.get("kind")

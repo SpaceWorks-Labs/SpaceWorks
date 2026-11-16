@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -13,7 +14,8 @@ from apps.hardware_requests.self_checkout_workflow import qr_has_active_loan
 from apps.inventory import availability
 from apps.inventory.availability import InsufficientStock
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
-from apps.makerspaces.guards import require_module
+from apps.makerspaces import limits
+from apps.makerspaces.guards import require_module_locked
 
 
 OUTSTANDING_REQUEST_STATUSES = (
@@ -26,18 +28,19 @@ def move_asset_across_makerspaces(
     user, qr, dest_makerspace_id, destination_product_id, new_name, request_target_id=None
 ):
     if qr.target_type != QrCode.TargetType.ASSET:
-        raise ValidationError("QR code does not target an asset.")
+        raise ValidationError(gettext("QR code does not target an asset."))
     if request_target_id is not None and int(request_target_id) != qr.target_id:
-        raise ValidationError("target_id must match the scanned asset.")
+        raise ValidationError(gettext("target_id must match the scanned asset."))
 
-    asset = InventoryAsset.objects.select_for_update().get(pk=qr.target_id)
     source_makerspace_id = qr.makerspace_id
     _require_transfer_permission(user, source_makerspace_id, dest_makerspace_id)
     if int(dest_makerspace_id) == source_makerspace_id:
-        raise ValidationError("Destination makerspace must be different.")
+        raise ValidationError(gettext("Destination makerspace must be different."))
 
-    dest_makerspace = require_module(dest_makerspace_id, "qr_management")
+    dest_makerspace = require_module_locked(dest_makerspace_id, "qr_management")
+    asset = InventoryAsset.objects.select_for_update().get(pk=qr.target_id)
     _guard_asset_is_movable(asset, qr)
+    limits.check_quota(dest_makerspace, "assets", adding=1)
 
     source_product_id = asset.product_id
     candidate_ids = _destination_candidate_ids(
@@ -66,7 +69,7 @@ def move_asset_across_makerspaces(
         .exclude(pk=asset.pk)
         .exists()
     ):
-        raise Conflict("An asset with that tag already exists in the destination makerspace.")
+        raise Conflict(gettext("An asset with that tag already exists in the destination makerspace."))
 
     asset.product = dest_product
     asset.makerspace = dest_makerspace
@@ -80,14 +83,14 @@ def move_asset_across_makerspaces(
                 "asset_tag", "updated_at",
             ])
     except IntegrityError as exc:
-        raise Conflict("An asset with that tag already exists in the destination makerspace.") from exc
+        raise Conflict(gettext("An asset with that tag already exists in the destination makerspace.")) from exc
 
     qr.makerspace = dest_makerspace
     try:
         with transaction.atomic():
             qr.save(update_fields=["makerspace", "updated_at"])
     except IntegrityError as exc:
-        raise Conflict("Target already has an active QR code.") from exc
+        raise Conflict(gettext("Target already has an active QR code.")) from exc
 
     try:
         availability.adjust_quantities(
@@ -144,21 +147,21 @@ def _require_transfer_permission(user, source_makerspace_id, dest_makerspace_id)
 
 def _guard_asset_is_movable(asset, qr):
     if asset.status != InventoryAsset.Status.AVAILABLE:
-        raise Conflict("asset is not available to move")
+        raise Conflict(gettext("asset is not available to move"))
     if qr_has_active_loan(qr.makerspace, qr):
-        raise Conflict("Cannot move an asset with an outstanding loan.")
+        raise Conflict(gettext("Cannot move an asset with an outstanding loan."))
     if HardwareRequestItemAsset.objects.filter(
         asset=asset,
         outcome=HardwareRequestItemAsset.Outcome.ISSUED,
         request_item__request__status__in=OUTSTANDING_REQUEST_STATUSES,
     ).exists():
-        raise Conflict("Cannot move an asset linked to an outstanding request.")
+        raise Conflict(gettext("Cannot move an asset linked to an outstanding request."))
     if PublicToolLoan.objects.filter(
         makerspace=qr.makerspace,
         status=PublicToolLoan.Status.CHECKED_OUT,
         asset_ids__contains=[asset.id],
     ).exists():
-        raise Conflict("Cannot move an asset with an outstanding loan.")
+        raise Conflict(gettext("Cannot move an asset with an outstanding loan."))
 
 
 def _destination_candidate_ids(product_name, dest_makerspace_id, destination_product_id):
@@ -184,18 +187,19 @@ def _resolve_destination_product(
             or product.tracking_mode != TrackingMode.INDIVIDUAL
             or product.is_archived
         ):
-            raise ValidationError("destination_product_id must be an unarchived individual product in the destination makerspace.")
+            raise ValidationError(gettext("destination_product_id must be an unarchived individual product in the destination makerspace."))
         return product
 
     candidates = [locked_products[pk] for pk in sorted(candidate_ids) if pk in locked_products]
     if any(product.tracking_mode == TrackingMode.QUANTITY for product in candidates):
-        raise Conflict("destination has a quantity-tracked product with this name")
+        raise Conflict(gettext("destination has a quantity-tracked product with this name"))
     individual = next(
         (product for product in candidates if product.tracking_mode == TrackingMode.INDIVIDUAL),
         None,
     )
     if individual is not None:
         return individual
+    limits.check_quota(dest_makerspace, "products", adding=1)
     return InventoryProduct.objects.create(
         makerspace=dest_makerspace,
         name=source_product.name,

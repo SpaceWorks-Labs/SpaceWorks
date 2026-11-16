@@ -1,0 +1,17 @@
+/* L22 receipts. The paper size itself is set by the @page rule ShopReceipt renders for the chosen format. */
+.shop-receipt-80 { width: 100%; max-width: 80mm; font-size: 0.8125rem; }
+.shop-receipt-a4 { width: 100%; max-width: 210mm; }
+.shop-receipt table { width: 100%; border-collapse: collapse; }
+.shop-receipt th, .shop-receipt td { padding: 0.25rem 0.25rem; vertical-align: top; }
+
+@media print {
+  body * { visibility: hidden !important; }
+  .shop-receipt, .shop-receipt * { visibility: visible !important; }
+  .shop-receipt {
+    position: absolute; left: 0; top: 0; margin: 0; padding: 0; border: 0 !important; box-shadow: none !important;
+    color: #000 !important; background: #fff !important;
+  }
+  .shop-receipt-80 { width: 72mm; max-width: none; font-size: 8.5pt; }
+  .shop-receipt-a4 { width: 100%; max-width: none; font-size: 10pt; }
+  .shop-receipt-no-print { display: none !important; }
+}

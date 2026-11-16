@@ -1,0 +1,8 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.door.opened.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {},
+  "required": [],
+  "type": "object"
+}

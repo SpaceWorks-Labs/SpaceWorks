@@ -1,8 +1,9 @@
 """Observe availability edges while the availability service holds the product lock."""
 
-from apps.integrations.destinations import NotificationScope
-from apps.integrations.email_templates_registry_helpers import bag
-from apps.integrations.notifications_research import bounded, notify_family, safe_adapter
+from django.db import transaction
+
+from .models import InventoryProduct
+from apps.integrations.notifications_research import safe_adapter
 
 
 def save_stock_change(product, *, update_fields):
@@ -18,16 +19,57 @@ def save_stock_change(product, *, update_fields):
     availability_rose(product, previous)
     if not product.is_archived and point > 0 and previous > point >= product.available_quantity:
         notify_low_stock(product)
+    if product.is_consumable and point > 0 and previous > product.available_quantity <= point:
+        _auto_restock(product)
+    if product.available_quantity > previous:
+        _waitlist(product)
+
+
+def _waitlist(product):
+    # The loan waitlist (loans.waitlist) offers freed units to the head of the line after
+    # commit; the hold it then takes goes back through this same module.
+    from apps.hardware_requests.waitlist import stock_rose
+    stock_rose(product)
+
+
+def _auto_restock(product):
+    # Lazy and runtime-gated: procurement is separable, inventory is core.
+    from apps.separability.registry import runtime_active
+    if not runtime_active("procurement"):
+        return
+    from apps.procurement.auto_drafts import schedule_product
+    schedule_product(product.pk)
 
 
 @safe_adapter
 def notify_low_stock(product):
-    # notify_family queues after commit and honors the F3 matrix, mutes and quotas.
-    # All labels/counts are snapshotted here; a later replenishment cannot rewrite it.
-    return notify_family(
-        product.makerspace, "stock", "low_stock",
-        bag(id=product.pk, name=bounded(product.name),
-            available=product.available_quantity, reorder_point=product.reorder_point),
-        data={"product_id": product.pk},
-        scope=NotificationScope(category=product.category_id),
+    from .notifications_p2 import notify_stock
+    return notify_stock(product)
+
+
+@transaction.atomic
+def observe_stock(makerspace, *, now):
+    from zoneinfo import ZoneInfo
+    from django.utils import timezone
+    from apps.audit.services import record
+    from apps.accounts import rbac
+    from .models_tracking import InventoryStockSnapshot
+
+    day = timezone.localdate(now, ZoneInfo(makerspace.timezone))
+    products = rbac.scope_for_scheduled_work(
+        InventoryProduct.objects.select_for_update().filter(is_archived=False),
+        makerspace_id=makerspace.pk,
     )
+    count = 0
+    for product in products.order_by("pk").iterator(chunk_size=500):
+        _, created = InventoryStockSnapshot.objects.get_or_create(
+            makerspace=makerspace, product=product, local_day=day,
+            defaults={"available": product.available_quantity, "issued": product.issued_quantity,
+                      "total": product.total_quantity, "out_of_stock": product.available_quantity <= 0,
+                      "below_reorder": product.available_quantity < product.reorder_point},
+        )
+        count += int(created)
+    if count:
+        record(None, "inventory.stock_observed", makerspace=makerspace,
+               meta={"local_day": day.isoformat(), "product_count": count})
+    return count

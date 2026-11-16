@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import { invalidateToastUndo, toast, toastSession } from "../../../components/ui/toastStore";
@@ -6,7 +7,7 @@ import type { AdminProduct } from "./InventoryPanelShared";
 const changing = new Set<number>();
 const undoKey = (id: number) => `inventory-archive:${id}`;
 async function change(product: AdminProduct, isArchived: boolean) {
-  if (changing.has(product.id)) throw new Error("This item's archive change is still in progress.");
+  if (changing.has(product.id)) throw new Error(t`This item's archive change is still in progress.`);
   changing.add(product.id);
   invalidateToastUndo(undoKey(product.id));
   const session = toastSession();

@@ -9,6 +9,7 @@ BAD_SIGNATURE = "bad signature"
 SKEW = "skew"
 NONCE_MISSING = "nonce missing"
 NONCE_REPLAY = "nonce replay"
+NONCE_STORE_UNAVAILABLE = "nonce store unavailable"
 SCOPE_DENIED = "scope denied"
 TARGET_UNRESOLVED = "target unresolved"
 TENANT_MISMATCH = "tenant mismatch"
@@ -21,6 +22,10 @@ logger = logging.getLogger("apps.inventory.middleware")
 
 def set_failure_reason(request, reason):
     setattr(request, _FAILURE_ATTRIBUTE, reason)
+
+
+def failure_reason(request):
+    return getattr(request, _FAILURE_ATTRIBUTE, None)
 
 
 def scope_failure_reason(observation, client):

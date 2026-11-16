@@ -1,5 +1,6 @@
 """Kernel-only public printer-service contract."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 import json
 
@@ -18,7 +19,7 @@ from apps.machines.models import (
 from apps.machines.print_uploads import validate_print_upload
 
 from apps.machines.printer_capabilities import resolve_global_printer_type
-from apps.machines.service_queue_position import queue_counts_for
+from apps.machines.service_queue_eta import queue_snapshot_for
 from apps.machines.service_storage import create_staged_queue_file, finalize_file
 from apps.machines.service_workflow import submit
 from apps.makerspaces import limits
@@ -72,12 +73,14 @@ def resolve_queue(makerspace, queue_id, *, compatibility=False):
         choices = list(rows[:2])
         row = choices[0] if len(choices) == 1 else None
     if row is None:
-        raise ValidationError({"queue_id": "Select an active public printer queue."})
+        raise ValidationError({"queue_id": gettext("Select an active public printer queue.")})
     return row
 
 
 def stage_upload(makerspace, data, actor, *, compatibility=False, legacy_presigner=None):
     queue = resolve_queue(makerspace, data.get("queue_id"), compatibility=compatibility)
+    from apps.machines.job_intake import require_member_job_gate
+    require_member_job_gate(makerspace, actor, queue.machine_type)
     try:
         content_type = validate_print_upload(data["kind"], data["filename"], data.get("content_type", ""))
     except ValueError as exc:
@@ -96,9 +99,9 @@ def _settings(value):
     try:
         value = json.loads(value)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({"preferred_settings": "Printer preferred settings must be an object."}) from exc
+        raise ValidationError({"preferred_settings": gettext("Printer preferred settings must be an object.")}) from exc
     if not isinstance(value, dict):
-        raise ValidationError({"preferred_settings": "Printer preferred settings must be an object."})
+        raise ValidationError({"preferred_settings": gettext("Printer preferred settings must be an object.")})
     return value
 
 
@@ -109,11 +112,11 @@ def _kernel_payload(queue, data):
             pk=data["consumable_pool_id"]
         ).first()
         if pool is None:
-            raise ValidationError({"consumable_pool_id": "Invalid or inactive consumable pool."})
+            raise ValidationError({"consumable_pool_id": gettext("Invalid or inactive consumable pool.")})
     from .material_catalogue import config_for, catalogue
     config = config_for(queue.makerspace, queue.machine_type)
     if not config["accepted_materials"] or not config["accepted_colours"]:
-        raise ValidationError({"material": "This makerspace has no accepted materials."})
+        raise ValidationError({"material": gettext("This makerspace has no accepted materials.")})
     material, color = data.get("material", ""), data.get("color", "")
     if pool:
         material, color = material or pool.material, color or pool.color
@@ -123,7 +126,7 @@ def _kernel_payload(queue, data):
         colours = next((row["colours"] for row in catalogue(queue.makerspace, queue.machine_type)
                         if row["name"].casefold() == material.casefold()), [])
         if not colours:
-            raise ValidationError({"material": "Select an accepted material with available colours."})
+            raise ValidationError({"material": gettext("Select an accepted material with available colours.")})
         color = colours[0]
     payload = {"requested_material": material, "requested_color": color, "quantity": data.get("quantity", 1), "project_brief": data.get("project_brief", "")}
     if no_preference:
@@ -140,26 +143,46 @@ def _kernel_payload(queue, data):
 def submit_request(makerspace, data, actor, *, compatibility=False):
     """Submit a kernel request and charge print quota exactly once."""
     queue = resolve_queue(makerspace, data.get("queue_id"), compatibility=compatibility)
+    # The 3D-printer form is an alias of the uniform job intake (#140): same gate and limit.
+    from apps.machines.job_intake import require_member_job_gate
+    require_member_job_gate(makerspace, actor, queue.machine_type)
     with transaction.atomic():
+        from apps.makerspaces.models import Makerspace
+        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
+        require_member_job_gate(makerspace, actor, queue.machine_type)
+        from apps.machines.job_rules import require_open_job_limit
+        require_open_job_limit(makerspace, actor, queue.machine_type)
         limits.check_quota(makerspace, "print", adding=1)
         row = submit(queue, actor, member=actor, actor=actor, requester_name=actor.display_name or "", contact_email=actor.email or "", contact_phone=actor.phone or "", title=data["title"], description=data.get("description", ""), source_link=data.get("source_link", ""), capability_payload=_kernel_payload(queue, data), certification_override_reason=data.get("certification_override_reason", ""))
         ids = data.get("file_ids") or []
         files = list(ServiceRequestFile.objects.select_for_update().filter(id__in=ids, makerspace=makerspace, queue=queue, owner_user_id=actor.pk, service_request__isnull=True, attached_at__isnull=True))
         if len(files) != len(set(ids)):
-            raise ValidationError({"file_ids": "One or more uploads are invalid, already used, or not yours."})
+            raise ValidationError({"file_ids": gettext("One or more uploads are invalid, already used, or not yours.")})
         for file in files:
             finalize_file(row, file_id=file.pk, actor=actor)
         return row
 
 
 class _StatusProjection:
-    def __init__(self, row):
+    """PII-free facts only; ``_row`` lets the shared snapshot read the raw status."""
+
+    def __init__(self, row, *, printer=True):
+        self._row = row
         self.id = row.pk
         self.public_token = row.public_token
-        self.status = "printing" if row.status == MachineServiceRequest.Status.IN_PROGRESS else row.status
+        printing = printer and row.status == MachineServiceRequest.Status.IN_PROGRESS
+        self.status = "printing" if printing else row.status
         self.title, self.created_at = row.title, row.created_at
         self.accepted_at, self.started_at, self.completed_at = row.accepted_at, row.started_at, row.completed_at
+        self.cancelled_at = row.cancelled_at
         self.estimated_minutes = row.estimated_minutes
+
+
+def status_context(rows):
+    """One request-scoped snapshot for ETA plus the legacy count fields (they agree)."""
+    snapshot = queue_snapshot_for(rows)
+    counts = {row.pk: snapshot.counts(row) for row in rows}
+    return {"queue_snapshot": snapshot, "queue_counts": {pk: value for pk, value in counts.items() if value}}
 
 
 def public_status(public_token):
@@ -177,12 +200,14 @@ def public_status(public_token):
     if kernel is None:
         raise NotFound()
     # The token names a job in ONE makerspace, so the module and edition gates are that
-    # space's: a space that uninstalled `printing` stops publishing job status, exactly
-    # like every other printer surface (module off = 400, edition-hidden = 404).
+    # space's: a space that switched off `machine_service` (which the retired `printing`
+    # module folded into, 340b) stops publishing job status, exactly like every other
+    # printer surface (module off and edition-hidden both answer 404).
     from apps.makerspaces.editions import require_public_surface
     from apps.makerspaces.platform import module_enabled
 
-    require_public_surface("printing")
-    if not module_enabled(kernel.makerspace, "printing"):
-        raise ValidationError({"module": "printing is disabled for this makerspace."})
-    return _StatusProjection(kernel), queue_counts_for([kernel])
+    require_public_surface("machine_service")
+    if not module_enabled(kernel.makerspace, "machine_service"):
+        from apps.makerspaces.guards import module_off
+        raise module_off("machine_service")
+    return _StatusProjection(kernel), status_context([kernel])

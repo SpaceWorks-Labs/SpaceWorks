@@ -6,6 +6,7 @@ import hmac
 from pathlib import Path
 import re
 
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
@@ -75,16 +76,29 @@ def prepare_import_objects(archive, job):
             raise ImportVerificationError(
                 f"Staged object checksum mismatch for {record['source_key']!r}."
             )
-        TenantImportObject.objects.create(
-            job=job,
-            bucket_kind=record["bucket_kind"],
-            source_key=record["source_key"],
-            staging_key=staging_key,
-            target_key=target_key,
-            size=record["size"],
-            sha256=record["sha256"],
-            content_type=record["content_type"],
-        )
+        try:
+            # A savepoint keeps a concurrent unique-key loss from breaking the
+            # caller's transaction before we can adopt the winning journal row.
+            with transaction.atomic():
+                TenantImportObject.objects.create(
+                    job=job,
+                    bucket_kind=record["bucket_kind"],
+                    source_key=record["source_key"],
+                    staging_key=staging_key,
+                    target_key=target_key,
+                    size=record["size"],
+                    sha256=record["sha256"],
+                    content_type=record["content_type"],
+                )
+        except IntegrityError:
+            existing = TenantImportObject.objects.filter(
+                job=job, source_key=record["source_key"],
+            ).first()
+            if existing is None:
+                raise
+            _require_matching_journal(existing, record)
+            target_key = existing.target_key
+            changed = target_key != existing.source_key
         target_keys[record["source_key"]] = target_key
         regenerated += changed
         if changed:

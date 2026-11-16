@@ -6,11 +6,13 @@ the raw stored metadata can no longer leave through this endpoint. The four adde
 are additive.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.audit.areas import AREAS
 from apps.audit.presentation import project
 
 MAX_AUDIT_RANGE = timedelta(days=366)
@@ -79,12 +81,18 @@ class AuditLogFilterSerializer(serializers.Serializer):
         start, end = attrs.get("start"), attrs.get("end")
         if start is not None and end is not None:
             if end <= start:
-                raise serializers.ValidationError({"end": "end must be after start."})
+                raise serializers.ValidationError({"end": gettext("end must be after start.")})
             if end - start > MAX_AUDIT_RANGE:
                 raise serializers.ValidationError(
-                    {"end": "The date range is limited to 366 days."}
+                    {"end": gettext("The date range is limited to 366 days.")}
                 )
         return attrs
+
+
+class AuditLogListFilterSerializer(AuditLogFilterSerializer):
+    """The list's filters plus ``area`` (#219e). Not inherited by verification requests."""
+
+    area = serializers.ChoiceField(choices=AREAS, required=False)
 
 
 def apply_audit_filters(queryset, filters):

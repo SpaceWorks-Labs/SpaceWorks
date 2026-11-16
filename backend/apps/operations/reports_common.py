@@ -1,5 +1,5 @@
 from django.db.models import QuerySet
-from django.db.models.functions import TruncDay, TruncMonth
+from django.db.models.functions import TruncDay, TruncMonth, TruncWeek
 
 from apps.makerspaces.models import Makerspace
 from apps.operations.report_scope import scoped_ids
@@ -22,8 +22,22 @@ def apply_range(queryset, field, date_range):
     return queryset
 
 
-def period_expression(field, grain):
-    return TruncMonth(field) if grain == "month" else TruncDay(field)
+def period_expression(field, grain, *, makerspace=None, tzinfo=None):
+    """SQL calendar bucket; ISO weeks start Monday in the selected local zone.
+
+    Subject/membership builders pass their already-resolved makerspace. Deployment
+    builders must group/query each tenant separately when local dates are required.
+    Other callers retain Django's current timezone, as before.
+    """
+    if makerspace is not None:
+        from zoneinfo import ZoneInfo
+        if tzinfo is not None:
+            raise ValueError("Pass makerspace or tzinfo, not both.")
+        tzinfo = ZoneInfo(makerspace.timezone)
+    trunc = {"day": TruncDay, "week": TruncWeek, "month": TruncMonth}.get(grain)
+    if trunc is None:
+        raise ValueError("Unsupported report grain.")
+    return trunc(field, tzinfo=tzinfo)
 
 
 def limited(records, limit):

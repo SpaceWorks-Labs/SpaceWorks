@@ -1,4 +1,5 @@
 """Invitation requests: public submission and the staff invite/decline decisions."""
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -37,7 +38,7 @@ def _lock_pending(row):
         "makerspace"
     ).get(pk=row.pk)
     if locked.status != InvitationRequest.Status.PENDING:
-        raise ValidationError({"detail": "This invitation request has already been handled."})
+        raise ValidationError({"detail": gettext("This invitation request has already been handled.")})
     return locked
 
 

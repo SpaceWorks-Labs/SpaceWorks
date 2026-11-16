@@ -1,0 +1,91 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { staffRequest } from "../../lib/api";
+import { MakerspaceThemeSettings } from "./MakerspaceThemeSettings";
+import type { Makerspace } from "./StaffPanels";
+
+vi.mock("../../lib/api", () => ({ staffRequest: vi.fn() }));
+afterEach(() => { vi.clearAllMocks(); });
+const space = { id: 7, name: "Brand", slug: "brand" } as Makerspace;
+
+function show() {
+  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  const invalidate = vi.spyOn(client, "invalidateQueries");
+  render(<QueryClientProvider client={client}><MakerspaceThemeSettings makerspace={space} settings={{ ...space, theme_config: { mode: "system", primary_color: "", accent_color: "", logo_url: "https://example.com/logo.png" } }} loading={false} /></QueryClientProvider>);
+  return invalidate;
+}
+
+it("previews safe derived colours and rejects only malformed input", () => {
+  show();
+  fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#777" } });
+  expect(screen.getByText(/Text must reach 4.5:1 and component edges 3:1/)).toBeVisible();
+  expect(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-on-brand")).toBe("0 0 0");
+  expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("tab", { name: "All" }));
+  for (const surface of ["member", "public"]) for (const mode of ["light", "dark"]) expect(screen.getByTestId(`preview-${surface}-${mode}`).style.getPropertyValue("--color-brand")).toBe("119 119 119");
+  fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "red" } });
+  expect(screen.getByText(/primary_color must be a #RGB/)).toBeVisible();
+  expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+  expect(screen.getByText(/Enter a #RGB or #RRGGBB colour/)).toBeVisible();
+  expect(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-brand")).toBe("0 110 99");
+});
+
+it("prevents a write before settings are available", () => {
+  const client = new QueryClient();
+  render(<QueryClientProvider client={client}><MakerspaceThemeSettings makerspace={space} loading={false} /></QueryClientProvider>);
+  fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#004400" } });
+  expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+  expect(staffRequest).not.toHaveBeenCalled();
+});
+
+it("can repair malformed restored colour values without crashing the editor", () => {
+  const client = new QueryClient();
+  render(<QueryClientProvider client={client}><MakerspaceThemeSettings makerspace={space} settings={{ ...space, theme_config: { primary_color: 0, accent_color: false } as unknown as Record<string, string> }} loading={false} /></QueryClientProvider>);
+  expect(screen.getByLabelText("Primary fill")).toHaveValue("");
+  expect(screen.getByLabelText("Link colour seed")).toHaveValue("");
+  fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#004400" } });
+  expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+});
+
+it("invalidates the submitted tenant when a save finishes after tenant navigation", async () => {
+  let finish!: (result: Makerspace) => void;
+  vi.mocked(staffRequest).mockImplementation(() => new Promise((resolve) => { finish = resolve as typeof finish; }));
+  const client = new QueryClient();
+  const invalidate = vi.spyOn(client, "invalidateQueries");
+  const view = render(<QueryClientProvider client={client}><MakerspaceThemeSettings makerspace={space} settings={space} loading={false} /></QueryClientProvider>);
+  fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#004400" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() => expect(staffRequest).toHaveBeenCalled());
+  const other = { ...space, id: 8, slug: "other" };
+  view.rerender(<QueryClientProvider client={client}><MakerspaceThemeSettings makerspace={other} settings={other} loading={false} /></QueryClientProvider>);
+  await act(async () => finish(space));
+  await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["tenant-bootstrap", "brand"] }));
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["makerspace-settings", 7] });
+  expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["tenant-bootstrap", "other"] });
+  expect(screen.getByLabelText("Primary fill")).toHaveValue("");
+});
+
+it("saves valid colours, preserves unrelated theme keys and refreshes public/member caches", async () => {
+  vi.mocked(staffRequest).mockResolvedValue(space);
+  const invalidate = show();
+  fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#004400" } });
+  expect(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-on-brand")).toBe("255 244 232");
+  expect(screen.getByTestId("preview-member-dark").style.getPropertyValue("--color-brand-ink")).not.toBe(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-brand-ink"));
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() => expect(staffRequest).toHaveBeenCalledWith("/admin/makerspaces/7", {
+    method: "PATCH", body: JSON.stringify({ theme_config: { mode: "system", primary_color: "#004400", accent_color: "", logo_url: "https://example.com/logo.png" } }),
+  }));
+  await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["tenant-bootstrap", "brand"] }));
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["member"] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["runtime-tenant-origin"] });
+});
+
+it("shows backend write failures and keeps the entered palette", async () => {
+  vi.mocked(staffRequest).mockRejectedValue(new Error("Permission denied"));
+  show();
+  fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#004400" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  expect(await screen.findByText("Permission denied")).toBeVisible();
+  expect(screen.getByLabelText("Primary fill")).toHaveValue("#004400");
+});

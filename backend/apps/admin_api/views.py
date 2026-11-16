@@ -10,6 +10,7 @@ from apps.admin_api.views_bulk import (
     BulkImportPreviewView,
     _rows_from_upload,
 )
+from apps.admin_api.views_bulk_sheet import BulkImportSheetView
 from apps.admin_api.views_categories import CategoryDetailView, CategoryListCreateView
 from apps.admin_api.views_inventory import (
     InventoryDetailView,
@@ -49,16 +50,11 @@ from apps.audit.views_verification import (
     AuditVerificationDetailView,
     AuditVerificationListCreateView,
 )
-from apps.audit.views_verification import (
-    AuditVerificationDetailView,
-    AuditVerificationListCreateView,
-)
 from apps.admin_api.views_users import (
     AuditLogListView,
     AuditLogPagination,
     MembershipRevokeView,
     StaffListCreateView,
-    _can_create_staff_role,
 )
 
 __all__ = [
@@ -73,6 +69,7 @@ __all__ = [
     "BulkImportJobDetailView",
     "BulkImportJobListCreateView",
     "BulkImportPreviewView",
+    "BulkImportSheetView",
     "CategoryDetailView",
     "CategoryListCreateView",
     "EmailLogListView",
@@ -104,7 +101,6 @@ __all__ = [
     "StaffListCreateView",
     "_assert_box_in_makerspace",
     "_assert_category_in_makerspace",
-    "_can_create_staff_role",
     "_global_role_for_membership",
     "_rows_from_upload",
 ]

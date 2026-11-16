@@ -1,6 +1,8 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
-import { Modal } from "../../../components/ui/Modal";
+import { QuantityStepper } from "../QuantityStepper";
+import { RequestFlowDialog } from "./RequestFlowDialog";
 import type { HardwareRequest } from "./Queues";
 
 type AcceptedQuantity = { item_id: number; quantity: number };
@@ -32,19 +34,8 @@ export function AcceptRequestModal({
   const canSubmit = total > 0 && !pending;
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={row ? `Accept request #${row.id}` : "Accept request"}
-      footer={
-        <div className="desk-actions flex flex-wrap justify-end gap-2">
-          <button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button>
-          <button className="desk-button-success" type="submit" form="accept-request-form" disabled={!canSubmit}>
-            {pending ? "Accepting..." : "Accept"}
-          </button>
-        </div>
-      }
-    >
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? t`Accept request #${row.id}` : t`Accept request`}
+      formId="accept-request-form" pending={pending} canSubmit={canSubmit} submitLabel={t`Accept`}>
       <form
         id="accept-request-form"
         className="grid gap-3"
@@ -55,36 +46,32 @@ export function AcceptRequestModal({
         }}
       >
         <p className="text-sm text-muted">
-          Accept up to the requested quantity per item. Lower a line to approve a partial amount; set 0 to
-          decline that item (at least one unit must be accepted).
-        </p>
+          {t`Accept up to the requested quantity per item. Lower a line to approve a partial amount; set 0 to decline that item (at least one unit must be accepted).`}</p>
         <div className="grid gap-2">
           {row?.items.map((item) => (
-            <label key={item.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-line p-2 text-sm">
-              <span className="min-w-0">
+            <label key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-3 text-sm">
+              <span className="min-w-0 flex-1 basis-40 break-words">
                 <span className="font-medium text-ink">{item.product_name}</span>
                 <span className="ml-1 text-xs text-muted">(requested {item.requested_quantity})</span>
               </span>
-              <input
-                className="desk-input w-24"
-                type="number"
-                min={0}
+              <QuantityStepper
+                label={item.product_name}
                 max={item.requested_quantity}
                 value={quantities[item.id] ?? item.requested_quantity}
                 disabled={pending}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setQuantities((current) => ({
                     ...current,
-                    [item.id]: Math.max(0, Math.min(item.requested_quantity, Number(event.target.value) || 0)),
+                    [item.id]: Math.max(0, Math.min(item.requested_quantity, Number(value) || 0)),
                   }))
                 }
               />
             </label>
           ))}
         </div>
-        {total === 0 ? <p className="text-xs text-warn-ink">Accept at least one unit, or reject the request instead.</p> : null}
-        {error ? <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p> : null}
+        {total === 0 ? <p className="text-xs text-warn-ink">{t`Accept at least one unit, or reject the request instead.`}</p> : null}
+        {error ? <p className="rounded-md border border-danger-line bg-panel px-3 py-2 text-sm text-danger">{error}</p> : null}
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 }

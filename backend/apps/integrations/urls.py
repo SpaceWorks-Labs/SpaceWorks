@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 from apps.integrations import views
 from apps.integrations.views_push import PushDeviceDetailView, PushDeviceListCreateView
@@ -7,8 +7,10 @@ from .suppression_views import SuppressionDeleteView, SuppressionListView
 
 from .bounce_webhooks import BounceWebhookView
 from .views_timing import TimingPolicyView
+from .notification_media_views import NotificationMediaView
 
 urlpatterns = [
+    path("notification-media/<str:token>.pdf", NotificationMediaView.as_view(), name="notification-media"),
     path("makerspace/<int:makerspace_id>/bounce-webhook", BounceWebhookView.as_view(), name="email-bounce-webhook"),
     path("makerspace/<int:makerspace_id>/timing-policy", TimingPolicyView.as_view(), name="notification-timing-policy"),
     path("makerspace/<int:makerspace_id>/delivery-logs", DeliveryLogListView.as_view(), name="delivery-log-list"),
@@ -21,3 +23,18 @@ urlpatterns = [
     path("telegram/webhook", views.TelegramWebhookView.as_view(), name="telegram-webhook"),
     path("telegram/test-alert", views.TelegramTestAlertView.as_view(), name="telegram-test-alert"),
 ]
+
+from .notification_contract_urls import urlpatterns as contract_urls
+urlpatterns += contract_urls
+from .notification_wa_meta_urls import urlpatterns as wa_meta_urls
+urlpatterns += wa_meta_urls
+urlpatterns += [path("", include("apps.integrations.notification_wa_twilio_urls"))]
+urlpatterns += [path("", include("apps.integrations.notification_slack_urls"))]
+urlpatterns += [path("", include("apps.integrations.notification_mattermost_urls"))]
+urlpatterns += [path("", include("apps.integrations.notification_discord_urls"))]
+
+from django.conf import settings
+if settings.EMAIL_PROVIDER_WEBHOOKS_ENABLED:
+    from .views_bounce import ProviderBounceWebhookView
+    urlpatterns += [path("makerspace/<int:makerspace_id>/email-provider-webhook/<str:provider>",
+                         ProviderBounceWebhookView.as_view(), name="email-provider-webhook")]

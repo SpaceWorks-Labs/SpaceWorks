@@ -1,0 +1,68 @@
+{
+  "kind": "organization",
+  "owner_id": 17,
+  "version": 0,
+  "handle": null,
+  "draft_revision_id": null,
+  "published_revision_id": null,
+  "document": {
+    "schema_version": 1,
+    "cover_mode": "inherit",
+    "cover_asset_id": null,
+    "accent_choice": "inherit",
+    "sections": [
+      {
+        "id": "4aa691a1-46b2-533b-ac4b-dafb10bad9b8",
+        "type": "linked_makerspaces",
+        "enabled": true,
+        "payload": {
+          "title": ""
+        }
+      },
+      {
+        "id": "1549b1e7-0f7f-554b-92ee-b8d787f34cc0",
+        "type": "organization_events",
+        "enabled": true,
+        "payload": {
+          "title": ""
+        }
+      }
+    ]
+  },
+  "assets": [],
+  "capabilities": {
+    "allowed_section_types": [
+      "about",
+      "gallery",
+      "team",
+      "testimonials",
+      "links",
+      "location",
+      "linked_makerspaces",
+      "organization_events"
+    ],
+    "required_groups": [
+      "linked_makerspaces",
+      "organization_events"
+    ],
+    "palette_choices": {
+      "inherit": null,
+      "maker_teal": "#006E63",
+      "workshop_orange": "#FF7447",
+      "citron": "#DFFF8F",
+      "sky_blue": "#B5CDFF",
+      "warm_yellow": "#FFD447"
+    },
+    "can_edit_details": true,
+    "can_publish": true,
+    "suggested_handle": "example-org"
+  },
+  "limits": {
+    "document_bytes": 131072,
+    "sections": 20,
+    "assets": 50,
+    "upload_bytes": 5000000,
+    "storage_bytes": 100000000,
+    "storage_bytes_used": 0
+  }
+}

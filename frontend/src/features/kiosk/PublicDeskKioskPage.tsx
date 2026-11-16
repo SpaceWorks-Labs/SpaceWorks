@@ -1,33 +1,46 @@
-import { Link, useParams } from "react-router-dom";
-
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
+import { t } from "@lingui/core/macro";
+import { useParams } from "react-router-dom";
+import { KioskLayout } from "../../components/layouts";
+import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
+import { SupportContact } from "../../components/SupportContact";
 import { ThemeToggle } from "../../components/ThemeToggle";
+import { Card } from "../../components/ui";
+import { RouteLink } from "../../components/ui/RouteLink";
+import { useTenant, useTenantPath } from "../../lib/tenant";
 import { PublicInventoryPage } from "../inventory/PublicInventoryPage";
+import { formatSlug } from "../inventory/PublicInventoryParts";
+import { publicPageChrome } from "../inventory/PublicPageChrome";
+import { useTenantBootstrap } from "../inventory/usePublicInventory";
+import { useStationConnection } from "./useStationConnection";
 
-// The central `/kiosk/:slug` public desk, moved unchanged from staff/PlatformApps.tsx.
-// Station kiosks live at `/m/:slug/kiosk/:stationToken` and never collide with it.
+// The catalogue owns its data and cart; the desk supplies the makerspace identity, programme links,
+// support contact and a two-column stage: products on the left, the request panel on the right.
 export function PublicDeskKioskPage() {
-  const { slug } = useParams();
-  return (
-    <main className="desk-shell">
-      <header className="border-b border-line bg-panel">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
-          <div>
-            <SpaceWorksBadge className="mb-3" />
-            <p className="text-xs font-semibold tracking-wide text-accent-ink">
-              Kiosk
-            </p>
-            <h1 className="text-xl font-bold text-ink">Public desk</h1>
-          </div>
-          <div className="flex gap-2">
+  const { slug = "" } = useParams();
+  const tenant = useTenant();
+  const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug;
+  const online = useStationConnection();
+  const path = useTenantPath(makerspaceSlug);
+  const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
+  const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
+  const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
+  const logo = bootstrap?.branding.logo_url || bootstrap?.makerspace.logo_url;
+  // Inventory is embedded here; Home and the other enabled destinations remain one tap away.
+  const programme = publicPageChrome(makerspaceSlug, name, path, bootstrap).nav.filter(link => link.href !== path("inventory"));
+  return <PublicInventoryPage embedded={({ body, request }) => <KioskLayout
+    context={{ identity: logo ? { kind: "image", src: logo } : undefined, title: name, subtitle: t`Public desk · Browse inventory and request what you need.` }}
+    connection={{ online }} mode="work" state={{ status: "ready" }}
+    headerActions={[...programme, { label: t`Open inventory`, href: path("inventory") }]}
+    work={{ capture: <div className="text-lg [&_button]:min-h-12 [&_a]:min-h-12">{body}</div>,
+      panel: <div className="grid gap-6"><Card>{request}</Card>
+        <Card className="grid gap-4">
+          <h2 className="title-panel">{t`Need a hand?`}</h2>
+          <SupportContact branding={bootstrap?.branding} />
+          <MakerspaceMapLink makerspace={bootstrap?.makerspace} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <ThemeToggle />
-            <Link className="desk-button" to={`/m/${slug ?? ""}`}>
-              Catalog
-            </Link>
+            <RouteLink className="text-sm text-muted underline hover:text-ink" href="/admin">{t`Staff sign-in`}</RouteLink>
           </div>
-        </div>
-      </header>
-      <PublicInventoryPage />
-    </main>
-  );
+        </Card>
+      </div> }} />} />;
 }

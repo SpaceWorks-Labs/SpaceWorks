@@ -12,6 +12,6 @@ from apps.payments.checkout_provider import (  # noqa: F401
     _application_fee_amount, _checkout_idempotency_key, _create_checkout_via_provider, _value,
 )
 from apps.payments.checkout_coordination import (  # noqa: F401
-    PaymentRailConflict, _ConnectAccountCannotCharge, _claim_provider,
+    PaymentRailConflict, PaymentSettlementPending, _ConnectAccountCannotCharge, _claim_provider,
     _create_checkout_safely, _create_checkout_url_atomic, create_checkout, create_checkout_url,
 )

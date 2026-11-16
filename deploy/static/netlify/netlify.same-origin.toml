@@ -1,0 +1,21 @@
+# Same-origin Netlify recipe (cloud plan, lane F): proxies /api through the edge function to your backend.
+# To use it, copy this file over the repository-root netlify.toml. The root file keeps the original
+# split-deployment setup (VITE_API_URL set in the Netlify UI) unchanged.
+
+[build]
+  base = "."
+  command = "npm --prefix frontend ci && npm --prefix frontend run build"
+  publish = "frontend/dist"
+  edge_functions = "deploy/static/netlify"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_API_URL = "/api"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Edge guard runs before redirects/assets. Set PUBLIC_ORIGIN, BACKEND_ORIGIN
+# and exact CSP origins as runtime environment variables in Netlify.

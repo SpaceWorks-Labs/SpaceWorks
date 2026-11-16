@@ -7,7 +7,6 @@ this tuple at import time, so a bad entry still fails the process at startup.
 
 from apps.makerspaces.module_registry_definitions import (
     FEATURE_PARENT,
-    GROUP_BACKUP,
     GROUP_BOOKINGS,
     GROUP_DEVICES,
     GROUP_EVENTS,
@@ -40,18 +39,15 @@ MODULES = (
         frontend_workflows=("staff_inventory", "staff_requests"),
     ),
     ModuleDefinition(
-        "guest_handover", "Guest handover", "Guest admin issue and return of accepted requests.",
+        "guest_handover", "Guest handover", "Front-desk issue and return of accepted requests.",
         "hardware_requests", GUARD, group=GROUP_INVENTORY, frontend_workflows=("guest_issue", "guest_return"),
     ),
     ModuleDefinition(
         "scanner", "Scanner", "QR scanning and container lookup.",
         "boxes", GUARD, group=GROUP_INVENTORY, is_core=True, frontend_workflows=("qr_scan", "container_lookup"),
     ),
-    ModuleDefinition(
-        "printing", "Printing", "3D print request queue (a machine type under `machines`).",
-        "machines", GUARD, group=GROUP_MACHINES, requires_modules=("machine_service",),
-        frontend_workflows=("printing_requests",),
-    ),
+    # `printing` (the 3D print queue) is a retired module key (decision 340b): the printer
+    # queue is one machine type inside `machine_service`, read through `module_aliases`.
     ModuleDefinition(
         "telegram", "Telegram", "Per-makerspace Telegram group alerts (outbound only).",
         "integrations", GUARD, group=GROUP_NOTIFICATIONS, frontend_workflows=("telegram_alerts",),
@@ -93,10 +89,8 @@ MODULES = (
         "asset_units", "Asset units", "Individually QR-tracked asset units.",
         "inventory", GUARD, group=GROUP_INVENTORY, frontend_workflows=("asset_qr_generation",),
     ),
-    ModuleDefinition(
-        "procurement", "Procurement", "To-buy list and procurement tracking.",
-        "procurement", GUARD, group=GROUP_INVENTORY, frontend_workflows=("procurement",),
-    ),
+    # `procurement` and `maintenance` are retired module keys (#97, #128 C-9): To-Buy,
+    # maintenance and warranty are per-parent capabilities (capability_definitions_r2_l17).
     ModuleDefinition(
         "machines", "Machines", "Machine registry, operators, usage and documents.",
         "machines", GUARD, group=GROUP_MACHINES,
@@ -107,31 +101,38 @@ MODULES = (
     # is installed, an active account otherwise. Declaring the dependency instead would
     # have dragged `membership` into the default profile and silently made ordinary
     # borrowing require a membership, waiver and presence session.
+    # Every machine type's service requests, the 3D print queue included (decision 340b
+    # folded the retired `printing` module in). `printing_requests` stays a workflow name
+    # here so clients that look for it keep finding it.
     ModuleDefinition(
-        "machine_service", "Machine service", "Machine service requests and consoles.",
-        "machines", GUARD, group=GROUP_MACHINES, frontend_workflows=("machine_service_requests",),
+        "machine_service", "Machine service",
+        "Service requests for every machine type (3D printers, lasers, CNC, cutters) and their consoles.",
+        "machines", GUARD, group=GROUP_MACHINES,
+        frontend_workflows=("machine_service_requests", "printing_requests"),
     ),
     # Members remain the default audience. Opt-in account/invite registration makes
     # an events-only tenant usable without the community membership module.
     ModuleDefinition(
         "events", "Events", "Event scheduling and registrations.", "events", GUARD, group=GROUP_EVENTS,
     ),
+    ModuleDefinition(
+        "event_reimbursements", "Event reimbursements",
+        "Optional event support requests, finite budgets, awards and expense claims.",
+        "event_reimbursements", GUARD, group=GROUP_EVENTS, requires_modules=("events",),
+    ),
     # Self-booking accepts active accounts and preserves existing membership waivers.
     ModuleDefinition(
         "bookings", "Bookings", "Resource booking and public self-booking.", "bookings", GUARD, group=GROUP_BOOKINGS,
     ),
-    ModuleDefinition(
-        "maintenance", "Maintenance", "Maintenance schedules and work orders.",
-        "maintenance", GUARD, group=GROUP_MACHINES, frontend_workflows=("maintenance",),
-        requires_modules=("machines",),
-    ),
-    # Community enrolment/content. Identity may instead come from external OIDC or a
-    # staff-created person record, so this deliberately does not depend on
-    # `member_accounts`.
+    # Community enrolment/content. Requires `member_accounts` (owner decision #91): a
+    # space without member accounts has accounts for staff only (#80), so it has no
+    # members to admit. Installing membership pulls member accounts in, and
+    # makerspaces/0108 repaired spaces that already had membership without them.
     ModuleDefinition(
         "membership", "Membership",
         "Join requests, referrals, verification, profiles, directory and member activity.",
         "makerspaces", FEATURE_PARENT, group=GROUP_MEMBERSHIP,
+        requires_modules=("member_accounts",),
     ),
     # Enforced by apps/notifications, but historically absent from the defaults list --
     # which is why the /control/ matrix (choices = defaults + keys already on the row)
@@ -146,6 +147,14 @@ MODULES = (
     # `integrations.dispatch.EMAIL_MODULE_EXEMPT`.
     ModuleDefinition(
         "email", "Email", "Outbound email delivery for this makerspace.",
+        "integrations", GUARD, group=GROUP_NOTIFICATIONS,
+    ),
+    ModuleDefinition(
+        "sms", "SMS", "Consented member and staff SMS notifications; OTP is independent.",
+        "integrations", GUARD, group=GROUP_NOTIFICATIONS,
+    ),
+    ModuleDefinition(
+        "whatsapp", "WhatsApp", "Consented member and staff approved-template WhatsApp notifications.",
         "integrations", GUARD, group=GROUP_NOTIFICATIONS,
     ),
     # One module key per notification channel, so a makerspace ships only the channels
@@ -179,7 +188,8 @@ MODULES = (
     ),
     # These keys were placed in front of substrate that had been unconditionally
     # present, so migration 0057 backfilled their original keys onto existing rows.
-    # Member accounts, mobile and payments are opt-in for new makerspaces.
+    # Mobile and payments are opt-in for new makerspaces. Member accounts became
+    # default-on with owner decisions #80/#91 (see its definition).
     # `payments` stopped being default-enabled when charge TRACKING moved out from under
     # it (`charges.*`): the module now buys only the online rail, which a cash-taking
     # space needs none of. Existing rows keep the key from migration 0057.
@@ -191,11 +201,14 @@ MODULES = (
     # Member-facing identity only. Staff authentication is core RBAC and is NEVER gated:
     # a space that could switch off its own staff logins could not be administered, the
     # same reasoning that keeps the staff roster ungated by `membership` (plan A7).
+    # Default-on since #80/#91: WITHOUT it a space takes account-less requests and
+    # self-checkout from anyone with a confirmed email, so that mode must be a deliberate
+    # untick, never the accident of a bare create. Setup always installed it already.
     ModuleDefinition(
         "member_accounts", "Member accounts",
         "Member self-service enrolment and built-in password, social and phone login. "
         "Staff sign-in, external identity and member-domain APIs are unaffected.",
-        "accounts", GUARD, group=GROUP_MEMBERSHIP,
+        "accounts", GUARD, group=GROUP_MEMBERSHIP, default_enabled=True,
     ),
     # Requires `member_accounts` because a device grant is bound to a user: without
     # member accounts there is no identity for a phone to hold.
@@ -204,17 +217,6 @@ MODULES = (
         "Attested device sessions, native push and the in-app payment sheet.",
         "accounts", GUARD, group=GROUP_MOBILE,
         requires_modules=("member_accounts",),
-    ),
-    # Makerspace-facing backup surfaces only (apps/backup/module_gate.py). Default-on
-    # because the key was placed in front of surfaces every makerspace already had, and
-    # recipient enrolment is the only road to a superadmin-off makerspace; backup/0026
-    # backfills it onto existing rows. Deployment backup and restore are platform and
-    # are never gated by it, and recipient compromise always works.
-    ModuleDefinition(
-        "backup", "Backup & custody",
-        "Makerspace archive requests and downloads, archive-recipient keys and custody "
-        "status. Deployment backups still cover this makerspace without it.",
-        "backup", GUARD, group=GROUP_BACKUP, default_enabled=True,
     ),
     # Opt-in and dependency-free: device identity is a trust boundary that printer and
     # label adapters build on, so it must not force `machines` onto a label-only space.
@@ -225,3 +227,11 @@ MODULES = (
         "devices", GUARD, group=GROUP_DEVICES,
     ),
 )
+
+from .module_registry_p2_presence import MODULES as PRESENCE_MODULES
+MODULES += PRESENCE_MODULES
+from .module_registry_r2_l22 import MODULES as SHOP_MODULES  # noqa: E402
+MODULES += SHOP_MODULES
+# Release-2 lane L25 (#163B): per-space Metabase analytics.
+from .module_registry_r2_l25 import MODULES as R2_L25_MODULES  # noqa: E402
+MODULES += R2_L25_MODULES

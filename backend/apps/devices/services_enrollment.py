@@ -8,6 +8,7 @@ transaction, so a concurrent second completion loses and an old key stays
 authoritative right up to the swap.
 """
 
+from django.utils.translation import gettext
 import hmac
 import secrets
 from datetime import timedelta
@@ -159,7 +160,7 @@ def _assert_key_available(device, enrollment, fingerprint):
     if Device.objects.filter(key_fingerprint=fingerprint).exclude(pk=device.pk).exists():
         raise DeviceKeyConflict()
     if enrollment.purpose == Purpose.ROTATE and device.key_fingerprint == fingerprint:
-        raise DeviceKeyConflict("Rotation must present a new key.")
+        raise DeviceKeyConflict(gettext("Rotation must present a new key."))
 
 
 def _public_key(value):

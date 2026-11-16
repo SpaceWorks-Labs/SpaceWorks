@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -8,8 +9,9 @@ from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit.services import record
 from apps.events.models import EventCategory, EventPromoCode
+from apps.events.event_permissions import MANAGE_REGISTRATIONS
 from apps.events.promos import create_promo, revoke_promo
-from apps.events.invites import require_feature
+from apps.events.feature_gates import require_feature
 from apps.events.ticketing import create_ticket
 from apps.events.views_admin_event_detail import _manageable_event, _visible_makerspace
 from apps.events.views_invites import ERRORS, PAGE_PARAMETERS, paginated, manageable_event_code
@@ -26,7 +28,7 @@ class EventTicketListView(APIView):
 
     @extend_schema(tags=["Admin events"], request=None, parameters=PAGE_PARAMETERS, responses={200: TicketListSerializer, **ERRORS})
     def get(self, request, pk):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
         require_feature(event, "events.ticket_types")
         return paginated(request, event.ticket_types.order_by("id"), TicketSerializer)
 
@@ -86,7 +88,7 @@ class EventCategoryListView(APIView):
         serializer = CategoryInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if EventCategory.objects.filter(makerspace=space, slug=serializer.validated_data["slug"]).exists():
-            raise ValidationError({"slug": "Category already exists."})
+            raise ValidationError({"slug": gettext("Category already exists.")})
         category = EventCategory.objects.create(makerspace=space, **serializer.validated_data)
         record(request.user, "event.category_created", makerspace=space, target=category)
         return Response(CategorySerializer(category).data, status=201)

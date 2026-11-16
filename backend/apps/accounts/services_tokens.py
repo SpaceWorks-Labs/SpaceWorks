@@ -1,4 +1,12 @@
-def blacklist_outstanding_tokens(user):
+from django.db import transaction
+from apps.accounts.models import User
+
+
+@transaction.atomic
+def blacklist_outstanding_tokens(user, *, keep_grant=None):
+    """Revoke every session. `keep_grant` survives, but only with its refresh families
+    revoked, so the caller can re-issue tokens on it (native MFA enrollment)."""
+    User.objects.select_for_update(no_key=True).get(pk=user.pk)
     # Invalidate every refresh token issued before a password rotation so old
     # sessions cannot persist after the credential changes.
     from rest_framework_simplejwt.token_blacklist.models import (
@@ -17,9 +25,14 @@ def blacklist_outstanding_tokens(user):
     for grant in DeviceGrant.objects.filter(
         user=user, status=DeviceGrant.Status.ACTIVE
     ):
+        if keep_grant is not None and grant.pk == keep_grant.pk:
+            for family in grant.refresh_families.filter(revoked_at__isnull=True):
+                blacklist_device_family(family)
+            continue
         revoke_device_grant(grant)
 
 
+@transaction.atomic
 def blacklist_device_family(family, *, revoke_grant=False, reuse=False):
     """Revoke a native refresh family and blacklist every persisted refresh JTI."""
     from django.utils import timezone
@@ -30,6 +43,7 @@ def blacklist_device_family(family, *, revoke_grant=False, reuse=False):
 
     from apps.accounts.models_devices import DeviceGrant
 
+    User.objects.select_for_update(no_key=True).get(pk=family.user_id)
     now = timezone.now()
     updates = {"revoked_at": now}
     if reuse:
@@ -48,11 +62,13 @@ def blacklist_device_family(family, *, revoke_grant=False, reuse=False):
         )
 
 
+@transaction.atomic
 def revoke_device_grant(grant):
     from django.utils import timezone
 
     from apps.accounts.models_devices import DeviceGrant
 
+    User.objects.select_for_update(no_key=True).get(pk=grant.user_id)
     now = timezone.now()
     DeviceGrant.objects.filter(pk=grant.pk).update(
         status=DeviceGrant.Status.REVOKED, revoked_at=now

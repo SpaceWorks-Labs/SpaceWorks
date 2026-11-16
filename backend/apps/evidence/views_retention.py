@@ -37,7 +37,6 @@ def _manageable_makerspace(actor, makerspace_id):
         Makerspace.objects.all(),
         field="id",
     )
-    queryset = rbac.hide_from_superadmin(actor, queryset, field="id")
     makerspace = get_object_or_404(queryset, pk=makerspace_id)
     require_module(makerspace, "evidence_uploads")
     if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk):

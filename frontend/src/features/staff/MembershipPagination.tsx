@@ -1,10 +1,9 @@
-export function MembershipPagination({ label, page, next, previous, fetching, onPage }: {
-  label: string; page: number; next?: string | null; previous?: string | null;
+import { PagePager } from "../../components/ui";
+
+/** Roster pager used by the membership, community and presence desks: a DRF page over the shared `Pagination`. */
+export function MembershipPagination({ page, next, fetching, onPage }: {
+  label?: string; page: number; next?: string | null; previous?: string | null;
   fetching: boolean; onPage: (page: number) => void;
 }) {
-  return <nav aria-label={`${label} pagination`} className="mt-3 flex items-center gap-3">
-    <button className="desk-button" disabled={!previous || fetching} onClick={() => onPage(page - 1)}>Previous {label}</button>
-    <span className="text-sm text-muted">Page {page}</span>
-    <button className="desk-button" disabled={!next || fetching} onClick={() => onPage(page + 1)}>Next {label}</button>
-  </nav>;
+  return <div className="mt-3"><PagePager page={page} setPage={onPage} next={next} disabled={fetching} /></div>;
 }

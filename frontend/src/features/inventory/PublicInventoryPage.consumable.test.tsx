@@ -20,8 +20,8 @@ vi.mock("./useContactRequest", () => ({ useContactRequest: () => ({ ready: true,
 vi.mock("./ProductQuickViewModal", () => ({ ProductQuickViewModal: () => null }));
 vi.mock("./api", () => ({ submitPublicRequest: vi.fn() }));
 
-it("reaches a consumable-only plan through the catalogue action card with lending off", async () => {
-  mock.desktop = true;
+it.each([true, false])("reaches a consumable-only plan through the catalogue action card with lending off (desktop=%s)", async desktop => {
+  mock.desktop = desktop;
   mock.member.mockReset(); mock.member.mockImplementation((path: string) => {
     if (path === "/auth/me") return Promise.resolve({ id: 1 });
     if (path.includes("equipment-kits")) return Promise.resolve({ results: [{ id: 9, name: "Materials", version: 2, lines: [{ product_id: 3, display_name: "Glue", quantity_per_person: 1, kind: "consumable" }] }], next: null, previous: null });
@@ -29,6 +29,7 @@ it("reaches a consumable-only plan through the catalogue action card with lendin
   });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><MemoryRouter><PublicInventoryPage embedded={({ aside }) => <PublicActionCard {...aside} />} /></MemoryRouter></QueryClientProvider>);
+  if (!desktop) fireEvent.click(screen.getByRole("button", { name: "Review request" }));
   fireEvent.click(await screen.findByRole("button", { name: "Materials" }));
   fireEvent.change(screen.getByLabelText("Purpose"), { target: { value: "Workshop" } });
   fireEvent.click(screen.getByRole("button", { name: "Save plan" }));

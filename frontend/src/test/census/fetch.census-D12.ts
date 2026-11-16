@@ -7,6 +7,7 @@ import programmeFixture from "../../../../backend/tests/events/programme/contrac
 import type { ProgrammeContext } from "../../features/events/contracts/types";
 import { admissionResponse, emptyResponse, operationFor } from "./schema.census-D12";
 import { checkActionRequest } from "./actions.census-D12";
+import { requestAttempt } from "./attempts.census-D12";
 
 export type Phase = "loading" | "empty" | "error" | "permission" | "module";
 export const PHASES: Phase[] = ["loading", "empty", "error", "permission", "module"];
@@ -57,7 +58,7 @@ export const USER = { id: 1, username: "d12-operator", display_name: "D12 Operat
 const TOKEN = `eyJhbGciOiJub25lIn0.${btoa(JSON.stringify({ user_id: 1, exp: 4102444800 }))}.d12`;
 // `outside`: a request whose render-owner chain lies outside <App> (a provider render) while the target was
 // mounted. It still receives the phase's answer, but it is never counted as the screen's own traffic.
-export type Exchange = { path: string; method: string; support: boolean; status: number | null; body: unknown; outside?: boolean };
+export type Exchange = { path: string; target: string; operation?: string; attempt?: string; method: string; support: boolean; status: number | null; body: unknown; outside?: boolean };
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
@@ -97,7 +98,8 @@ function identity(platform: boolean) {
   return platform ? { ...USER, role: "superadmin", is_superuser: true, kind: "platform", is_platform: true } : USER;
 }
 export function installFetch(phase: Phase, platform = false, row?: RouteCase, targetMounted = () => true,
-  requestOwner: () => Set<string> | undefined = () => undefined) {
+  requestOwner: () => Set<string> | undefined = () => undefined,
+  requestOperation: () => string | undefined = () => undefined, admissionOnly = false) {
   const exchanges: Exchange[] = [];
   const fixtureErrors: string[] = [];
   let activePhase = phase;
@@ -107,16 +109,19 @@ export function installFetch(phase: Phase, platform = false, row?: RouteCase, ta
     const url = new URL(input instanceof Request ? input.url : String(input), "http://localhost");
     if (!url.pathname.startsWith("/api/")) throw new Error(`D12 unexpected non-API fetch ${url}`);
     const path = url.pathname.replace(/^\/api(?:\/v1)?/, "").replace(/\/$/, "") || "/";
+    const target = `${url.pathname}${url.search}`;
+    const operation = requestOperation();
+    const attempt = requestAttempt();
     const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
     // live.ts: a 503 permanently disables SSE on deployments without the transport.
     // It is background admission traffic, never evidence for a screen's error state.
     if (path === "/live" && method === "GET") {
       const body = { code: "service_unavailable", detail: "Live transport is unavailable." };
-      exchanges.push({ path, method, support: true, status: 503, body });
+      exchanges.push({ path, target, operation, attempt, method, support: true, status: 503, body });
       return json(body, 503);
     }
     const fixture = support(path, platform, row);
-    const exchange: Exchange = { path, method, support: fixture !== undefined, status: null, body: null };
+    const exchange: Exchange = { path, target, operation, attempt, method, support: fixture !== undefined, status: null, body: null };
     exchanges.push(exchange);
     if (fixture !== undefined) {
       exchange.status = 200; exchange.body = fixture;
@@ -133,7 +138,7 @@ export function installFetch(phase: Phase, platform = false, row?: RouteCase, ta
     const owned = row && owner ? owner.has(row.screen.split("/")[0])
       && (!(row.leaves?.length) || row.leaves.some(leaf => owner.has(leaf))) : targetMounted();
     if (chain && !owner && owned) exchange.outside = true;
-    if (method === "GET" && !owned) {
+    if (method === "GET" && (!owned || admissionOnly)) {
       exchange.support = true; exchange.status = 200;
       exchange.body = /^\/admin\/makerspaces\/1$/.test(path) ? SPACE : admissionResponse(path);
       return json(exchange.body);

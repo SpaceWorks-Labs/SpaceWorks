@@ -1,3 +1,5 @@
+import { isRetryable } from "../../../lib/api/errors";
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
@@ -24,6 +26,7 @@ export function OwnConsentStatusCard({ makerspaceId }: { makerspaceId: number })
   const status = useQuery({ queryKey: communityKeys.ownConsent(makerspaceId), queryFn: () => communityMemberApi.ownConsent(makerspaceId), retry: false });
   if (status.isLoading) return <LogoLoader label={t`Checking your guardian consent…`} size={48} className="min-h-16 py-3" />;
   const data = status.data;
+  if (status.error && isRetryable(status.error)) return <QueryErrors queries={[status]} />;
   if (status.isError || !data?.applies) return null;
   const state = data.state;
   if (state === "not_applicable") return null;

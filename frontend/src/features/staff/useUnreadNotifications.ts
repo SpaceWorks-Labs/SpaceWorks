@@ -6,8 +6,8 @@ import { inboxUnreadKey } from "../notifications/PersonalInbox";
 export const notificationsUnreadQueryKey = (makerspaceId: number | undefined) =>
   inboxUnreadKey(makerspaceId);
 
-export function useUnreadNotifications(makerspaceId: number | undefined, enabled: boolean) {
-  const query = useQuery({
+export function useUnreadNotificationsQuery(makerspaceId: number | undefined, enabled: boolean) {
+  return useQuery({
     queryKey: notificationsUnreadQueryKey(makerspaceId),
     queryFn: () => staffRequest<{ count: number }>(`/notifications/inbox/${makerspaceId}/unread-count`),
     enabled: enabled && Boolean(makerspaceId),
@@ -15,6 +15,10 @@ export function useUnreadNotifications(makerspaceId: number | undefined, enabled
     retry: false,
   });
 
+}
+
+export function useUnreadNotifications(makerspaceId: number | undefined, enabled: boolean) {
+  const query = useUnreadNotificationsQuery(makerspaceId, enabled);
   if (query.isError) return 0;
   return Math.max(0, query.data?.count ?? 0);
 }

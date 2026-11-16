@@ -21,8 +21,8 @@ export function FamilyHome() {
   const memberHref = tenant.mode === "single" ? "/member" : `/m/${slug}/member`;
   const [params] = useSearchParams();
   if (!bootstrap) {
-    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: t`Couldn't load this space. Try again.`, onRetry: isRetryable(bootstrapQuery.error) ? () => void bootstrapQuery.refetch() : undefined }}
-      makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]} header={{ title: t`We couldn't load this space` }}
+    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: isRetryable(bootstrapQuery.error) ? (t`Couldn't load this space. Try again.`) : (bootstrapQuery.error instanceof Error ? bootstrapQuery.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(bootstrapQuery.error) ? () => void bootstrapQuery.refetch() : undefined }}
+      makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]} header={{ title: isRetryable(bootstrapQuery.error) ? t`We couldn't load this space` : (bootstrapQuery.error instanceof Error ? bootstrapQuery.error.message : t`This content is no longer available for your access.`) }}
       footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
     return <RouteFallback />;
   }

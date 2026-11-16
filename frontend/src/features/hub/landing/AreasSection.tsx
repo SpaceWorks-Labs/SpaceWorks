@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { DOCS_LINKS } from "../hubLinks";
 import { hubAreas, type AreaTone } from "./areas";
 import { FeatureCoverage } from "./FeatureCoverage";
+import { ModuleDirectory } from "./ModuleDirectory";
+import { ProductGuide } from "./ProductGuide";
 
 const TONES: Record<AreaTone, string> = {
   success: "bg-success text-on-success", warn: "bg-warn text-on-warn", info: "bg-info text-on-info", neutral: "border border-line bg-surface text-ink",
@@ -69,6 +71,8 @@ export function AreasSection() {
         </div>
       </div>
       <FeatureCoverage />
+      <ModuleDirectory />
+      <ProductGuide />
     </div>
   </section>;
 }

@@ -120,8 +120,12 @@ describe("Failed kiosk recovery", () => {
     // Nothing unresolved: the section folds to its "· 0" heading and opens on demand.
     fireEvent.click(await screen.findByRole("button", { name: /Failed kiosk handovers · 0/ }));
     await screen.findByText("No retained failures in this view.");
-    api.mockRejectedValueOnce(new StructuredApiError(403, {}));
+    const refusal = new StructuredApiError(403, { code: "permission_denied", detail: "Access refused." });
+    api.mockRejectedValueOnce(refusal);
     fireEvent.change(screen.getByLabelText("Recovery status"), { target: { value: "all" } });
-    await screen.findByText("Couldn't load failed handovers. Try again.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Access refused.");
+    expect({ status: refusal.status, code: refusal.code }).toEqual({ status: 403, code: "permission_denied" });
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+    expect(screen.queryByText(/try again|temporarily unavailable/i)).toBeNull();
   });
 });

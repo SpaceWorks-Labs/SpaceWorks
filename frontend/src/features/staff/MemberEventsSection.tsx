@@ -17,7 +17,7 @@ export function MemberEventsSection({ makerspaceId, userId }: { makerspaceId: nu
     <h2 id={`member-events-${userId}`} className="title-panel">{t`Events`}</h2>
     {history.isLoading ? <LogoLoader label={t`Loading events…`} size={48} className="min-h-16 py-3" /> : null}
     {status === 404 ? <p className="text-sm text-muted">{t`No events here yet.`}</p>
-      : history.error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{t`Couldn't load events.`}</p>
+      : history.error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{isRetryable(history.error) ? t`Couldn't load events.` : (history.error instanceof Error ? history.error.message : t`This content is no longer available for your access.`)}</p>
         {isRetryable(history.error) ? <button className="desk-button" type="button" onClick={() => { void history.refetch(); }}>{t`Retry`}</button> : null}</div> : null}
     {history.data ? <EventHistoryLists compact history={history.data} emptyMessage={t`No events here yet.`} /> : null}
   </section>;

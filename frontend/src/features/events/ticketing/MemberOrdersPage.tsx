@@ -30,7 +30,7 @@ export function MemberOrdersPage() {
   const { orderId } = useParams();
   const space = useMemberSpace();
   const tenantPath = useTenantPath(space.makerspaceSlug);
-  const orders = useQuery({ queryKey: ticketingKeys.orders(space.makerspaceId), enabled: Boolean(space.makerspaceId),
+  const orders = useQuery({ queryKey: ticketingKeys.orders(space.makerspaceId), enabled: Boolean(space.makerspaceId) && !orderId,
     queryFn: () => listOrders(space.makerspaceId), retry: false });
   if (orders.error instanceof StructuredApiError && orders.error.status === 401) {
     return <MemberAuthPanel makerspaceSlug={space.makerspaceSlug} onAuthenticated={() => { void orders.refetch(); }} />;

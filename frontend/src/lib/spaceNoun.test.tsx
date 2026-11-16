@@ -8,7 +8,8 @@ import { nounOf, nounTitleOf, spaceKindOf } from "./spaceNoun";
 
 const hosting = vi.hoisted(() => ({ enabled: false }));
 vi.mock("../features/hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: hosting.enabled }) }));
-vi.mock("../features/organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
+vi.mock("../features/organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false,
+  usePublicOrganizationDirectory: () => ({ isSuccess: false, error: null }) }));
 
 describe("space nouns (decision 295)", () => {
   it("treats anything but an explicit organization as a makerspace", () => {

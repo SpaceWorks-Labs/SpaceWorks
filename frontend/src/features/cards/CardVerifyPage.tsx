@@ -81,7 +81,7 @@ export function CardVerifyPage() {
     <h1 className="text-xl font-semibold">{limited ? t`Too many checks` : missing ? t`Card not found` : t`Card check unavailable`}</h1>
     <p className="text-sm text-muted">{limited ? t`Too many checks. Try again in a minute.`
       : missing ? t`We couldn't match this code to a card. Check the whole code was scanned, or ask to see the card again.`
-        : t`Couldn't load this page. Try again.`}</p>
+        : isRetryable(check.error) ? t`Couldn't load this page. Try again.` : (check.error instanceof Error ? check.error.message : t`This content is no longer available for your access.`)}</p>
     {isRetryable(check.error) ? <button type="button" className="desk-button min-h-11" onClick={() => void check.refetch()}>{t`Check again`}</button> : null}
   </section></Shell>;
 

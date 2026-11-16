@@ -18,7 +18,7 @@ export function ApiClientsAccessSummary({
   settings?: ApiSettingsSummary;
   loading?: boolean; error?: Error | null; onRetry?: () => void;
 }) {
-  return <QueryContent state={{ status: loading ? "loading" : error ? "error" : "ready", error: t`Couldn't load API settings. Try again.`, onRetry }}><div className="grid gap-4">
+  return <QueryContent state={{ status: loading ? "loading" : error ? "error" : "ready", error: onRetry ? t`Couldn't load API settings. Try again.` : error?.message, onRetry }}><div className="grid gap-4">
     <Callout size="card" tone="warn" lead={t`Keep keys in a secret manager.`} body={t`Never put them in browser code or URLs.`} />
     <KeyValueCard title={t`Makerspace API access`} items={[
       { label: t`Makerspace code`, value: settings?.public_code ?? makerspace.public_code },

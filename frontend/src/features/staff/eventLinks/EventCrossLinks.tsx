@@ -32,13 +32,13 @@ export function EventCrossLinks({ makerspaceId, eventId }: { makerspaceId: numbe
   if (!links.length && !showLoans && !showPasses) return null;
   return <div className="grid min-w-0 gap-6">
     {links.length ? <RelatedLinks links={links} /> : null}
-    {showLoans ? <ReadOnlyList title={t`Equipment on loan for this event`} error={loans.query.isError} onRetry={isRetryable(loans.query.error) ? () => { void loans.query.refetch(); } : undefined}
+    {showLoans ? <ReadOnlyList title={t`Equipment on loan for this event`} error={loans.query.error} onRetry={isRetryable(loans.query.error) ? () => { void loans.query.refetch(); } : undefined}
       empty={t`No equipment is lent for this event.`} count={loans.count}>
       {loans.rows.map(row => <ListRow key={row.request_id} title={row.items.map(item => `${item.product_name} ×${item.issued || item.requested}`).join(", ") || t`Loan #${row.request_id}`}
         meta={[row.holder, row.due_at ? t`Due ${formatDate(row.due_at)}` : ""].filter(Boolean).join(" · ")}
         right={<StatusPill tone={["issued", "partially_returned"].includes(row.status) ? "accent" : "neutral"} label={opsStatusLabel(row.status)} />} />)}
     </ReadOnlyList> : null}
-    {showPasses ? <ReadOnlyList title={t`Guest passes for this event`} error={passes.query.isError} onRetry={isRetryable(passes.query.error) ? () => { void passes.query.refetch(); } : undefined}
+    {showPasses ? <ReadOnlyList title={t`Guest passes for this event`} error={passes.query.error} onRetry={isRetryable(passes.query.error) ? () => { void passes.query.refetch(); } : undefined}
       empty={t`No guest passes were issued for this event.`} count={passes.count}>
       {passes.rows.map(row => <ListRow key={row.id} title={row.holder || t`Guest`}
         meta={row.valid_until ? t`Until ${formatDate(row.valid_until)}` : undefined}
@@ -48,11 +48,11 @@ export function EventCrossLinks({ makerspaceId, eventId }: { makerspaceId: numbe
 }
 
 function ReadOnlyList({ title, count, empty, error, onRetry, children }: {
-  title: string; count: number; empty: string; error: boolean; onRetry?: () => void; children: ReactNode;
+  title: string; count: number; empty: string; error: Error | null; onRetry?: () => void; children: ReactNode;
 }) {
   return <section className="grid min-w-0 gap-2" aria-label={title}>
     <h3 className="title-section">{title} <span className="tabular-nums text-muted">({count})</span></h3>
-    {error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{t`Couldn't load this list.`}</p>
+    {error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{onRetry ? t`Couldn't load this list.` : error.message}</p>
       {onRetry ? <button type="button" className="desk-button" onClick={onRetry}>{t`Retry`}</button> : null}</div>
       : count ? <div className="grid gap-2">{children}</div> : <p className="text-sm text-muted">{empty}</p>}
   </section>;

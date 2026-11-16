@@ -48,7 +48,7 @@ export function AuditLog({ makerspaceId, platform = false, actions }: { makerspa
 
   return <ListLayout width="wide"
     header={{ title: platform ? t`Platform audit log` : t`Audit log`, subtitle: platform ? t`Every space's trail and the platform's own actions, append-only. Filter by makerspace ID, or show platform-level rows only.` : areas ? t`State changes in the areas you work in, append-only. The Space Manager sees the whole trail.` : t`Every state change in this makerspace, append-only.`, meta: canVerify ? <AuditVerificationStatus key={new URLSearchParams(verifyParams).toString()} makerspaceId={filters.makerspace} params={verifyParams} /> : undefined }}
-    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: t`Couldn't load audit entries${logs.error?.message ? ` (${logs.error.message})` : ""}. Try again.`, onRetry: isRetryable(logs.error) ? () => void logs.refetch() : undefined }}
+    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: isRetryable(logs.error) ? (t`Couldn't load audit entries${logs.error?.message ? ` (${logs.error.message})` : ""}. Try again.`) : (logs.error instanceof Error ? logs.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(logs.error) ? () => void logs.refetch() : undefined }}
     isEmpty={Boolean(logs.data && !logs.data.results.length)} filtered={chips.length > 0}
     empty={{ message: areas ? t`No audit entries in your areas yet.` : t`No audit entries yet. Complete a workflow to start the trail.` }}
     filteredEmpty={{ message: t`No entries match these filters. Clear filters to see the trail.`, action: { label: t`Clear filters`, onClick: clear } }}

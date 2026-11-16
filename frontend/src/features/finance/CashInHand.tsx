@@ -10,7 +10,7 @@ import { analyticsRows, useAnalyticsCatalog, useAnalyticsReport } from "../staff
 import { CashHandoverDialog, type Holder } from "./CashHandoverDialog";
 import { localToday } from "./collectionSheetRows";
 import { invalidateFinance } from "./financeApi";
-import { isRetryable } from "../../lib/api/errors";
+import { QueryErrors } from "../../components/ui/QueryErrors";
 
 const KEY = "cash-in-hand";
 const money = (row: Record<string, unknown>, field: string) => formatMoney(String(row[field] ?? 0), String(row.currency ?? ""));
@@ -30,7 +30,8 @@ export function CashInHand({ makerspaceId, canHandover }: { makerspaceId: number
   const available = Boolean(report && report.available !== false);
   const base = `/admin/makerspace/${makerspaceId}/analytics`;
   const query = useAnalyticsReport(base, KEY, new URLSearchParams(asOf ? { end: asOf } : {}), available);
-  const rows = analyticsRows(query.data);
+  const failed = Boolean(catalog.error || query.error);
+  const rows = failed ? [] : analyticsRows(query.data);
   return <section className="grid min-w-0 gap-4" aria-labelledby="cash-in-hand-heading">
     <header className="grid gap-1">
       <h3 id="cash-in-hand-heading" className="title-section">{t`Cash in hand`}</h3>
@@ -42,11 +43,8 @@ export function CashInHand({ makerspaceId, canHandover }: { makerspaceId: number
     {catalog.isLoading || query.isLoading ? <p role="status" className="text-sm text-muted">{t`Adding up the cash…`}</p> : null}
     {catalog.isSuccess && !available ? <p className="text-sm text-muted">{report?.unavailable_reason
       || t`This report needs the Reports area switched on and finance access in this space.`}</p> : null}
-    {catalog.isError || query.isError ? <div role="alert" className="grid justify-items-start gap-2 text-sm text-danger">
-      <p>{t`Couldn't load cash in hand.`}</p>
-      {[catalog.error, query.error].filter(Boolean).some(isRetryable) ? <button type="button" className="desk-button" onClick={() => void (catalog.isError ? catalog.refetch() : query.refetch())}>{t`Retry`}</button> : null}
-    </div> : null}
-    {query.isSuccess && !rows.length ? <EmptyState message={t`Nobody has recorded a cash payment in this space up to this date.`} /> : null}
+    <QueryErrors queries={[catalog, query]} />
+    {!failed && query.isSuccess && !rows.length ? <EmptyState message={t`Nobody has recorded a cash payment in this space up to this date.`} /> : null}
     {rows.length ? <div role="region" aria-label={t`Cash in hand per collector`} tabIndex={0}
       className="overflow-x-auto rounded-xl border border-line bg-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <table className="w-full min-w-[40rem] text-sm">
@@ -77,7 +75,7 @@ export function CashInHand({ makerspaceId, canHandover }: { makerspaceId: number
       </table>
     </div> : null}
     {rows.length > 1 && report?.chart_spec ? <CatalogChartPanel title={report.title} spec={report.chart_spec} hint={report.chart_hint} rows={rows} /> : null}
-    {holder ? <CashHandoverDialog makerspaceId={makerspaceId} holder={holder} onClose={() => setHolder(null)} onDone={() => {
+    {!failed && holder ? <CashHandoverDialog makerspaceId={makerspaceId} holder={holder} onClose={() => setHolder(null)} onDone={() => {
       setMessage(t`Hand-over from ${holder.collector} recorded.`); setHolder(null);
       void client.invalidateQueries({ queryKey: ["operations-report"] }); invalidateFinance(client, makerspaceId);
     }} /> : null}

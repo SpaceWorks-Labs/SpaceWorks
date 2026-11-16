@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -47,5 +48,5 @@ export function useCreateSpace() {
   const modal = open && <CreateMakerspaceModal open form={form} pending={create.isPending} error={create.error}
     onChange={setForm} onClose={() => setOpen(false)} onSubmit={() => create.mutate()}
     identityExtra={hostingOn ? <HostingTypeChoice value={hostingType} onChange={setHostingType} /> : undefined} />;
-  return { start, modal };
+  return { start, modal: <><QueryErrors queries={[hosting]} />{modal}</> };
 }

@@ -86,7 +86,7 @@ export function value(node: ts.Expression, file: string, env: Env = {}): unknown
 }
 const SAMPLES: Record<string, string> = {
   slug: "lab", organizationSlug: "d12-org", programmeSlug: "d12-programme", productSlug: "d12-product",
-  memberTab: "loans", view: "request", sectionId: "member", articleSlug: "borrow-tools", module: "events",
+  memberTab: "loans", view: "request", sectionId: "member", articleSlug: "d12-missing-article", module: "events",
   handle: "d12-maker", campaign: "d12-campaign", sessionSlug: "d12-session", speakerSlug: "d12-speaker",
   obligationId: "11111111-1111-4111-8111-111111111111", verificationId: "11111111-1111-4111-8111-111111111111",
 };

@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { plural, t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
@@ -41,9 +42,9 @@ export function PlatformDashboardPanel() {
   // Problems has its own query: a failed dashboard must not hide the checks that explain it.
   const state = dashboard.isLoading && problems.isLoading ? adminQueryState(dashboard, "platform dashboard") : { status: "ready" as const };
   const callout: CalloutProps | undefined = dashboard.isError
-    ? { size: "banner", tone: "danger", lead: t`Couldn't load the platform dashboard.`, body: dashboard.error.message, action: isRetryable(dashboard.error) ? { label: t`Retry`, onClick: () => { void dashboard.refetch(); } } : undefined }
+    ? { size: "banner", tone: "danger", lead: isRetryable(dashboard.error) ? t`Couldn't load the platform dashboard.` : dashboard.error.message, body: dashboard.error.message, action: isRetryable(dashboard.error) ? { label: t`Retry`, onClick: () => { void dashboard.refetch(); } } : undefined }
     : attention ? { size: "banner", tone: "danger", lead: attention.message, body: t`Review this check before your next deployment change.`, action: { label: t`Open in control panel`, href: problemHref(attention) } } : undefined;
-  return <DashboardLayout header={{ title: t`Platform overview`, eyebrow: t`Space Works`,
+  return <><QueryErrors queries={[dashboard]} />{<DashboardLayout header={{ title: t`Platform overview`, eyebrow: t`Space Works`,
     subtitle: t`Usage totals cover every live makerspace.`,
     meta: data ? <Trans>Checked <RelativeTime date={data.checked_at} /></Trans> : undefined,
     secondary: { label: t`Run checks now`, onClick: refresh, disabled: dashboard.isFetching || problems.isFetching, disabledReason: t`Checks are running.` } }}
@@ -56,7 +57,7 @@ export function PlatformDashboardPanel() {
     ] } : undefined}
     main={[
       { title: t`Problems`, empty: { message: t`All checks passed. Run checks again after a deployment change.` },
-        content: problems.isLoading ? <p role="status">{t`Running checks…`}</p> : problems.isError ? <EmptyState message={t`Couldn't load problems. Try again.`} action={isRetryable(problems.error) ? { label: t`Retry`, onClick: () => { void problems.refetch(); } } : undefined} />
+        content: problems.isLoading ? <p role="status">{t`Running checks…`}</p> : problems.isError ? <EmptyState message={isRetryable(problems.error) ? (t`Couldn't load problems. Try again.`) : (problems.error instanceof Error ? problems.error.message : t`This content is no longer available for your access.`)} action={isRetryable(problems.error) ? { label: t`Retry`, onClick: () => { void problems.refetch(); } } : undefined} />
           : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <Trans>Checked <RelativeTime date={problems.data.checked_at} />.</Trans> : null}{" "}{t`Checks also run every 15 minutes through the platform scheduler.`}</p>
             {problems.data?.results.map((row, index) => <ListRow key={`${row.key}:${row.makerspace_id}:${index}`} title={row.message}
               meta={<StatusPill tone={row.status === "error" ? "danger" : row.status === "warn" ? "warn" : "success"} label={row.status === "ok" ? t`OK` : row.status === "warn" ? t`Warning` : t`Error`} />}
@@ -92,5 +93,5 @@ export function PlatformDashboardPanel() {
     rail={data ? { title: t`Delivery`, items: [
       { key: "emails", actor: t`Email`, children: failedDeliveries(data.failed_deliveries.email), date: data.checked_at },
       { key: "notifications", actor: t`Notifications`, children: failedDeliveries(data.failed_deliveries.notifications), date: data.checked_at },
-    ], seeAll: { label: t`Platform settings`, href: consoleSessionHref("/admin/platform", "platform") } } : undefined} />;
+    ], seeAll: { label: t`Platform settings`, href: consoleSessionHref("/admin/platform", "platform") } } : undefined} />}</>;
 }

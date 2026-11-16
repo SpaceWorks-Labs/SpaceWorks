@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
@@ -16,7 +17,7 @@ import { OrganizationPublicEvents, OrganizationPublicSpaces } from "./Organizati
 import { usePublicOrganization } from "./publicOrganizationsApi";
 import { OrganizationPlans } from "./OrganizationPlans";
 import { OrganizationWorkspaceSections } from "./OrganizationWorkspace";
-import { useOrganizationDirectoryEnabled } from "./publicDirectoryApi";
+import { isDirectoryOff, usePublicOrganizationDirectory } from "./publicDirectoryApi";
 import { useOptionalTenant } from "../../lib/tenant";
 import { CanonicalPageRedirect } from "../publicPages/CanonicalPageRedirect";
 import { isRetryable } from "../../lib/api/errors";
@@ -32,7 +33,8 @@ export function PublicOrganizationPage({ profileSlug, profileOnly = false }: { p
   const legacy = organization.error ? undefined : organization.data;
   const style = usePageBranding(page?.presentation.resolved_theme, page?.presentation.accent_choice);
   // The directory link shows only while the server lists organizations (404 = switched off).
-  const directory = useOrganizationDirectoryEnabled();
+  const directoryQuery = usePublicOrganizationDirectory(1, "");
+  const directory = directoryQuery.isSuccess;
   const pageMissing = projection.data === null || projection.error instanceof StructuredApiError && projection.error.status === 404;
   if (profileOnly && pageMissing || pageMissing && organization.error instanceof StructuredApiError && organization.error.status === 404) return <NotFoundPage />;
   // The legacy API owns adoption/withdrawal; cached consented prose never fills an unavailable builder.
@@ -47,10 +49,10 @@ export function PublicOrganizationPage({ profileSlug, profileOnly = false }: { p
       if (canonical.origin !== window.location.origin) return <CanonicalPageRedirect url={canonical.href} />;
     } catch { return <NotFoundPage />; }
   }
-  return <div style={style}><PublicLayout makerspace={{ name, logo: legacy?.logo_url || undefined, slug: "", homeHref: "/" }}
+  return <>{directoryQuery.error && !isDirectoryOff(directoryQuery.error) ? <QueryErrors queries={[directoryQuery]} /> : null}{<div style={style}><PublicLayout makerspace={{ name, logo: legacy?.logo_url || undefined, slug: "", homeHref: "/" }}
     nav={[{ label: t`Directory`, href: "/" }, ...(directory ? [{ label: t`Organizations`, href: "/organizations" }] : [])]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle />}
     hero={page ? <PublicPageHero page={page} /> : <header className="mb-6"><p className="eyebrow">{t`Organization`}</p><h1 className="title-page">{name}</h1>{ready ? <><p className="mt-3 text-muted">{legacy?.description}</p>{legacy?.website ? <a className="desk-button mt-3" href={legacy.website} rel="noopener noreferrer">{t`Visit website`}</a> : null}</> : null}</header>}
-    state={error ? { status: "error", error: error instanceof Error ? error.message : t`Couldn't load organization.`, onRetry: [projection.error, organization.error].filter(Boolean).some(isRetryable) ? () => { void projection.refetch(); void organization.refetch(); } : undefined } : ready ? { status: "ready" } : { status: "loading" }}
+    state={error ? { status: "error", error: error instanceof Error ? error.message : t`Couldn't load organization.`, onRetry: [projection.error, organization.error].filter(Boolean).some(isRetryable) ? () => { for (const query of [projection, organization]) if (query.error && isRetryable(query.error)) void query.refetch(); } : undefined } : ready ? { status: "ready" } : { status: "loading" }}
     footer={{ credit: "Powered by Space Works", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Staff sign-in`, href: "/admin" }] }}>
     <div className="grid gap-8">
       {ready ? <PageMetadata title={name} description={page?.description ?? legacy?.description ?? ""} path={page?.canonical_url ?? legacy?.canonical_url ?? `/o/${slug}`} image={page ? page.cover?.url : legacy?.logo_url} imageAlt={page?.cover?.alt} /> : null}
@@ -62,5 +64,5 @@ export function PublicOrganizationPage({ profileSlug, profileOnly = false }: { p
       {ready && legacy ? <OrganizationPlans organization={legacy} workspace={Boolean(legacy.workspace)} /> : null}
       {page ? <PageShare title={page.title} description={page.description} canonicalUrl={page.canonical_url} image={page.cover ? <PageImage url={page.cover.url} alt={page.cover.alt} token={page.publication_token} /> : undefined} /> : null}
     </div>
-  </PublicLayout></div>;
+  </PublicLayout></div>}</>;
 }

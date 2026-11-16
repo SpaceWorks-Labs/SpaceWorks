@@ -1,3 +1,5 @@
+import { isRetryable } from "../../lib/api/errors";
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +46,7 @@ export function EventSeriesCollaborationInbox({ makerspaceId }: { makerspaceId: 
     ]),
   });
   const rows = inbox.data ?? [];
+  if (inbox.error && isRetryable(inbox.error)) return <QueryErrors queries={[inbox]} />;
   if (!rows.length) return null;
 
   return <section className="mb-5 rounded-xl border border-line bg-bg p-4" aria-labelledby="series-collaboration-inbox-title">

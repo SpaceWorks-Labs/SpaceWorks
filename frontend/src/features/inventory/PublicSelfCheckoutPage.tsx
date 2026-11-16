@@ -133,7 +133,7 @@ export function PublicSelfCheckoutPage() {
 
   const phase = !canScan ? "photo" : scannedPayload && kits.components.length ? "kit" : "scan";
   const state = bootstrapQuery.isLoading || (accountAccess && session === "restoring") ? { status: "loading" as const } : bootstrapQuery.isError
-    ? { status: "error" as const, error: t`Couldn't load checkout access. Try again.`, onRetry: isRetryable(bootstrapQuery.error) ? () => { void bootstrapQuery.refetch(); } : undefined } : { status: "ready" as const };
+    ? { status: "error" as const, error: isRetryable(bootstrapQuery.error) ? (t`Couldn't load checkout access. Try again.`) : (bootstrapQuery.error instanceof Error ? bootstrapQuery.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(bootstrapQuery.error) ? () => { void bootstrapQuery.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}>
     <FlowLayout title={t`Borrow or return a tool`} subject={displayName} state={state} compact
       isEmpty={!enabled || signedOut} empty={!enabled ? { message: t`Self-checkout isn't on at ${displayName}.`, action: { label: t`Back to inventory`, href: tenantPath("inventory") } }

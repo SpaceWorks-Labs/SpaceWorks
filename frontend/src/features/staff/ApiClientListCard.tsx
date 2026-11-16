@@ -11,6 +11,7 @@ import {
   type ApiClientScopeOption,
   type ApiKeyRequest,
 } from "./apiClientsApi";
+import { isRetryable } from "../../lib/api/errors";
 type Props = {
   canManageMakerspace: boolean;
   clients: ApiClient[] | undefined;
@@ -67,7 +68,7 @@ export function ApiClientListCard({
   const errors = [scopesError, scopeUpdateError, deleteError, rotateError, activeError].filter(Boolean);
   return <div className="grid gap-3">
     {canManageMakerspace ? <>
-      <QueryContent state={{ status: clientsLoading ? "loading" : clientsError ? "error" : "ready", error: t`Couldn't load API clients. Try again.`, onRetry }}>
+      <QueryContent state={{ status: clientsLoading ? "loading" : clientsError ? "error" : "ready", error: isRetryable(clientsError) ? t`Couldn't load API clients. Try again.` : clientsError?.message, onRetry }}>
       {clients?.map(client => <ApiClientRow key={client.id} client={client} scopeOptions={scopeOptions}
         scopesLoading={scopesLoading} updatePending={scopeUpdatePending} deletePending={deletePending}
         rotatePending={rotatePending} activePending={activePending} onSetActive={onSetActive} updateError={scopeUpdateError} scopesError={scopesError} onRetryScopes={onRetryScopes} onDelete={onDelete} onRotate={onRotate} onScopesUpdate={onScopesUpdate} />)}
@@ -75,7 +76,7 @@ export function ApiClientListCard({
       </QueryContent>
       {errors.map((error, index) => <ErrorBlock key={index} error={error!} />)}
     </> : <>
-      <QueryContent state={{ status: requestsLoading ? "loading" : requestsError ? "error" : "ready", error: t`Couldn't load API access requests. Try again.`, onRetry }}>
+      <QueryContent state={{ status: requestsLoading ? "loading" : requestsError ? "error" : "ready", error: isRetryable(requestsError) ? t`Couldn't load API access requests. Try again.` : requestsError?.message, onRetry }}>
       {requests?.map(request => <ListRow key={request.id} title={request.label}
         meta={<><RelativeTime date={request.created_at} />{request.resolution_note ? ` · ${request.resolution_note}` : ""}</>}
         right={<StatusPill label={reviewStatusLabel(request.status)} />} />)}
@@ -141,7 +142,7 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, upda
           { label: t`Delete`, onClick: () => setConfirm("delete"), disabled: deletePending, tone: "danger", confirms: true },
         ]} /></div>} />
     {editing ? <DetailLayout presentation="drawer" open onClose={() => { setSelected(client.scopes); setEditing(false); }} title={t`Scopes for ${client.label}`}
-      state={{ status: scopesLoading ? "loading" : scopesError ? "error" : "ready", error: t`Couldn't load API scopes. Try again.`, onRetry: onRetryScopes }}
+      state={{ status: scopesLoading ? "loading" : scopesError ? "error" : "ready", error: isRetryable(scopesError) ? t`Couldn't load API scopes. Try again.` : scopesError?.message, onRetry: onRetryScopes }}
       footer={{ secondary: [{ label: t`Discard`, onClick: () => { setSelected(client.scopes); setEditing(false); } }],
         primary: { label: t`Save scopes`, pending: updatePending, disabled: !grantable.length || !changed,
           onClick: () => onScopesUpdate(client.id, grantable) } }}

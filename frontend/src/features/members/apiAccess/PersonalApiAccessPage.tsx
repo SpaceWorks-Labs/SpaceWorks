@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 // /account/api-access (#196): my personal access tokens and the apps I connected.
 // Creating a token asks for a fresh sign-in check (the API client prompts for it).
 import { t } from "@lingui/core/macro";
@@ -50,7 +51,7 @@ export function PersonalApiAccessPage() {
   const toggle = (value: string) => setScopes((current) => current.includes(value)
     ? current.filter((item) => item !== value) : [...current, value]);
   const liveTokens = (tokens.data ?? []).filter((token) => !token.revoked_at);
-  return <>
+  return <><QueryErrors queries={[catalog]} />{<>
     <SettingsLayout standalone header={{ title: t`API access`, subtitle: t`Tokens and apps that act as you. They can never do more than you can.` }}
       state={{ status: tokens.isLoading ? "loading" : "ready" }} sections={[
         { id: "new-token", title: t`New personal access token`, rows: <div className="grid gap-3">
@@ -98,5 +99,5 @@ export function PersonalApiAccessPage() {
       message={confirm?.kind === "app" ? t`The app loses access at once and must ask you again.` : t`Anything using it stops working at once.`}
       confirmLabel={confirm?.kind === "app" ? t`Disconnect` : t`Revoke`} onCancel={() => setConfirm(null)}
       onConfirm={() => { if (confirm) revoke.mutate(confirm); setConfirm(null); }} />
-  </>;
+  </>}</>;
 }

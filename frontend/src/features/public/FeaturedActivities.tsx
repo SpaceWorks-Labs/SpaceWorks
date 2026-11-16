@@ -88,7 +88,7 @@ export function FeaturedActivities({ slug, path, timeZone }: Props) {
   const showPrice = useChargesOn("events", slug); // #184
   if (events.isLoading) return null;
   if (events.isError) return <MakerspaceSection id="featured" title={t`Featured activities`}>
-    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">{t`Couldn't load upcoming events.`}{isRetryable(events.error) ? <button type="button" className="desk-button" onClick={() => void events.refetch()}>{t`Try again`}</button> : null}</p>
+    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">{isRetryable(events.error) ? t`Couldn't load upcoming events.` : (events.error instanceof Error ? events.error.message : t`This content is no longer available for your access.`)}{isRetryable(events.error) ? <button type="button" className="desk-button" onClick={() => void events.refetch()}>{t`Try again`}</button> : null}</p>
   </MakerspaceSection>;
   const now = Date.now();
   const upcoming = (events.data ?? []).filter((event) => Date.parse(event.ends_at) > now)

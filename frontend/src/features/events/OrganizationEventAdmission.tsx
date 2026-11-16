@@ -66,7 +66,7 @@ function OrganizationAdmissionCheck({ event, makerspaceSlug, organisation }: Adm
     void queryClient.invalidateQueries({ queryKey: ["public-event", makerspaceSlug] });
     void queryClient.invalidateQueries({ queryKey: ["public-events", makerspaceSlug] });
   }} />;
-  if (account.error || eligibility.error) return <ErrorText message={t`Unable to check organization eligibility.`}
+  if (account.error || eligibility.error) return <ErrorText message={[account.error, eligibility.error].filter(Boolean).some(isRetryable) ? t`Unable to check organization eligibility.` : (account.error ?? eligibility.error)?.message ?? t`This content is no longer available for your access.`}
     onRetry={[account.error, eligibility.error].filter(Boolean).some(isRetryable) ? () => { void account.refetch(); void eligibility.refetch(); } : undefined} />;
   if (repaired) return <div role="status"><Callout size="inline" tone="success" lead="Your registration consent has been updated." /></div>;
   if (eligibility.data?.consent_repair_required && eligibility.data.host_waiver) return <EventConsentRepairForm

@@ -44,8 +44,10 @@ describe("guest gift absent data, refusal and settlement refresh", () => {
   // Decision 588 (supersedes the earlier refusal retry): Retry only for 5xx, 429 or no response.
   it("an initial permission refusal shows no gift details and no Retry", async () => {
     gift.mockRejectedValueOnce(new StructuredApiError(403, { code: "permission_denied", detail: "Private" }));
-    show();
-    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't load your gift.");
+    const client = show();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Private");
+    const error = client.getQueryState(donationKeys.gift("signed"))!.error as StructuredApiError;
+    expect({ status: error.status, code: error.code }).toEqual({ status: 403, code: "permission_denied" });
     expect(screen.queryByText("₹750.00")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
     expect(gift).toHaveBeenCalledTimes(1);
@@ -71,7 +73,8 @@ describe("guest gift absent data, refusal and settlement refresh", () => {
     await act(async () => { await client.refetchQueries({ queryKey: donationKeys.gift("signed"), exact: true }); });
     expect(client.getQueryState(donationKeys.gift("signed"))?.error).toBe(refused);
     expect(client.getQueryData(donationKeys.gift("signed"))).toEqual(row);
-    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't load your gift.");
+    expect({ status: refused.status, code: refused.code }).toEqual({ status: 403, code: "permission_denied" });
+    expect(await screen.findByRole("alert")).toHaveTextContent("Private");
     expect(screen.queryByText("₹750.00")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Pay online" })).not.toBeInTheDocument();
     expect(checkout).not.toHaveBeenCalled();

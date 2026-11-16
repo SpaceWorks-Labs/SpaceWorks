@@ -91,7 +91,7 @@ export function MemberEventTicketPage() {
     content={<div className="grid gap-4">
       {authError ? <ErrorText message={authError instanceof StructuredApiError && authError.status === 404 ? t`Ticket not found.` : authError.message} onRetry={isRetryable(authError) ? () => { void (identity.error ? identity.refetch() : ticket.refetch()); } : undefined} /> : null}
       {/* Decision 588: Retry only for an outage; "Ticket not found." and other refusals keep the nav and All events way out. */}
-      {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} onRetry={isRetryable(bootstrap.error) ? () => { void bootstrap.refetch(); } : undefined} /> : null}
+      {bootstrap.error ? <ErrorText message={isRetryable(bootstrap.error) ? (t`Unable to load this makerspace.`) : (bootstrap.error instanceof Error ? bootstrap.error.message : t`This content is no longer available for your access.`)} onRetry={isRetryable(bootstrap.error) ? () => { void bootstrap.refetch(); } : undefined} /> : null}
       {current ? <>
         <LiveTicketState status={current.status} attendedAt={current.attended_at} />
         <PayByNotice payBy={current.pay_by} audience="guest" />

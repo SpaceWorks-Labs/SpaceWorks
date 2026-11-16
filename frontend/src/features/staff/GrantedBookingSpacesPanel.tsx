@@ -20,7 +20,7 @@ export function GrantedBookingSpacesPanel({ makerspaceId, frame, grants = [] }: 
     <BookingDrawer key={selected.id} spaceId={selected.id} makerspaceId={selected.makerspace_id} onClose={() => setSelected(null)} /></SpaceScope>;
   return <ListLayout header={{ title: t`Assigned booking resources`, subtitle: t`Open a resource to use your assigned permissions.` }} {...frame}
     state={spaces.isLoading ? { status: "loading" } : spaces.error
-      ? { status: "error", error: t`Unable to load resources. ${spaces.error.message}`, onRetry: isRetryable(spaces.error) ? () => { void spaces.refetch(); } : undefined } : { status: "ready" }}
+      ? { status: "error", error: isRetryable(spaces.error) ? (t`Unable to load resources. ${spaces.error.message}`) : (spaces.error instanceof Error ? spaces.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(spaces.error) ? () => { void spaces.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={spaces.data?.results.length === 0} empty={{ message: t`No assigned resources. Your access may have been revoked.` }}
     body={{ kind: "rows", rows: spaces.data?.results.map((space) => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Calendar", tone: "info" }} onClick={() => setSelected(space)}

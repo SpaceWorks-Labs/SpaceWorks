@@ -8,7 +8,8 @@ import { FeaturesPage } from "../FeaturesPage";
 const request = vi.hoisted(() => vi.fn());
 vi.mock("../../../lib/api", () => ({ publicV1Request: request }));
 vi.mock("../../hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: false, isPending: false }) }));
-vi.mock("../../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
+vi.mock("../../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false,
+  usePublicOrganizationDirectory: () => ({ isSuccess: false, error: null }) }));
 
 function renderAt(path: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

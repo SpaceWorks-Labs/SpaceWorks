@@ -26,7 +26,7 @@ export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspac
   const rows = (programmes.data ?? []).filter((row) => row.makerspace === makerspaceId);
   if (open !== null) return <ProgrammePage programmeId={open} onBack={() => setOpen(null)} sheetImport={sheetImport} />;
   if (organizations.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
-  if (organizations.isError) return <ErrorBlock error={organizations.error} resource={t`organisations`} />;
+  if (organizations.isError) return <ErrorBlock error={organizations.error} resource={t`organisations`} onRetry={() => { void organizations.refetch(); }} />;
   if (!organizations.data?.results.length) return <EmptyState title={t`No organisations yet`}
     description={t`ID programmes belong to an organisation that owns this space. Add one under Organisations first.`} />;
 
@@ -41,7 +41,7 @@ export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspac
     <label className="flex min-h-11 w-fit items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5"
       checked={showArchived} onChange={(event) => setShowArchived(event.target.checked)} />{t`Show archived programmes`}</label>
     {programmes.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
-    {programmes.isError ? <ErrorBlock error={programmes.error} resource={t`programmes`} /> : null}
+    {programmes.isError ? <ErrorBlock error={programmes.error} resource={t`programmes`} onRetry={() => { void programmes.refetch(); }} /> : null}
     {programmes.data && !rows.length ? <p className="text-sm text-muted">{showArchived
       ? t`No archived programmes for this organisation here.` : t`No programmes yet for this organisation here.`}</p> : null}
     <ul className="grid gap-3 sm:grid-cols-2">

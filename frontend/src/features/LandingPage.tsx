@@ -37,11 +37,11 @@ export function LandingPage() {
   const emptyMessage = searchQuery ? `No spaces match '${searchQuery}'. Try another name or place.` : t`No public spaces yet. They appear here once a space publishes its public site.`;
   const loading = makerspacesQuery.isLoading;
   return <div className="sw-landing"><PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
-    nav={[{ label: t`About`, href: "/about" }, ...hostLink]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle variant="icon" />}
-    state={makerspacesQuery.isError ? { status: "error", error: t`Couldn't load spaces. Try again.`, onRetry: isRetryable(makerspacesQuery.error) ? () => { void makerspacesQuery.refetch(); } : undefined } : { status: "ready" }}
+    nav={[{ label: t`About`, href: "/about" }, { label: t`Features`, href: "/features" }, { label: t`Docs`, href: "/docs" }, ...hostLink]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle variant="icon" />}
+    state={makerspacesQuery.isError ? { status: "error", error: isRetryable(makerspacesQuery.error) ? (t`Couldn't load spaces. Try again.`) : (makerspacesQuery.error instanceof Error ? makerspacesQuery.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(makerspacesQuery.error) ? () => { void makerspacesQuery.refetch(); } : undefined } : { status: "ready" }}
     hero={<LandingHero search={searchInput} onSearch={setSearchInput} shown={filtered.length} total={total} />}
     isEmpty={!loading && !filtered.length} empty={{ message: emptyMessage, action: searchQuery ? { label: t`Clear search`, onClick: clear } : undefined }}
-    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, ...hostLink, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Platform sign-in`, href: "/admin" }] }}>
+    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, { label: t`Features`, href: "/features" }, { label: t`Docs`, href: "/docs" }, ...hostLink, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Platform sign-in`, href: "/admin" }] }}>
     <h2 className="title-panel mb-4 md:mb-6 min-[1680px]:text-2xl">{t`All spaces`}</h2>
     {loading ? <SpaceCardSkeletons /> : filtered.length
       ? <div className="sw-space-grid">{filtered.map(space => <SpaceCard key={space.slug} space={space} />)}</div>

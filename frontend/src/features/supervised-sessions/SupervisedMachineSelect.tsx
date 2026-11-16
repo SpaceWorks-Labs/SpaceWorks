@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { Field, PagePager } from "../../components/ui";
 import { useMemberMachines } from "./api";
 
@@ -22,9 +23,9 @@ export function SupervisedMachineSelect({ makerspaceId, value, onChange }: {
   const [page, setPage] = useState(1);
   const machines = useMemberMachines(makerspaceId, page);
   const digits = (text: string) => text.replace(/\D/g, "");
-  if (machines.isError) return <Field label={t`Machine number`} hint={t`The number in the machine's QR link.`}>
+  if (machines.isError) return <><QueryErrors queries={[machines]} /><Field label={t`Machine number`} hint={t`The number in the machine's QR link.`}>
     <input className="desk-input" inputMode="numeric" pattern="[0-9]*" value={value} onChange={change => onChange(digits(change.target.value))} />
-  </Field>;
+  </Field></>;
   const rows = machines.data?.results ?? [];
   return <div className="grid gap-2">
     <Field label={t`Machine`} hint={rows.length || machines.isPending ? undefined : t`No machines are listed for members here.`}>

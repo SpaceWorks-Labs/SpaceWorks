@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -57,7 +58,7 @@ export function TenantMigrationPanel({ makerspace }: { makerspace: Makerspace })
   const current = step ?? 0;
   const furthest = Math.max(visited, reached);
   const go = (next: number) => { setStep(next); setVisited(value => Math.max(value, next)); };
-  return <FlowLayout title={t`Move a space`} subject={makerspace.name} standalone={false}
+  return <><QueryErrors queries={[approvals, exports, imports]} />{<FlowLayout title={t`Move a space`} subject={makerspace.name} standalone={false}
     state={step === null ? { status: "loading" } : { status: "ready" }} current={stages[current].key}
     steps={stages.map((stage, index) => ({ ...stage, state: index === current ? "current" : index <= furthest ? "done" : "todo" }))}
     onStepSelect={key => go(stages.findIndex(stage => stage.key === key))}
@@ -74,5 +75,5 @@ export function TenantMigrationPanel({ makerspace }: { makerspace: Makerspace })
     </div>}
     footer={{ back: current > 0 ? { label: t`Previous step`, onClick: () => go(current - 1) } : undefined,
       next: { label: current === stages.length - 1 ? t`Review what moves again` : t`Continue to ${stages[current + 1].label.toLowerCase()}`, onClick: () => go((current + 1) % stages.length) } }}
-    onCancel={() => window.history.back()} leaveGuard={t`Your saved migration records stay on the server. Unsaved fields will be lost if you leave this task.`} />;
+    onCancel={() => window.history.back()} leaveGuard={t`Your saved migration records stay on the server. Unsaved fields will be lost if you leave this task.`} />}</>;
 }

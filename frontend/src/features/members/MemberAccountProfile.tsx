@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { SettingsActions, SettingsRow } from "../../components/ui";
 import { useState } from "react";
@@ -23,9 +24,9 @@ function ProfileForm({ makerspaceId, profile }: { makerspaceId: number; profile:
 export function MemberAccountProfile({ makerspaceId }: { makerspaceId: number }) {
   const profile = useQuery({ queryKey: [...accountKey(makerspaceId), "profile"], queryFn: () => ownProfile(makerspaceId), retry: false });
   // Rendered inside the account page's Profile settings section, which owns the card and the heading.
-  return <div className="grid min-w-0 gap-3">
+  return <><QueryErrors queries={[profile]} />{<div className="grid min-w-0 gap-3">
     {profile.isLoading ? <LogoLoader label={t`Loading profile…`} size={48} className="min-h-16 py-3" /> : null}
-    {profile.error ? <p role="alert" className="text-sm text-danger">{profile.error.message}</p> : null}
+    
     {profile.data ? <ProfileForm key={JSON.stringify(profile.data)} makerspaceId={makerspaceId} profile={profile.data} /> : null}
-  </div>;
+  </div>}</>;
 }

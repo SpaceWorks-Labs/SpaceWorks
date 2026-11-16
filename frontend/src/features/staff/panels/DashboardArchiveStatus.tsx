@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ type Props = { makerspaceId: number; slug: string; guestOnly: boolean; singleTen
 /** The read-only "Last backup" items for this makerspace. A missing archive is a warning, never a silent zero. */
 export function BackupStatusCard({ makerspaceId }: { makerspaceId: number }) {
   const status = useQuery({ queryKey: ["backup-status", makerspaceId], queryFn: () => getMakerspaceBackupStatus(makerspaceId) });
-  if (status.isError) return <StatusPill tone="warn" label={t`Couldn't check backups`} />;
+  if (status.isError) return <QueryErrors queries={[status]} />;
   if (!status.isSuccess) return <LogoLoader label={t`Loading backup status...`} size={48} className="min-h-16 py-3" />;
   const data = status.data;
   return <KeyValueCard title={t`Backup status`} items={[

@@ -28,7 +28,7 @@ export function useReorderSuggestions({ makerspaceId, canProcure }: { makerspace
   const count = suggestions.data?.count ?? 0;
   const callout: CalloutProps | undefined = count ? { size: "banner", tone: "warn", lead: plural(count, { one: "# item is running low.", other: "# items are running low." }),
     body: t`Review their reorder points before your next project.`, action: { label: t`Review suggestions`, onClick: () => setOpen(true) } } : undefined;
-  const error = suggestions.error ? <ErrorText resource={t`reorder suggestions`} onRetry={isRetryable(suggestions.error) ? () => { void suggestions.refetch(); } : undefined} message={t`Couldn't load reorder suggestions. Try again.`} /> : null;
+  const error = suggestions.error ? <ErrorText resource={t`reorder suggestions`} onRetry={isRetryable(suggestions.error) ? () => { void suggestions.refetch(); } : undefined} message={isRetryable(suggestions.error) ? (t`Couldn't load reorder suggestions. Try again.`) : (suggestions.error instanceof Error ? suggestions.error.message : t`This content is no longer available for your access.`)} /> : null;
   const panel = open ? <DetailLayout presentation="drawer" open onClose={() => setOpen(false)} title={t`Reorder suggestions`}
       state={inventoryQueryState(suggestions, "reorder suggestions")} isEmpty={!suggestions.data?.results.length}
       empty={{ message: t`No products are at their reorder points. Check back as stock changes.` }}

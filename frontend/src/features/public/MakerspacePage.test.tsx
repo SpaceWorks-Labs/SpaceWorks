@@ -166,8 +166,14 @@ describe("makerspace page", () => {
     respond(new Error("down"));
     show();
     // A network failure is retried twice (1s, 2s) before the section gives up.
-    expect(await screen.findByRole("alert", {}, { timeout: 6000 })).toHaveTextContent("Couldn't load upcoming events.");
-    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+    const failure = await screen.findByText("Couldn't load upcoming events.", { exact: true }, { timeout: 6000 });
+    expect(failure).toHaveAttribute("role", "alert");
+    const retry = within(failure).getByRole("button", { name: "Try again" });
+    expect(retry).toBeVisible();
+    const attempts = () => tenantPublicRequest.mock.calls.filter(([, path]) => path.includes("/events/")).length;
+    const before = attempts();
+    fireEvent.click(retry);
+    await waitFor(() => expect(attempts()).toBe(before + 1));
   }, 10_000);
 
   it("matches the join call to the membership policy", async () => {

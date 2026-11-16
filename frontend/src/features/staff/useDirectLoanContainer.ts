@@ -35,7 +35,7 @@ export function useDirectLoanContainer(makerspaceId: number) {
   };
   const reset = useCallback(() => { setContainerId(""); setScanning(false); setScanError(""); }, []);
   return {
-    containerId, scanning, error: containers.error, label: options.find(row => String(row.id) === containerId)?.label,
+    containerId, scanning, error: containers.error, refetch: containers.refetch, label: options.find(row => String(row.id) === containerId)?.label,
     scan, reset, closeScanner: () => setScanning(false),
     field: { containerId, onContainerIdChange: setContainerId, containerOptions: options, containersLoading: containers.isLoading,
       scanError, onScanClick: () => { setScanError(""); setScanning(true); } },

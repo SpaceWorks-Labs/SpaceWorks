@@ -42,7 +42,7 @@ export function HostingRequestPage() {
   return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
     nav={[{ label: t`Browse spaces`, href: "/spaces" }, { label: t`About`, href: "/about" }]} headerAction={{ label: t`Sign in`, href: "/member" }}
     liveStatus={<ThemeToggle variant="icon" />} width="narrow" hero={<HostingHero organizations={organizations} />}
-    state={config.isError ? { status: "error", error: t`Couldn't load this page. Try again.`, onRetry: isRetryable(config.error) ? () => { void config.refetch(); } : undefined }
+    state={config.isError ? { status: "error", error: isRetryable(config.error) ? (t`Couldn't load this page. Try again.`) : (config.error instanceof Error ? config.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(config.error) ? () => { void config.refetch(); } : undefined }
       : config.isLoading ? { status: "loading" } : { status: "ready" }}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }] }}>
     <div className="grid gap-8">

@@ -52,7 +52,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
       {availability.isLoading ? <LogoLoader label={t`Checking confirmed bookings...`} size={48} className="min-h-16 py-3" /> : null}
       {availability.error ? (
         <div className="mt-3" role="alert">
-          <p className="text-sm text-danger">{t`Availability could not be checked. This does not mean the space is free.`}</p>
+          <p className="text-sm text-danger">{isRetryable(availability.error) ? t`Availability could not be checked. This does not mean the space is free.` : (availability.error instanceof Error ? availability.error.message : t`This content is no longer available for your access.`)}</p>
           {isRetryable(availability.error) ? <button className="desk-button-ghost mt-2" type="button" onClick={() => availability.refetch()}>{t`Retry`}</button> : null}
         </div>
       ) : null}

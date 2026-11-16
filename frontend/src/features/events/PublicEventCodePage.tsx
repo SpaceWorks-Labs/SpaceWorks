@@ -30,7 +30,7 @@ export function PublicEventCodePage() {
     },
   });
   if (!(isUuid || isShort) || query.isSuccess && !query.data || query.error instanceof StructuredApiError && query.error.status === 404) return <NotFoundPage />;
-  if (query.error) return <CenteredCardLayout state={{ status: "error", error: t`Couldn't load this event.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }} title={t`Event`} body="" primary={isRetryable(query.error) ? { label: t`Try again`, onClick: () => { void query.refetch(); } } : { label: t`Home`, href: "/" }} />;
+  if (query.error) return <CenteredCardLayout state={{ status: "error", error: isRetryable(query.error) ? (t`Couldn't load this event.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }} title={t`Event`} body="" primary={isRetryable(query.error) ? { label: t`Try again`, onClick: () => { void query.refetch(); } } : { label: t`Home`, href: "/" }} />;
   if (!query.data) return <CenteredCardLayout state={{ status: "loading" }} title={t`Opening event…`} body="" primary={{ label: t`Loading`, disabled: true }} />;
   let match: RegExpExecArray | null;
   try { match = /^\/public\/([^/]+)\/events\/([^/]+)\/$/.exec(pageApiPath(query.data.content_url)); } catch { return <NotFoundPage />; }

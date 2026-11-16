@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
@@ -41,7 +42,7 @@ export function BookingQueuePanel({ makerspaceId, status, onStatus, onOpenBookin
   const approve = (booking: Booking) => { setActingOn(booking.id); action.mutate({ bookingId: booking.id, action: "approve" }, { onSettled: () => setActingOn(null) }); };
   const data = queue.data;
   const queryClient = useQueryClient();
-  return (
+  return <><QueryErrors queries={[spaces]} />{(
     <section aria-labelledby="booking-queue-title" className="grid gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -96,5 +97,5 @@ export function BookingQueuePanel({ makerspaceId, status, onStatus, onOpenBookin
         pending={action.isPending} onCancel={() => setRejecting(null)}
         onConfirm={reason => rejecting && action.mutate({ bookingId: rejecting.id, action: "reject", reason }, { onSettled: () => setRejecting(null) })} />
     </section>
-  );
+  )}</>;
 }

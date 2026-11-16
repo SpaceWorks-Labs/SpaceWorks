@@ -12,6 +12,7 @@ import { DOCS_LINKS } from "../hubLinks";
 import { featureCatalogue } from "./catalogue";
 import { defaultLabel, moduleDocs } from "./featureSummary";
 import { moduleDefault } from "./featureAreas";
+import { moduleMoney, moduleWithout } from "./moduleLifecycle";
 import { FeatureList, Lines, Panel } from "./ModuleSections";
 import { featuresByModule } from "./moduleFeatures";
 import { moduleFromSlug, moduleGroups, retiredModuleRedirect } from "./moduleGroups";
@@ -65,6 +66,12 @@ export function FeatureModulePage() {
       </section>
       <div className="sw-hub-wrap sw-features-panels">
         {entry.newIn?.length ? <Panel kind="new" title={t`New in 0.12.0`}><Lines items={entry.newIn} empty="" /></Panel> : null}
+        <Panel kind="without" title={t`Without this module`} note={t`Switching a module off keeps its data. Deleting module data is a separate superadmin action.`}>
+          <p className="text-muted">{moduleWithout()[key]}</p>
+        </Panel>
+        <Panel kind="money" title={t`Money and charges`} note={t`New charges require charges.enabled and the relevant area switch. Existing debts and receipts stay when charging is off; online checkout also needs configured provider credentials.`}>
+          <p className="text-muted">{moduleMoney(key)}</p>
+        </Panel>
         <Panel kind="who" title={t`Who uses it`}><Lines items={entry.roles} empty={t`Everyone who signs in.`} /></Panel>
         <Panel kind="integrations" title={t`Integrations`}><Lines items={entry.integrations} empty={t`It works on its own, with nothing to connect.`} /></Panel>
         <Panel kind="features" title={t`Features (${features.length})`}><FeatureList features={features} /></Panel>

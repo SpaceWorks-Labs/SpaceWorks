@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { expectNoA11yViolations } from "../../test/axe";
 import type { Makerspace } from "../../types/inventory";
+import { moduleKeys } from "../../lib/moduleLabels";
 import { HubLandingPage } from "./HubLandingPage";
 
 const spaces: Makerspace[] = Array.from({ length: 7 }, (_, i) => ({ name: `Space ${i + 1}`, public_code: `C${i}`, slug: `space-${i + 1}`, location: "Town" }));
@@ -11,7 +12,8 @@ vi.mock("../inventory/usePublicInventory", () => ({
 }));
 vi.mock("../hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: false, isPending: false }) }));
 const directory = vi.hoisted(() => ({ enabled: false }));
-vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => directory.enabled }));
+vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => directory.enabled,
+  usePublicOrganizationDirectory: () => ({ isSuccess: directory.enabled, error: null }) }));
 
 function Where() { const location = useLocation(); return <p data-testid="where">{location.pathname}{location.search}</p>; }
 function renderLanding() {
@@ -202,6 +204,11 @@ describe("HubLandingPage", () => {
     const nav = screen.getAllByRole("navigation", { name: "Main" })[0];
     expect(within(nav).getByRole("link", { name: "Features" })).toHaveAttribute("href", "/features");
     expect(screen.getByRole("link", { name: "See every feature" })).toHaveAttribute("href", "/features");
+    expect(screen.getByRole("link", { name: "Explore every module and feature switch" })).toHaveAttribute("href", "/features");
+    expect([...document.querySelectorAll("[data-landing-module]")].map(row => row.getAttribute("data-landing-module")).sort()).toEqual(moduleKeys().sort());
+    for (const name of ["How modules connect", "Integrations", "Free and paid", "Limits", "Public TV"]) {
+      expect(screen.getByRole("heading", { level: 3, name })).toBeInTheDocument();
+    }
     const areas = screen.getByRole("heading", { level: 2, name: "Turn on what you run. Leave off what you don’t." }).closest("section")!;
     expect(within(areas).getByRole("link", { name: "Every area and switch, on one page" })).toHaveAttribute("href", "/features");
     const footer = within(screen.getByRole("contentinfo")).getByRole("navigation", { name: "Footer: Use it" });

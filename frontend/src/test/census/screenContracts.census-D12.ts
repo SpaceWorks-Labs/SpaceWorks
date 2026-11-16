@@ -40,7 +40,7 @@ export const SCREEN_COPY: { screen: string; phase: Phase; source: string; text: 
   // The intake projection's module_disabled refusal names the fixture space (fetch BOOTSTRAP name).
   { screen: "JobRequestPage", phase: "module", source: "features/machine-jobs/JobRequestPage.tsx", text: "D12 Lab isn't taking job requests right now." },
   { screen: "CardVerifyPage", phase: "module", source: "features/cards/CardVerifyPage.tsx", text: "We couldn't match this code to a card. Check the whole code was scanned, or ask to see the card again." },
-  { screen: "CardVerifyPage", phase: "permission", source: "features/cards/CardVerifyPage.tsx", text: "Couldn't load this page. Try again." },
+  { screen: "CardVerifyPage", phase: "permission", source: "lib/api/errors.ts", text: "Census access denied." },
   { screen: "StaffApp/accountability", phase: "empty", source: "features/staff/panels/AccountabilityPanel.tsx", text: "Nothing to follow up. No overdue loans, open problems or restrictions." },
   { screen: "StaffApp/requests", phase: "empty", source: "features/staff/panels/RequestQueues.tsx", text: "No requests waiting for review. Check Ready for handover for the next step." },
   // Handover-only consoles open on the ready queue (guestOnly), with its own empty sentence.

@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from 'react';
 import { ListLayout, PublicDetailLayout } from '../../../components/layouts';
@@ -25,21 +26,21 @@ export function GalleryPage({ makerspaceSlug, publicToken, eventTitle, entryPubl
   const offered = query.data && 'filters' in query.data ? query.data.filters : null;
   if (offered && offered !== fieldFilters) setFieldFilters(offered);
   const state = { status: query.isLoading ? 'loading' as const : query.isError ? 'error' as const : 'ready' as const,
-    error: query.error?.message, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined };
+    error: query.error?.message, onRetry: isRetryable(query.error) ? () => { void query.refetch(); if (voting.publicQuery.error && isRetryable(voting.publicQuery.error)) void voting.publicQuery.refetch(); } : undefined };
   if (entryPublicId) {
     const entry = query.data && 'public_id' in query.data ? query.data as GalleryEntry : null;
-    return <PublicDetailLayout title={entry?.title ?? eventTitle} tagline="Made at the shared bench" state={state}
+    return <><QueryErrors queries={[voting.publicQuery, voting.ballotQuery]} /><PublicDetailLayout title={entry?.title ?? eventTitle} tagline="Made at the shared bench" state={state}
       sections={entry && !query.isError ? [{ id: 'project', label: t`The project`, content: <GalleryCard entry={entry} onDownload={onDownload} renderMemberCard={renderMemberCard} action={vote(entry)} /> }] : []}
       actionCard={{ title: t`Project record`, state: 'done', summary: t`Published with the team’s consent.`,
-        doneContent: 'File access follows current consent and the event’s retention deadline.', mobileBar: { summary: eventTitle, label: t`Project record` } }} />;
+        doneContent: 'File access follows current consent and the event’s retention deadline.', mobileBar: { summary: eventTitle, label: t`Project record` } }} /></>;
   }
   const data = query.data && 'results' in query.data ? query.data as Page<GalleryEntry> : null;
-  return <ListLayout header={{ title: `${eventTitle} projects`, subtitle: t`Projects shared by their teams.` }}
+  return <><QueryErrors queries={[voting.publicQuery, voting.ballotQuery]} /><ListLayout header={{ title: `${eventTitle} projects`, subtitle: t`Projects shared by their teams.` }}
     state={searching && query.isError ? { status: 'ready' } : state}
     filters={{ toolbar: <div className="grid gap-4"><PeoplesChoiceBanner voting={voting} slug={makerspaceSlug} projectHref={projectHref} />
       <GallerySearchBar value={search} filters={fieldFilters} unavailable={searching && query.isError} onChange={next => { setSearch(next); setPage(1); }} /></div> }}
     empty={{ message: t`No projects are public yet.` }} isEmpty={!query.isLoading && !data?.count}
     pagination={{ page, pageSize: 24, count: data?.count ?? 0, onChange: setPage }} body={{ kind: 'rows', rows: <>
       {!query.isError && data?.results.map(entry => <GalleryCard key={entry.public_id} entry={entry} href={projectHref(entry.public_id)} onDownload={onDownload} renderMemberCard={renderMemberCard} action={vote(entry)} />)}
-    </> }} />;
+    </> }} /></>;
 }

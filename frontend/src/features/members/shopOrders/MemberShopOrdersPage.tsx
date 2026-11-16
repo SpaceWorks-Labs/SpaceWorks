@@ -22,7 +22,7 @@ export function MemberShopOrdersPage() {
   const space = useMemberSpace();
   const tenantPath = useTenantPath(space.makerspaceSlug);
   const [page, setPage] = useState(1);
-  const orders = useQuery({ queryKey: shopKeys.memberOrders(space.makerspaceId, page), enabled: Boolean(space.makerspaceId),
+  const orders = useQuery({ queryKey: shopKeys.memberOrders(space.makerspaceId, page), enabled: Boolean(space.makerspaceId) && !orderId,
     queryFn: () => listMemberShopOrders(space.makerspaceId, page), retry: false, placeholderData: keepPreviousData });
   if (orders.error instanceof StructuredApiError && orders.error.status === 401) {
     return <MemberAuthPanel makerspaceSlug={space.makerspaceSlug} onAuthenticated={() => { void orders.refetch(); }} />;

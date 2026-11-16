@@ -15,7 +15,7 @@ export function PublicInventoryRoute() {
   const query = useTenantBootstrap(slug, tenant.mode === "central" && Boolean(slug));
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : query.data;
   if (!bootstrap) return <CenteredCardLayout title={t`Inventory`}
-    state={query.error ? { status: "error", error: t`Couldn't load this space. Try again.`, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined } : { status: "loading" }}
+    state={query.error ? { status: "error", error: isRetryable(query.error) ? (t`Couldn't load this space. Try again.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined } : { status: "loading" }}
     body="" primary={{ label: t`Opening inventory…`, disabled: true, disabledReason: t`The page is opening.` }} />;
   if (!publicFamilies(bootstrap).includes("inventory")) return <NotFoundPage />;
   return <PublicInventoryPage />;

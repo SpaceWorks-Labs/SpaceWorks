@@ -93,7 +93,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
             <Badge label="" tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
           </div>
           {health.isLoading ? <LogoLoader label={t`Loading integration health…`} size={48} className="min-h-16 py-3" /> : null}
-          {health.error ? <ErrorBlock error={new Error(t`Couldn't load integration health. Try again.`)} onRetry={isRetryable(health.error) ? () => { void health.refetch(); } : undefined} /> : null}
+          {health.error ? <ErrorBlock error={isRetryable(health.error) ? (new Error(t`Couldn't load integration health. Try again.`)) : health.error} onRetry={isRetryable(health.error) ? () => { void health.refetch(); } : undefined} /> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="desk-button" to={consoleSessionHref(staffTabPath("email-logs", false, makerspace.slug))}>{t`Delivery log`}</Link>

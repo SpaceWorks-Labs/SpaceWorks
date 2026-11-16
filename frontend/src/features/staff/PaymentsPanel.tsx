@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useContext, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +27,7 @@ import type { RefundRow } from "./paymentsApi";
 import { StaffListContext } from "./StaffListContext";
 import { MAKER_CHECKER_NOTICE } from "./PaymentReconcileActions";
 import { PaymentsPanelDialogs } from "./PaymentsPanelDialogs";
-import { TestModeBadge, usePaymentTestMode } from "./paymentTestMode";
+import { TestModeBadge, usePaymentTestModeQuery } from "./paymentTestMode";
 import { AreaPaymentGroups } from "./areaPayments/AreaPaymentGroups";
 import { AreaClaimsList } from "./areaPayments/AreaClaimsList";
 import {
@@ -70,7 +71,8 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
   const useQueue = areaMode || Boolean(areaFilter);
   const claimsOn = capabilityOn(makerspace, "billing.offline_claims");
   const makerChecker = capabilityOn(makerspace, "billing.maker_checker");
-  const testMode = usePaymentTestMode(makerspaceId); // Parity C20
+  const paymentSettings = usePaymentTestModeQuery(makerspaceId);
+  const testMode = paymentSettings.data?.test_mode === true; // Parity C20
   const showClaims = claimsOn && list.values.view === "claims";
   const filters = { area: areaFilter, status: status || "all", subject_type: subject, due_state: dueState, ordering: list.values.ordering, page: list.page };
   const [correctingRefund, setCorrectingRefund] = useState<{ paymentId: number; refund: RefundRow } | null>(null);
@@ -158,7 +160,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
   const subtitle = area ? t`${areaLabel(area)} charges owed to ${owner}, and how they were paid.`
     : areaMode ? t`Charges for the areas you run, owed to ${owner}, and how they were paid.`
     : t`Money owed to ${owner}, and how it was paid.`;
-  return <div onClickCapture={event => {
+  return <><QueryErrors queries={[paymentSettings]} />{<div onClickCapture={event => {
     const anchor = (event.target as HTMLElement).closest('nav[aria-label="Page sections"] a');
     if (!anchor || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
@@ -170,7 +172,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     callout={makerChecker ? { size: "inline", tone: "warn", lead: t`Two-person check is on.`,
       body: t`A payment you record waits until a second person who can record payments confirms it. You can't confirm your own. Online payment is paused for the member while it waits.` } : undefined}
     state={showClaims ? { status: "ready" } : payments.isLoading ? { status: "loading" } : payments.error && !payments.data
-      ? { status: "error", error: t`Couldn't load payments. Try again.`, onRetry: isRetryable(payments.error) ? () => { void payments.refetch(); } : undefined } : { status: "ready" }}
+      ? { status: "error", error: isRetryable(payments.error) ? (t`Couldn't load payments. Try again.`) : (payments.error instanceof Error ? payments.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(payments.error) ? () => { void payments.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={!showClaims && payments.data?.count === 0}
     empty={{ message: status === "pending" ? t`Nothing to collect. Every charge here is paid or waived.` : t`No payments yet. Charges appear here when someone books, registers or borrows.` }}
     filtered={Boolean(list.values.subject_type || dueState || list.values.area)} filteredEmpty={{ message: t`No matching payments. Try another filter.`, action: { label: t`Clear filters`, onClick: () => list.update({ subject_type: "", due_state: "", area: "" }) } }}
@@ -202,5 +204,5 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
         createLink={areaMode && payLinkRow ? email => areaPaymentsApi.payLink(makerspaceId, payLinkRow.id, email) : undefined}
         correctingRefund={correctingRefund} onCloseCorrection={() => setCorrectingRefund(null)} />
     </>}
-  /></div>;
+  /></div>}</>;
 }

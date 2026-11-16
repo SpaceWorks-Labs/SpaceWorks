@@ -1,7 +1,8 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { Link } from "react-router-dom";
 import { AnimatedLogoMark } from "../../components/brand/AnimatedLogoMark";
-import { useOrganizationDirectoryEnabled } from "../organizations/publicDirectoryApi";
+import { isDirectoryOff, usePublicOrganizationDirectory } from "../organizations/publicDirectoryApi";
 import { useHostingConfig } from "../hosting/hostingApi";
 import { useLandingEnabled } from "./useLandingEnabled";
 import { ExternalLink } from "./ExternalLink";
@@ -45,9 +46,11 @@ function columns(directory: boolean, hosting: boolean, about: boolean): { title:
 export function HubFooter() {
   const landing = useLandingEnabled();
   const year = new Date().getFullYear();
-  const directory = useOrganizationDirectoryEnabled();
+  const directoryQuery = usePublicOrganizationDirectory(1, "");
+  const directory = directoryQuery.isSuccess;
   const hosting = useHostingConfig().data === true;
   return <footer className="sw-hub-footer">
+    {directoryQuery.error && !isDirectoryOff(directoryQuery.error) ? <QueryErrors queries={[directoryQuery]} /> : null}
     <div className="sw-hub-wrap grid grid-cols-2 gap-x-6 gap-y-10 py-12 md:grid-cols-4 md:py-16 lg:grid-cols-[minmax(0,1.3fr)_repeat(4,minmax(0,1fr))]">
       <div className="col-span-2 grid content-start gap-4 md:col-span-4 lg:col-span-1">
         <Link to="/" aria-label={t`Space Works home`} className="w-fit rounded-control focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus">

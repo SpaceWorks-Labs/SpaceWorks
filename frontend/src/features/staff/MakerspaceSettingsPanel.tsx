@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
@@ -88,13 +89,13 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     : { id: requested, title: t`Settings`, rows: <EmptyState title={t`This settings page isn't available`}
       description={t`It may be switched off for this ${noun}, or your role can't open it.`}
       action={<Link className="desk-button-primary" to={sectionHref(settingsLanding(ids))}>{t`Go to settings overview`}</Link>} /> };
-  return <>
+  return <><QueryErrors queries={[archiveRequests]} />{<>
     {/* Every editor owns its own query, so the parent GET never gates the page: while it
         loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a
         failure is reported here instead of hiding payments, notifications and the rest. */}
     <SettingsLayout header={{ title: t`${nounTitle} settings`, subtitle: t`Make this space work for your community.`,
       meta: <>{settings.isLoading ? <LogoLoader label={t`Loading settings...`} size={48} className="min-h-16 py-3" /> : null}{settings.error ? <ErrorBlock className="w-full" onRetry={isRetryable(settings.error) ? () => { void settings.refetch(); } : undefined}
-        error={new Error(t`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)} /> : null}</>,
+        error={isRetryable(settings.error) ? (new Error(t`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)) : settings.error} /> : null}</>,
       primary: { label: t`View public site`, href: `/m/${makerspace.slug}` } }}
       state={{ status: "ready" }}
       nav={<SettingsSectionNav titles={titles} links={links} active={requested} href={sectionHref} canLeave={canLeave} />}
@@ -105,5 +106,5 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     <Modal open={archiveOpen} onClose={() => setArchiveOpen(false)} title={t`Archive this ${noun}`} size="xl">
       <MakerspaceArchiveRequestPanel makerspaceId={makerspace.id} canManageMakerspace={canManageMakerspace} />
     </Modal>
-  </>;
+  </>}</>;
 }

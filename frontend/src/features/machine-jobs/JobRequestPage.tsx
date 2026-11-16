@@ -2,7 +2,7 @@ import { plural, t } from "@lingui/core/macro";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { FlowLayout, type FlowStep } from "../../components/layouts";
-import type { Action, CalloutProps } from "../../components/ui";
+import { ErrorBlock, type Action, type CalloutProps } from "../../components/ui";
 import { SiteFooter } from "../../components/SiteFooter";
 import { StructuredApiError } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
@@ -56,7 +56,7 @@ export function JobRequestPage() {
   const { types, type, step, draft, submit } = flow;
 
   if (tenant.mode === "central" && bootstrapQuery.isLoading) return <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" />;
-  if (tenant.mode === "central" && bootstrapQuery.isError) return <div role="alert">{t`Couldn’t load the space. Try again.`}</div>;
+  if (tenant.mode === "central" && bootstrapQuery.isError) return <ErrorBlock error={bootstrapQuery.error} onRetry={isRetryable(bootstrapQuery.error) ? () => { void bootstrapQuery.refetch(); } : undefined} />;
   if (!available) return <div role="status">{t`Online machine requests aren't available here. Ask space staff for help.`}</div>;
 
   if (member.signedOut) return <div style={brandStyle}><MemberAuthPanel makerspaceSlug={makerspaceSlug}
@@ -70,7 +70,7 @@ export function JobRequestPage() {
   const busy = submit.isPending;
   const closed = types.error instanceof StructuredApiError && types.error.status === 404;
   const state = bootstrapQuery.isLoading || member.loading || types.isPending ? { status: "loading" as const }
-    : types.isError && !closed ? { status: "error" as const, error: t`Couldn't load the machines taking jobs. Try again.`, onRetry: isRetryable(types.error) ? () => { void types.refetch(); } : undefined }
+    : types.isError && !closed ? { status: "error" as const, error: isRetryable(types.error) ? (t`Couldn't load the machines taking jobs. Try again.`) : (types.error instanceof Error ? types.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(types.error) ? () => { void types.refetch(); } : undefined }
       : { status: "ready" as const };
   const steps: FlowStep[] = JOB_STEPS.map((key, position) => ({ key, label: STEP_LABELS[key], required: true,
     state: position < index ? "done" : position === index ? "current" : "todo",

@@ -55,6 +55,8 @@ describe("LandingPage", () => {
     renderLanding({ data: spaces });
     expect(screen.getAllByRole("link", { name: "About" }).some(link => link.getAttribute("href") === "/about")).toBe(true);
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/member");
+    expect(screen.getAllByRole("link", { name: "Features" }).map(link => link.getAttribute("href"))).toEqual(["/features", "/features"]);
+    expect(screen.getAllByRole("link", { name: "Docs" }).map(link => link.getAttribute("href"))).toEqual(["/docs", "/docs"]);
     expect(screen.getByRole("link", { name: /License/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Platform sign-in" })).toHaveAttribute("href", "/admin");
     for (const space of spaces) expect(screen.getByRole("link", { name: `Open makerspace ${space.name}` })).toHaveAttribute("href", `/m/${space.slug}`);

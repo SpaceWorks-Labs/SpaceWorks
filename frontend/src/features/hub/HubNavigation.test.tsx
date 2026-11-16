@@ -13,7 +13,8 @@ import { GITHUB_URL } from "./hubLinks";
 const state = vi.hoisted(() => ({ enabled: true, owner: "", accountId: 1, count: 0 }));
 vi.mock("./useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: state.enabled }) }));
 vi.mock("../hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: false }) }));
-vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
+vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false,
+  usePublicOrganizationDirectory: () => ({ isSuccess: false, error: null }) }));
 vi.mock("../publicPages/pageApi", async original => ({ ...await original<typeof import("../publicPages/pageApi")>(), usePublicPage: () => ({ data: null }) }));
 vi.mock("../../lib/api/sessionTokens", async original => ({ ...await original<typeof import("../../lib/api/sessionTokens")>(), getSessionOwner: () => state.owner }));
 vi.mock("../../lib/api", async original => ({ ...await original<typeof import("../../lib/api")>(),

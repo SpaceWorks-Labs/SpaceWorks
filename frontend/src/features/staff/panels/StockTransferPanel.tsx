@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { ListLayout, FlowLayout } from "../../../components/layouts";
 import { Callout, ErrorText, Field, OverflowMenu } from "../../../components/ui";
@@ -19,7 +20,7 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
    validationError, submit, transfers, makerspaceNames, sourceContainerNames,
    destinationContainerNames,
  } = useStockTransfer({ makerspace, makerspaces, isSuperadmin, canEditInventory });
-  return <ListLayout header={{ title: t`Transfers`, subtitle: t`Stock moved between boxes and spaces.`, primary: canCreate ? { label: t`New transfer`, onClick: () => { setStep("from"); setOpen(true); } } : undefined }}
+  return <><QueryErrors queries={[products, sourceContainers, destinationContainers]} />{<ListLayout header={{ title: t`Transfers`, subtitle: t`Stock moved between boxes and spaces.`, primary: canCreate ? { label: t`New transfer`, onClick: () => { setStep("from"); setOpen(true); } } : undefined }}
     callout={!canCreate ? { size: "inline", tone: "warn", lead: t`Transfers are managed by inventory staff.`, body: t`This view is read-only.` } : undefined}
     filters={isSuperadmin && spaceOptions.length > 1 ? { views: <label className="relative flex h-11 min-w-0 items-center">
       <span aria-hidden="true" className="pointer-events-none absolute left-3 text-sm text-muted">{t`Makerspace:`}</span><span className="sr-only">{t`Show transfers for makerspace`}</span>
@@ -98,5 +99,5 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
             {isCrossMakerspace ? <details><summary className="desk-button-ghost">{t`Read the details`}</summary><p className="text-sm text-muted">{t`Only available stock can move. Individual asset-tracked products are not supported. The source container is ignored for transfers between makerspaces.`}</p></details> : null}
 
         <ErrorText message={validationError || create.error?.message || products.error?.message} />
-      </>}</div>} /> : undefined} />;
+      </>}</div>} /> : undefined} />}</>;
 }

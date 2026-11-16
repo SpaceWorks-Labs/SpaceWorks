@@ -23,7 +23,7 @@ export function PublicHandlePage() {
   // have their own resolver and retain the legacy /<handle> entry point.
   if (query.data === null || query.error instanceof StructuredApiError && query.error.status === 404) return <PublicProfilePage />;
   // A failed refetch keeps the last resolution; the error state is only for a handle never resolved.
-  if (query.error && !query.data) return <CenteredCardLayout state={{ status: "error", error: t`Couldn't load this public page.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }} title={t`Public page`} body="" primary={isRetryable(query.error) ? { label: t`Try again`, onClick: () => { void query.refetch(); } } : { label: t`Home`, href: "/" }} />;
+  if (query.error && !query.data) return <CenteredCardLayout state={{ status: "error", error: isRetryable(query.error) ? (t`Couldn't load this public page.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }} title={t`Public page`} body="" primary={isRetryable(query.error) ? { label: t`Try again`, onClick: () => { void query.refetch(); } } : { label: t`Home`, href: "/" }} />;
   if (!query.data) return <CenteredCardLayout state={{ status: "loading" }} title={t`Opening public page…`} body="" primary={{ label: t`Loading`, disabled: true }} />;
   const resolution = query.data;
   let url: URL; let path: string;

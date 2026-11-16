@@ -82,7 +82,8 @@ export function observeQueryCaches() {
   // Async context follows awaits through the API client to the fetch boundary.
   const fetchSpy = vi.spyOn(Query.prototype, "fetch").mockImplementation(function (this: Query, ...args: Parameters<typeof fetchQuery>) {
     const owner = owners.get(this);
-    return owner ? requestScope.run({ owner, query: this }, () => fetchQuery.apply(this, args)) : fetchQuery.apply(this, args);
+    // The first optimistic or imperative fetch can precede a render owner. Its query identity still exists.
+    return requestScope.run({ owner: owner ?? new Set<string>(), query: this }, () => fetchQuery.apply(this, args));
   } as typeof fetchQuery);
   const originalMutation = buildMutation;
   const mutationSpy = vi.spyOn(MutationCache.prototype, "build");
@@ -93,7 +94,10 @@ export function observeQueryCaches() {
   } as typeof originalMutation);
   return { rendered, errors, localResults, requestOwner: () => {
     const scope = requestScope.getStore();
-    return scope?.query.state.fetchStatus === "fetching" ? scope.owner : undefined;
+    return scope?.query.state.fetchStatus === "fetching" && scope.owner.size ? scope.owner : undefined;
+  }, requestOperation: () => {
+    const scope = requestScope.getStore();
+    return scope?.query.state.fetchStatus === "fetching" ? scope.query.queryHash : undefined;
   }, queries: () => [...caches].flatMap(cache => cache.getAll()),
     mutations: () => [...mutationCaches].flatMap(cache => cache.getAll()),
     clear() { for (const cache of caches) cache.clear(); for (const cache of mutationCaches) cache.clear(); },

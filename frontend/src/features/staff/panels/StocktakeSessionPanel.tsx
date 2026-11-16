@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -96,7 +97,7 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
     meta={selected ? [`#${selected.id}`, selected.started_at ? <>{t`Started `}<RelativeTime date={selected.started_at} /></> : "", selected.blind ? t`Blind count` : t`Expected shown`] : undefined}
     state={inventoryQueryState(session, "this count")} actions={{ primary: selected ? nextAction(selected) : undefined }}
     main={<CountSection makerspace={makerspace} stocktakeId={openId} readOnly={selected ? !canCount(selected.status) : undefined} />} />{detail}</>;
-  return <ListLayout header={{ title: t`Stocktake`, subtitle: t`Count what's on the shelves and fix the numbers.`, primary: add,
+  return <><QueryErrors queries={[containers, schedules]} />{<ListLayout header={{ title: t`Stocktake`, subtitle: t`Count what's on the shelves and fix the numbers.`, primary: add,
     overflow: [...(shelfChecks ? [{ label: t`Check shelves`, onClick: () => setChecksOpen(true) }] : []), ...(discipline && canConfigure ? [{ label: t`Count policy and schedule`, onClick: () => setPolicyOpen(true) }] : [])] }}
     callout={dueSchedule ? { size: "banner", tone: "warn", lead: `${dueSchedule.name} is due.`, body: t`Start a count to check the shelves.`, action: { label: t`Start it`, onClick: () => { setCreateNotes(dueSchedule.name); setCreateOpen(true); } } } : undefined}
     state={inventoryQueryState(stocktakes, "stocktake sessions")} isEmpty={!stocktakes.results.length} filtered={Boolean(list.values.status)}
@@ -110,6 +111,6 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
         {(() => { const next = canCount(row.status) ? undefined : nextAction(row);
           return next ? <button className="desk-button-ghost" disabled={next.pending} onClick={event => { event.stopPropagation(); next.onClick(); }}>{next.label}</button>
             : <button className="desk-button-ghost" onClick={() => setParams(current => { current.set("session", String(row.id)); return current; })}>{canCount(row.status) ? t`Continue` : t`Open count`}</button>; })()}</div>} />) }}
-    pagination={{ page: stocktakes.page, pageSize: stocktakes.pageSize, count: stocktakes.count, onChange: stocktakes.setPage }} detail={detail} />;
+    pagination={{ page: stocktakes.page, pageSize: stocktakes.pageSize, count: stocktakes.count, onChange: stocktakes.setPage }} detail={detail} />}</>;
 }
 function canCount(status: string) { return status === "draft" || status === "counting"; }

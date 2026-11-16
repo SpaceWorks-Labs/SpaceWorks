@@ -10,7 +10,7 @@ export function PayoutDashboard({ scope }: { scope: FinanceScope }) {
   const query = usePayoutDashboard(scope);
   return <DashboardLayout header={{ eyebrow: t`Finance`, title: t`Event reimbursements`, subtitle: t`Budgets, claims and recorded payouts, separated by currency.` }}
     state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready",
-      error: t`The finance dashboard could not be loaded.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
+      error: isRetryable(query.error) ? (t`The finance dashboard could not be loaded.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
     stats={[]} main={[{ title: t`Currency balances`, empty: { message: t`No reimbursement balances yet.` },
       isEmpty: query.data?.currencies.length === 0, content: <div className="grid gap-6">
         {query.data?.pool_provider_available === false ? <p className="text-sm text-muted">{t`Event budget information is unavailable. Core payout balances remain available.`}</p> : null}

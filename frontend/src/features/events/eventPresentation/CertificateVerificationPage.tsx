@@ -40,7 +40,7 @@ export function CertificateVerificationPage() {
       media={data ? { icon: valid ? "ShieldCheck" : "ShieldAlert", tone: valid ? "success" : "danger" } : undefined}
       state={query.isLoading ? { status: "loading" } : { status: "ready" }}
       body={data ? <span className={valid ? "text-success-ink" : "text-danger"}><strong>{valid ? t`Valid.` : t`Withdrawn.`}</strong> {data.status_note}</span>
-        : failed ? t`Certificate checking is unavailable. Try again.` : t`This certificate is not available for public checking.`}
+        : failed ? (isRetryable(query.error) ? t`Certificate checking is unavailable. Try again.` : query.error?.message) : t`This certificate is not available for public checking.`}
       content={data ? <div className="grid gap-6">
         <dl className="grid gap-3 rounded-control border border-line p-4">
           {data.recipient_name ? <Row label={t`Awarded to`}><span className="font-semibold">{data.recipient_name}</span></Row> : null}
@@ -54,7 +54,7 @@ export function CertificateVerificationPage() {
         </dl>
         {!data.recipient_name ? <p className="text-sm text-muted">{t`The holder has not chosen to show their name here.`}</p> : null}
         <CertificateFileCheck expected={data.sha256} />
-      </div> : failed ? <ErrorText message={query.error instanceof StructuredApiError && query.error.status < 500 ? query.error.message : t`Certificate checking is unavailable. Try again.`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : missing ? <p role="status" className="text-sm text-muted">{t`Unknown, private and unfinished certificates all give this same answer.`}</p> : null}
+      </div> : failed ? <ErrorText message={isRetryable(query.error) ? t`Certificate checking is unavailable. Try again.` : query.error?.message ?? t`This certificate is not available for public checking.`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : missing ? <p role="status" className="text-sm text-muted">{t`Unknown, private and unfinished certificates all give this same answer.`}</p> : null}
       primary={{ label: t`Space Works home`, href: "/" }} />
   </AppShell>;
 }

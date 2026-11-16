@@ -7,10 +7,12 @@ import { moduleKeys, moduleLabel } from "../../../lib/moduleLabels";
 import { FeatureModulePage } from "./FeatureModulePage";
 import { featureCatalogue } from "./catalogue";
 import { featuresByModule, isProductFeature } from "./moduleFeatures";
+import { moduleMoney, moduleWithout } from "./moduleLifecycle";
 import { moduleSlug } from "./moduleGroups";
 
 vi.mock("../../hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: false, isPending: false }) }));
-vi.mock("../../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
+vi.mock("../../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false,
+  usePublicOrganizationDirectory: () => ({ isSuccess: false, error: null }) }));
 
 function renderAt(path: string) {
   return render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/features/:module" element={<FeatureModulePage />} /></Routes></MemoryRouter>);
@@ -55,6 +57,8 @@ describe("FeatureModulePage", () => {
     for (const key of moduleKeys()) {
       const { unmount } = renderAt(`/features/${moduleSlug(key)}`);
       expect([key, screen.getByRole("heading", { level: 1 }).textContent]).toEqual([key, moduleLabel(key)]);
+      expect(document.querySelector('[data-panel="without"]')).toHaveTextContent(moduleWithout()[key]);
+      expect(document.querySelector('[data-panel="money"]')).toHaveTextContent(moduleMoney(key));
       unmount();
     }
     const { container } = renderAt("/features/events");

@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { plural, t } from "@lingui/core/macro";
 import { toast } from "../../../components/ui/toastStore";
 import type { Key } from "react";
@@ -228,7 +229,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   if (addOpen) return <ItemModal title={t`Add item`} open onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} makerspace={makerspace} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
     {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
   </ItemModal>;
-  return (
+  return <><QueryErrors queries={[categories]} />{reorder.error}{(
     <ListLayout width="wide" header={{ title: t`Inventory`, subtitle: t`Parts, tools and the stock ready for your next project.`, primary: addItem,
       secondary: { label: t`Export`, menu: [{ label: selectedIds.length ? t`Export CSV (${selectedIds.length} selected)` : t`Export CSV`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: selectedIds.length ? t`Export Excel (${selectedIds.length} selected)` : t`Export Excel`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, overflow: [...domainSettings.actions, ...loanPayments.actions, { label: t`Equipment kits`, onClick: () => setEquipmentKitsOpen(true) }], meta: plural(products.data?.count ?? 0, { one: "# item", other: "# items" }) }}
       callout={reorder.callout} state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id || list.values.category)}
@@ -241,7 +242,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
       body={{ kind: "table", table: <DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={value => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={row => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} /> }}
       pagination={{ page: list.page, pageSize: 24, count: products.data?.count ?? 0, onChange: list.setPage }}
       detail={<>
-      {reorder.panel}{products.isError ? null : reorder.error}
+      {reorder.panel}
       <p role="status" className="text-sm text-muted">{toBuyMessage || bulkQrMessage}</p><ErrorText message={exportInventory.error?.message} />
       {editing ? <InventoryItemDetail product={editing} makerspace={makerspace} canViewAudit={canViewAudit} kitEnabled={kitEnabled} form={form} setForm={setForm} categories={categoryRows} onClose={closeEdit}
         pending={update.isPending} error={update.error?.message} onSave={() => update.mutate()} onArchive={() => { archive.mutate(editing); closeEdit(); }}
@@ -271,5 +272,5 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
       <Modal open={equipmentKitsOpen} onClose={() => setEquipmentKitsOpen(false)} title={t`Equipment kits`}><EquipmentKitManager tenant={makerspace.id} canEdit={canEditInventory} /></Modal>
       <ConfirmDialog open={qrConfirm !== null} title={qrConfirm ? t`Enable public QR` : t`Disable public QR`} message={qrConfirm ? plural(selectedIds.length, { one: "Enable public self-checkout QR for # selected item?", other: "Enable public self-checkout QR for # selected items?" }) : plural(selectedIds.length, { one: "Disable public self-checkout QR for # selected item?", other: "Disable public self-checkout QR for # selected items?" })} confirmLabel={qrConfirm ? t`Enable` : t`Disable`} pending={bulkQr.isPending} onCancel={() => setQrConfirm(null)} onConfirm={() => { if (qrConfirm !== null) bulkQr.mutate(qrConfirm); }} />
       </>} />
-  );
+  )}</>;
 }

@@ -1,3 +1,5 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
+import { isRetryable } from "../../lib/api/errors";
 import { t } from "@lingui/core/macro";
 import { MakerspaceSection } from "../public/MakerspaceSection";
 import { useMachinesNow, type MachineNowStatus } from "./api";
@@ -17,6 +19,7 @@ export function MachineChip({ status }: { status: MachineNowStatus }) {
 
 export function MachinesNowSection({ slug, enabled }: { slug: string; enabled: boolean }) {
   const query = useMachinesNow(slug, enabled);
+  if (enabled && query.error && isRetryable(query.error)) return <QueryErrors queries={[query]} />;
   if (!enabled || !query.data || query.data.items.length === 0) return null;
   const { in_use: inUse, free, out_of_service: out, items } = query.data;
   return <MakerspaceSection id="machines-now" title={t`Machines now`}

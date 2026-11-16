@@ -14,7 +14,7 @@ import type { SelfResult } from "./contextualIntake";
 import type { FormEvent, ReactNode } from "react";
 import { useParams } from "react-router-dom";
 
-import { Card, Field, Pagination } from "../../components/ui";
+import { Card, ErrorBlock, Field, Pagination } from "../../components/ui";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import type { Product } from "../../types/inventory";
 import { ProductCard } from "./ProductCard";
@@ -96,8 +96,9 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
 
   // A catalogue refresh must not hide search or an already-composed request.
   const state = inventoryQuery.isLoading ? { status: "loading" as const } : inventoryQuery.isError
-    ? { status: "error" as const, error: t`Couldn't load inventory. Try again.`, onRetry: isRetryable(inventoryQuery.error) ? () => { void inventoryQuery.refetch(); } : undefined } : { status: "ready" as const };
+    ? { status: "error" as const, error: isRetryable(inventoryQuery.error) ? (t`Couldn't load inventory. Try again.`) : (inventoryQuery.error instanceof Error ? inventoryQuery.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(inventoryQuery.error) ? () => { void inventoryQuery.refetch(); } : undefined } : { status: "ready" as const };
   const body = <div className="grid min-w-0 gap-6">
+    {categoriesQuery.error ? <ErrorBlock error={categoriesQuery.error} onRetry={isRetryable(categoriesQuery.error) ? () => { void categoriesQuery.refetch(); } : undefined} /> : null}
     <CatalogSidebar categories={categories} view={view} onSelect={selectView} />
     <Card><form className="flex flex-wrap items-end gap-3" onSubmit={submitSearch}>
       <Field className="min-w-0 flex-1" label={t`Search inventory`}><SearchField fixedIcon adornmentClassName="text-on-success" className="desk-input w-full bg-success text-on-success placeholder:text-on-success" placeholder={t`Search tools, machines, kits, or materials`} value={searchInput} onChange={event => setSearchInput(event.target.value)} /></Field>

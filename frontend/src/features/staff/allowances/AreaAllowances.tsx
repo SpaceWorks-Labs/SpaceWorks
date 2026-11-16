@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { Callout, ProgressBar, StatusPill } from "../../../components/ui";
 import { currencyUsageAmount } from "../platformSpaces/LimitRowView";
@@ -38,6 +39,7 @@ export function AreaAllowances({ makerspaceId, tab }: { makerspaceId: number; ta
   const area = TAB_AREA[tab];
   const query = useStaffAllowances(makerspaceId);
   const all = query.data?.rows;
+  if (query.error) return <QueryErrors queries={[query]} />;
   if (!area || !Array.isArray(all)) return null;
   const rows = all.filter(row => area === "all" || row.areas.includes(area));
   if (!rows.length) return null;

@@ -38,7 +38,7 @@ export function LegalPage({ slug }: { slug: LegalSlug }) {
     <PageMetadata title={spaceName ? `${title} · ${spaceName}` : title} description={legalTitle(slug)} path={space ? path(slug) : `/${slug}`} />
     <PublicLayout {...chrome} width="narrow"
       header={{ title, subtitle: updated, secondary: { label: legalTitle(other), href: space ? path(other) : `/${other}` } }}
-      state={page.isLoading ? { status: "loading" } : page.error ? { status: "error", error: t`This page could not be loaded. Try again.`, onRetry: isRetryable(page.error) ? () => { void page.refetch(); } : undefined } : { status: "ready" }}>
+      state={page.isLoading ? { status: "loading" } : page.error ? { status: "error", error: isRetryable(page.error) ? (t`This page could not be loaded. Try again.`) : (page.error instanceof Error ? page.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(page.error) ? () => { void page.refetch(); } : undefined } : { status: "ready" }}>
       {page.data ? split.body.trim() ? <article aria-label={title}><LegalMarkdown body={split.body} /></article>
         : <EmptyState message={t`No content has been published for this page yet.`} /> : null}
     </PublicLayout>

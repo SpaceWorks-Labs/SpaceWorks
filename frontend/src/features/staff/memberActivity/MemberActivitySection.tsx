@@ -29,7 +29,7 @@ export function MemberActivitySection({ makerspaceId, userId }: { makerspaceId: 
   return <section className="grid min-w-0 gap-3 border-t border-line pt-4" aria-labelledby={`member-activity-${userId}`}>
     <h2 id={`member-activity-${userId}`} className="title-panel">{t`Activity across the space`}</h2>
     {activity.isLoading ? <LogoLoader label={t`Loading activity…`} size={48} className="min-h-16 py-3" /> : null}
-    {activity.error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{t`Couldn't load this member's activity.`}</p>
+    {activity.error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{isRetryable(activity.error) ? t`Couldn't load this member's activity.` : (activity.error instanceof Error ? activity.error.message : t`This content is no longer available for your access.`)}</p>
       {isRetryable(activity.error) ? <button className="desk-button" type="button" onClick={() => { void activity.refetch(); }}>{t`Retry`}</button> : null}</div> : null}
     {activity.data ? <>
       <AccountFacts access={activity.data.access_status} member={activity.data.is_member} />

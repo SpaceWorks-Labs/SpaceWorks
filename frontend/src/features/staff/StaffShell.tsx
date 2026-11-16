@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { consoleSessionHref, currentSessionContext } from "../../lib/api/sessionContext";
 import { useEffect, useState, type ReactNode } from "react";
@@ -9,7 +10,7 @@ import type { StaffAuthUser } from "../../lib/api";
 import type { Makerspace } from "./panels/shared";
 import { CommandPalette } from "./CommandPalette";
 import { sidebarSections } from "./sidebarSections";
-import { useUnreadNotifications } from "./useUnreadNotifications";
+import { useUnreadNotificationsQuery } from "./useUnreadNotifications";
 import { collectionResults, machineKeys, type MachineCollection, type MachineType } from "./machinesApi";
 import { machineTypeSegment, staffTabPath, SUPERADMIN_GLOBAL_TABS } from "./staffTabs";
 import { visibleRequestTabs } from "./panels/requestTabs";
@@ -30,7 +31,8 @@ export function StaffShell(props: Props) {
   const { activeMakerspace: space, allowedTabs, activeTab, guestOnly, singleTenantLocked, user } = props;
   const [paletteOpen, setPaletteOpen] = useState(false);
   const location = useLocation();
-  const unread = useUnreadNotifications(space?.id, !!space && allowedTabs.includes("notifications"));
+  const unreadQuery = useUnreadNotificationsQuery(space?.id, !!space && allowedTabs.includes("notifications"));
+  const unread = unreadQuery.isError ? 0 : Math.max(0, unreadQuery.data?.count ?? 0);
   // The console has no tenant bootstrap: publish the active space's delight switches.
   const spaceFeatures = space?.enabled_features ?? null;
   useEffect(() => {
@@ -121,6 +123,7 @@ export function StaffShell(props: Props) {
       {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}
       <SuperadminSpaceGuard notice={props.isSuperadmin && space ? spaceNotice(notices.data, { id: space.id }) : undefined} />
       <PlatformNoticeBanners data={notices.data} space={space ? { id: space.id } : undefined} />
+      <QueryErrors queries={[unreadQuery]} />
       {props.children}
     </AppShell>
     {makerspaceTools && space ? <CommandPalette key={space.id} makerspaceId={space.id} makerspaceSlug={space.slug} allowedTabs={allowedTabs}

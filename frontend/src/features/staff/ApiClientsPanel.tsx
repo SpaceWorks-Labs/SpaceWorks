@@ -163,7 +163,7 @@ export function ApiClientsPanel({
             onClientTypeChange={(next) => { setClientType(next); setScopes([]); }}
             scopesLoading={scopeOptions.isLoading}
             scopesError={scopeOptions.error}
-            onRetryScopes={() => { void scopeOptions.refetch(); }}
+            onRetryScopes={isRetryable(scopeOptions.error) ? () => { void scopeOptions.refetch(); } : undefined}
             onLabelChange={handleLabelChange}
             onReasonChange={handleReasonChange}
             onOriginsChange={handleOriginsChange}
@@ -188,7 +188,7 @@ export function ApiClientsPanel({
             scopeOptions={catalog}
             scopesLoading={scopeOptions.isLoading}
             scopesError={scopeOptions.error}
-            onRetryScopes={() => { void scopeOptions.refetch(); }}
+            onRetryScopes={isRetryable(scopeOptions.error) ? () => { void scopeOptions.refetch(); } : undefined}
             scopeUpdatePending={updateScopes.isPending}
             scopeUpdateError={updateScopes.error}
             activePending={setActive.isPending}

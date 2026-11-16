@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
 import { QueryContent } from "../../components/layouts/LayoutFrame";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { StructuredApiError } from "../../lib/api";
 import { useOptionalTenant } from "../../lib/tenant";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { NotFoundPage } from "../NotFoundPage";
@@ -40,7 +39,7 @@ export function PublicProfilePage() {
 
   // Grammar failures never reach the API; missing handles use the shared 404 page.
   if (!HANDLE_PATTERN.test(handle) || isProfileMissing(profile.error)) return <NotFoundPage />;
-  const failure = profile.error instanceof StructuredApiError && profile.error.detail ? profile.error.detail : t`Couldn't load this profile. Try again.`;
+  const failure = isRetryable(profile.error) ? t`Couldn't load this profile. Try again.` : profile.error instanceof Error ? profile.error.message : t`This content is no longer available for your access.`;
   return <ProfileFrame state={profile.isLoading ? { status: "loading" }
     : profile.error ? { status: "error", error: failure, onRetry: isRetryable(profile.error) ? () => { void profile.refetch(); } : undefined } : { status: "ready" }}>
     {profile.data ? <PublicProfileCard profile={profile.data} /> : null}

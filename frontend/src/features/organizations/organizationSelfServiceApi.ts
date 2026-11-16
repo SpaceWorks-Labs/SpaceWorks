@@ -10,7 +10,8 @@ export type OrganizationCreationPolicy = import("../../generated/api").Organizat
 /** `enabled` lets a caller share this cache entry without fetching where self-service cannot exist. */
 export function useOrganizationCreationPolicy(enabled = true) {
   return useQuery({ queryKey: [...organizationSelfServiceKey, browserSessionIdentity(getAccessToken())],
-    queryFn: () => staffRequest<OrganizationCreationPolicy>("/auth/organizations/self-service/"), enabled });
+    // The parent reveals its editor on error. Mounting that second observer must not restart the failed read.
+    queryFn: () => staffRequest<OrganizationCreationPolicy>("/auth/organizations/self-service/"), enabled, retryOnMount: false });
 }
 
 export function useCreateOwnOrganization() {

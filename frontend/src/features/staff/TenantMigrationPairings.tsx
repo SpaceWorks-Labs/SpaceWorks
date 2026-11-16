@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ export function TenantMigrationPairings({ pairings, active = true }: { pairings:
     }
   };
 
+  if (identity.error) return <QueryErrors queries={[identity]} />;
   if (!active) return null;
   return (
     <section aria-labelledby="migration-pairing-title" className="min-w-0">

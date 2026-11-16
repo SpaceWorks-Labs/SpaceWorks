@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import type { TenantBootstrap } from "../../lib/api";
 import { MakerspaceSection } from "../public/MakerspaceSection";
@@ -28,15 +29,16 @@ function PublicStatsNow({ slug }: { slug: string }) {
  */
 export function SpaceNowSections({ slug, bootstrap, path }: { slug: string; bootstrap: TenantBootstrap; path: (sub?: string) => string }) {
   const modules = new Set(bootstrap.modules);
-  const config = usePublicNowConfig(slug).data;
+  const configQuery = usePublicNowConfig(slug);
+  const config = configQuery.data;
   const order = config?.sections ?? DEFAULT_ORDER;
   const hours = bootstrap.makerspace.opening_hours as { weekly?: Record<string, { start: string; end: string }[]> } | undefined;
-  return <>{order.map((section) => {
+  return <><QueryErrors queries={[configQuery]} />{<>{order.map((section) => {
     if (section === "here_now") return <HereNowSection key={section} slug={slug} enabled={modules.has("presence")} />;
     if (section === "machines") return <MachinesNowSection key={section} slug={slug} enabled={modules.has("machines")} />;
     if (section === "events") return <EventsCalendarSection key={section} slug={slug} path={path} timeZone={bootstrap.makerspace.timezone ?? "UTC"} enabled={modules.has("events")} />;
     if (section === "public_stats") return <PublicStatsNow key={section} slug={slug} />;
     return hours?.weekly && Object.keys(hours.weekly).length
       ? <MakerspaceSection key={section} id="opening-hours" title={t`Opening hours`}><OpeningHoursList tv={false} data={hours} /></MakerspaceSection> : null;
-  })}</>;
+  })}</>}</>;
 }

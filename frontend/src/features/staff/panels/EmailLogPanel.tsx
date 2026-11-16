@@ -56,7 +56,7 @@ export function EmailLogPanel({ makerspace }: { makerspace: Makerspace }) {
     list.setFilter("status", value);
   };
   return <ListLayout header={{ title: t`Delivery log`, subtitle: t`See what reached people and retry deliveries that need attention.` }}
-    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: t`Couldn't load email logs. Try again.`, onRetry: isRetryable(logs.error) ? () => { void logs.refetch(); } : undefined }}
+    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: isRetryable(logs.error) ? (t`Couldn't load email logs. Try again.`) : (logs.error instanceof Error ? logs.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(logs.error) ? () => { void logs.refetch(); } : undefined }}
     isEmpty={logs.data?.results.length === 0} filtered={Boolean(status || list.values.recent_days)}
     empty={{ message: t`No email logs yet. Sent emails will appear here.` }}
     filteredEmpty={{ message: t`No email logs match. Try another status or date range.` }}

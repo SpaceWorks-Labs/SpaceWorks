@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { formatDateTime } from "../../lib/format";
 import { plural, t } from "@lingui/core/macro";
 import { X } from "lucide-react";
@@ -69,9 +70,10 @@ export function EventDiscoverPage() {
         </select></label>
         <button className="desk-button-primary w-full sm:w-auto">{t`Find events`}</button>
       </form>
-      <DiscoverChips filters={filters} organizers={organizers.data ?? []} onRemove={key => { const next = { ...filters, [key]: "" }; setPage(1); setFilters(next); setDraft(next); }} />
+      <QueryErrors queries={[organizers]} />
+    <DiscoverChips filters={filters} organizers={organizers.data ?? []} onRemove={key => { const next = { ...filters, [key]: "" }; setPage(1); setFilters(next); setDraft(next); }} />
       {query.isLoading ? <LogoLoader label={t`Loading events`} size={48} className="min-h-20 py-3" /> : null}
-      {query.error ? <ErrorText message={t`Unable to discover events. Check your dates and try again.`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : null}
+      {query.error ? <ErrorText message={isRetryable(query.error) ? (t`Unable to discover events. Check your dates and try again.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`)} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : null}
       {!query.error && query.data ? <section aria-labelledby="discover-events-results" className="grid gap-3">
         <h2 id="discover-events-results" className="title-panel">{plural(query.data.count, { one: "# event", other: "# events" })}</h2>
         {query.data.results.map((row) => <ListRow key={row.url} href={row.url} title={row.title}

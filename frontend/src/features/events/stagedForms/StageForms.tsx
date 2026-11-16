@@ -18,7 +18,7 @@ export function StageForms({ scope, onOpen }: { scope: StageScope; onOpen: (resp
   const query = useStageAssignments(scope, page);
   const now = useNow();
   return <ListLayout header={{ eyebrow: t`Your event`, title: t`Stage forms`, subtitle: t`Complete the forms opened for your participation.` }}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Forms could not be loaded.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: isRetryable(query.error) ? (t`Forms could not be loaded.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
     isEmpty={query.data?.count === 0} empty={{ message: t`You have no stage forms to complete.` }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: "rows", rows: query.data?.results.map(row => <article key={row.id} className="grid gap-3 rounded-2xl border border-line bg-panel p-5">

@@ -23,6 +23,10 @@ describe("featureAreas", () => {
     expect(moduleDefault("public_inventory")).toBe("always");
     expect(moduleDefault("events")).toBe("off");
     expect(moduleDefault("machines")).toBe("on");
+    for (const key of ["notifications", "email", "member_accounts"] as const) expect(moduleDefault(key)).toBe("on");
+    expect(moduleKeys().filter(key => moduleDefault(key) === "always").sort()).toEqual([
+      "evidence_uploads", "public_inventory", "qr_management", "request_workflow", "scanner", "staff_admin",
+    ]);
     const membership = featureAreas().find(area => area.key === "membership")!;
     expect(membership.gets).toContain("Card designer for member cards and staff ID cards, with numbering");
     expect(membership.gets).toContain("Wallet passes and a QR that anyone can check");

@@ -1,3 +1,5 @@
+import { isRetryable } from "../../../lib/api/errors";
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +33,7 @@ export function MyGuestPasses({ makerspaceId, paymentsHref, joinSlot }: {
     onSuccess: (data) => { window.location.assign(data.url); },
   });
   if (mine.isLoading) return <LogoLoader label={t`Loading your passes…`} />;
+  if (mine.error && isRetryable(mine.error)) return <QueryErrors queries={[mine]} />;
   if (mine.isError) return null; // Feature off (404) or signed out: the section simply isn't there.
   const passes = mine.data?.passes ?? [];
   if (!passes.length) return null;

@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { PublicStageDeadlines, type PublicStage } from "../events/stageTime";
@@ -33,7 +34,7 @@ import { useEventVenueSection } from "../bookings/EventVenueBlock";
 import { EventVenueDetails, hasVenueDetails, type Venue as VenueFields } from "../events/EventVenueDetails";
 import { PageShare } from "../publicPages/PageShare";
 import { PublicSponsorCards } from "../publicPages/PublicSponsorCards";
-import { useEventSponsors } from "../donations/useEventSponsors";
+import { useEventSponsorsQuery } from "../donations/useEventSponsors";
 import { PublicPrizes, usePublicPrizes } from "../events/prizes";
 import { EventShopOfferList } from "../shop/EventShopOffers";
 import { eventOffersEnabled, useEventShopOffers } from "../shop/eventOffersApi";
@@ -55,7 +56,8 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
   const brandStyle = useTenantBranding(bootstrap);
   const showPrice = chargesOn(bootstrap, "events"); // #184: no price at all when event charges are off
   const [shareError, setShareError] = useState("");
-  const sponsors = useEventSponsors(makerspaceSlug, publicToken, Boolean(bootstrap?.features.includes("finance.sponsors")));
+  const sponsorsQuery = useEventSponsorsQuery(makerspaceSlug, publicToken, Boolean(bootstrap?.features.includes("finance.sponsors")));
+  const sponsors = sponsorsQuery.data?.results ?? [];
   const calendar = useMutation({ mutationFn: (item: PublicEventDetail) => downloadEventCalendar(makerspaceSlug, item) });
   const eventQuery = useQuery({
     queryKey: ["public-event", makerspaceSlug, publicToken],
@@ -83,7 +85,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
   // That form says "Registration is closed." itself, so the card note only adds when it closed.
   const closedNote = organizationAudience ? cutoff || undefined : `Registration is closed.${cutoff ? ` ${cutoff}` : ""}`;
   if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title={t`Event not found`} body={t`This event is no longer available.`} primary={{ label: t`All events`, href: tenantPath("events") }} />;
-  return <div style={brandStyle}>
+  return <><QueryErrors queries={[sponsorsQuery, prizes, offers]} />{<div style={brandStyle}>
     {event ? <PageMetadata title={event.title} description={event.description.slice(0, 300)} path={canonicalUrl ?? location.pathname} image={event.website && "cover" in event.website ? event.website.cover?.url : event.image_url} imageAlt={event.website?.cover?.alt} noindex={surfaceOf(event).indexable === false} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={state}
       breadcrumb={[{ label: t`All events`, href: tenantPath("events") }, { label: event?.title ?? t`Event` }]}>
@@ -127,5 +129,5 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
           doneContent: <>{calendar.error ? <p role="alert">{t`Could not download this calendar.`}</p> : null}{shareError ? <p role="alert">{shareError}</p> : null}</> }} />
     </PublicLayout>
     {calendar.error || shareError ? <div role="alert" className="sw-layout p-4 text-danger">{shareError || t`Could not download this calendar.`}</div> : null}
-  </div>;
+  </div>}</>;
 }

@@ -13,7 +13,7 @@ export const inventoryStock = (): CataloguePart => ({
     roles: [t`Inventory managers`, t`Staff`], 
     noLimits: t`Containers are QR boxes and are counted by the boxes limit.`, integrations: [t`QR codes`] },
   stock_transfers: { icon: ArrowLeftRight, value: t`Move stock between locations on the record.`,
-    what: t`Transfers between shelves, rooms or sites are recorded with who moved what and when, so counts stay true.`,
+    what: t`Move stock between shelves, rooms and makerspaces, recording who moved what and when so counts stay true.`,
     roles: [t`Inventory managers`], 
     integrations: [] },
   qr_print_batches: { icon: Printer, value: t`Print labels for many boxes at once.`,
@@ -25,7 +25,7 @@ export const inventoryStock = (): CataloguePart => ({
     roles: [t`Inventory managers`], 
     integrations: [t`QR codes`, t`Warranty tracking`] },
   stocktake: { icon: ClipboardCheck, value: t`Scan-first stock counts.`,
-    what: t`Count by scanning, see variance against the book as you go and close the count with an audit trail.`,
+    what: t`Scan shelves for stocktakes and shelf checks, see variance against the book as you go and close the count with an audit trail. A connected shelf pointer can light the right shelf.`,
     roles: [t`Inventory managers`], 
     integrations: [t`Camera scanning`] },
 });

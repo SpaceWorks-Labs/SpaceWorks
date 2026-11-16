@@ -12,10 +12,11 @@ import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { MemberPortalTabs } from "../members/MemberPortalTabs";
 import { forgetOfflineMemberData } from "../members/memberCard/offlineCard";
 import { useMemberIdentity } from "./useMemberIdentity";
+import { isRetryable } from "../../lib/api/errors";
 
 export type MemberJobsContext = {
   slug: string; makerspaceId: number | undefined; path: (part?: string) => string; ready: boolean; bootstrapError: boolean;
-  features?: string[];
+  features?: string[]; bootstrapFailure?: Error | null; onRetryBootstrap?: () => void;
 };
 
 /**
@@ -31,6 +32,7 @@ export function MemberJobsShell({ children }: { children: (context: MemberJobsCo
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap: TenantBootstrap | null | undefined = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
+  const bootstrapFailure = tenant.mode === "single" ? tenant.error : bootstrapQuery.error;
   const member = useMemberIdentity();
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || "Makerspace";
   const logo = bootstrap?.branding.logo_url || bootstrap?.makerspace.logo_url || undefined;
@@ -45,7 +47,12 @@ export function MemberJobsShell({ children }: { children: (context: MemberJobsCo
       user={{ name: member.identity.data?.username || "Your account", menu: [{ label: t`Account & two-step sign-in`, href: "/mfa" }, { label: t`API access & connected apps`, href: "/account/api-access" }],
         onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(memberHome); }); } }}>
       {children({ slug: makerspaceSlug, makerspaceId: bootstrap?.makerspace.id, path, ready: !member.loading && Boolean(bootstrap),
-        bootstrapError: bootstrapQuery.isError, features: bootstrap?.features ?? [] })}
+        bootstrapError: Boolean(bootstrapFailure), bootstrapFailure,
+        onRetryBootstrap: isRetryable(bootstrapFailure) ? () => {
+          if (tenant.mode === "single") void client.refetchQueries({ predicate: query =>
+            ["runtime-tenant", "runtime-tenant-origin"].includes(String(query.queryKey[0])) });
+          else void bootstrapQuery.refetch();
+        } : undefined, features: bootstrap?.features ?? [] })}
     </MemberPortalTabs>
   </div>;
 }

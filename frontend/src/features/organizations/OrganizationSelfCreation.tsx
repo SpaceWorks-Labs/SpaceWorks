@@ -2,7 +2,7 @@ import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ErrorText, SettingsRow } from "../../components/ui";
+import { ErrorBlock, ErrorText, SettingsRow } from "../../components/ui";
 import { useTenant } from "../../lib/tenant";
 import { useCreateOwnOrganization, useOrganizationCreationPolicy } from "./organizationSelfServiceApi";
 
@@ -31,7 +31,7 @@ function EligibleOrganizationSelfCreation({ onCreated }: { onCreated?: (id: numb
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   if (policy.isLoading) return <LogoLoader label={t`Loading organization creation options…`} />;
-  if (policy.error) return <div className="py-5"><ErrorText message={policy.error.message} /></div>;
+  if (policy.error) return <div className="py-5"><ErrorBlock error={policy.error} onRetry={() => { void policy.refetch(); }} /></div>;
   if (!policy.data?.enabled) return null;
   return <div className="grid divide-y divide-line">
     <p className="pb-5 text-sm text-muted">{t`Create a private organization profile and invite other governors. Makerspace links require platform approval. Creation is limited to ${policy.data.max_per_day} per day and ${policy.data.max_owned} owned organizations.`}</p>

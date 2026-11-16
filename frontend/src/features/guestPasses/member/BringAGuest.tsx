@@ -1,3 +1,5 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
+import { isRetryable } from "../../../lib/api/errors";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,7 +23,8 @@ export function BringAGuest({ makerspaceId }: { makerspaceId: number }) {
   const [key, setKey] = useState(operationId);
   const guests = useQuery({ queryKey: guestKeys.sponsored(makerspaceId), queryFn: () => guestMemberApi.sponsored(makerspaceId), retry: false });
   // #234 addendum 3(a): how many more guests this member may bring right now (the per-sponsor limit).
-  const allowance = useMemberAllowances(makerspaceId).data?.guest_passes ?? null;
+  const allowanceQuery = useMemberAllowances(makerspaceId);
+  const allowance = allowanceQuery.data?.guest_passes ?? null;
   const noneLeft = allowance?.limit != null && allowance.remaining === 0;
   const refresh = () => {
     void client.invalidateQueries({ queryKey: memberAllowancesKey(makerspaceId) });
@@ -32,9 +35,10 @@ export function BringAGuest({ makerspaceId }: { makerspaceId: number }) {
     onSuccess: () => { setEmail(""); setKey(operationId()); void refresh(); },
   });
   const withdraw = useMutation({ mutationFn: (passId: number) => guestMemberApi.revokeSponsored(makerspaceId, passId, ""), onSuccess: refresh });
+  if (guests.error && isRetryable(guests.error)) return <QueryErrors queries={[guests, allowanceQuery]} />;
   if (guests.isError) return null; // Guest passes off here, or no longer a member.
   const rows = guests.data ?? [];
-  return <section aria-labelledby="bring-guest-title" className="desk-panel grid gap-4 p-5">
+  return <><QueryErrors queries={[allowanceQuery]} />{<section aria-labelledby="bring-guest-title" className="desk-panel grid gap-4 p-5">
     <div><h2 id="bring-guest-title" className="title-panel">{t`Bring a guest`}</h2>
       <p className="mt-1 text-sm text-muted">{t`Your guest needs an account here. They get a pass for today and see what it allows on their phone.`}</p>
       {allowance?.limit != null ? <p className="mt-1 text-sm text-ink">{t`You can bring ${allowance.remaining ?? 0} more of ${allowance.limit} guests right now.`}</p> : null}</div>
@@ -59,5 +63,5 @@ export function BringAGuest({ makerspaceId }: { makerspaceId: number }) {
       </li>)}
     </ul> : null}
     {withdraw.error ? <p role="alert" className="text-sm text-danger">{guestErrorText(withdraw.error)}</p> : null}
-  </section>;
+  </section>}</>;
 }

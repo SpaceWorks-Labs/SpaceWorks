@@ -56,7 +56,7 @@ export function PaymentDocuments({ makerspaceId, audience, initiallyExpanded = f
         <option value="receipt">{t`Receipts`}</option><option value="credit_note">{t`Credit notes`}</option>
       </select>
     </label><QueryContent state={documents.isLoading ? { status: "loading" } : documents.error
-      ? { status: "error", error: t`Couldn't load documents. Try again.`, onRetry: isRetryable(documents.error) ? () => { void documents.refetch(); } : undefined } : { status: "ready" }}
+      ? { status: "error", error: isRetryable(documents.error) ? (t`Couldn't load documents. Try again.`) : (documents.error instanceof Error ? documents.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(documents.error) ? () => { void documents.refetch(); } : undefined } : { status: "ready" }}
       isEmpty={documents.data?.count === 0} empty={{ message: t`No issued documents match this filter.` }}>
       <div className="grid gap-3">{documents.data?.results.map(document => <ListRow key={document.id}
         title={`${kindLabel(document.kind)} ${document.number}`}

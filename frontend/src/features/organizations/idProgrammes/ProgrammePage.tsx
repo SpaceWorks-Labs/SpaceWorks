@@ -55,7 +55,7 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
 function ProgrammeDesign({ programmeId, makerspaceId, canManage }: { programmeId: number; makerspaceId: number; canManage: boolean }) {
   const design = useProgrammeDesign(programmeId);
   if (design.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
-  if (design.isError || !design.data) return <ErrorBlock error={design.error} resource={t`card design`} />;
+  if (design.isError || !design.data) return <ErrorBlock error={design.error} resource={t`card design`} onRetry={() => { void design.refetch(); }} />;
   return <div className="grid gap-4">
     {canManage ? <ProgrammeApproval programmeId={programmeId} /> : null}
     <CardDesigner designId={design.data.id} makerspaceId={makerspaceId} canEdit={design.data.can_edit} title={t`Programme card design`} />
@@ -64,7 +64,7 @@ function ProgrammeDesign({ programmeId, makerspaceId, canManage }: { programmeId
 
 function ProgrammeApproval({ programmeId }: { programmeId: number }) {
   const { query, save } = useProgrammeApproval(programmeId);
-  if (!query.data) return query.error ? <ErrorBlock error={query.error} resource={t`approval setting`} /> : null;
+  if (!query.data) return query.error ? <ErrorBlock error={query.error} resource={t`approval setting`} onRetry={() => { void query.refetch(); }} /> : null;
   return <div className="grid max-w-md gap-1">
     <ApprovalLevelSelect label={t`Design changes for this programme`} value={query.data.required} inherited={query.data.inherited}
       inheritLabel="Follow the organisation and space" disabled={save.isPending} onChange={(value) => save.mutate(value)} />

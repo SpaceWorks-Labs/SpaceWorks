@@ -9,12 +9,16 @@ import { staffRequest } from "../../lib/api";
  * the payment settings, which only people who may open them can read: for anyone else this answers `false`
  * and nothing is shown, so the badge never claims a mode it could not check.
  */
-export function usePaymentTestMode(makerspaceId: number | undefined) {
-  const query = useQuery({
+export function usePaymentTestModeQuery(makerspaceId: number | undefined) {
+  return useQuery({
     queryKey: ["payment-settings", makerspaceId],
     queryFn: () => staffRequest<{ test_mode?: boolean | null }>(`/admin/makerspace/${makerspaceId}/payment-settings`),
     enabled: Boolean(makerspaceId), retry: false, staleTime: 60_000,
   });
+}
+
+export function usePaymentTestMode(makerspaceId: number | undefined) {
+  const query = usePaymentTestModeQuery(makerspaceId);
   return query.data?.test_mode === true;
 }
 

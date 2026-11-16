@@ -23,12 +23,13 @@ function SessionList({ context }: { context: MemberJobsContext }) {
     enabled: context.ready && context.makerspaceId != null, retry: false,
     refetchInterval: current => (current.state.data ?? []).some(row => row.status === "live") ? 60_000 : false });
   const rows = sessions.data ?? [];
+  const loadError = context.bootstrapFailure ?? sessions.error;
   // Decision 220(d)2: the server routes a session report to that machine's managers.
   const canReport = (context.features ?? []).includes("machines.issue_reporting");
   return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine sessions`,
     subtitle: t`Time you spent on the space's machines. Scan a machine's QR to start one.` }}
     state={context.bootstrapError || sessions.isError
-      ? { status: "error", error: t`Couldn't load your sessions. Try again.`, onRetry: isRetryable(sessions.error) ? () => { void sessions.refetch(); } : undefined }
+      ? { status: "error", error: isRetryable(loadError) ? (t`Couldn't load your sessions. Try again.`) : (loadError instanceof Error ? loadError.message : t`This content is no longer available for your access.`), onRetry: context.bootstrapError ? context.onRetryBootstrap : isRetryable(loadError) ? () => { void sessions.refetch(); } : undefined }
       : !context.ready || sessions.isPending ? { status: "loading" } : { status: "ready" }}
     isEmpty={sessions.isSuccess && !rows.length}
     empty={{ message: t`No machine sessions yet. Scan the QR on a machine to start one.` }}

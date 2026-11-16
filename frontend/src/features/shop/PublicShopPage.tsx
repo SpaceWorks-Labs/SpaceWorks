@@ -34,7 +34,7 @@ export function PublicShopPage() {
   }, [category, products.data]);
   const failed = !space.slug || shop.error || products.error;
   const state: QueryState = failed ? { status: "error", error: !space.slug ? t`This shop is not available.` : shopErrorMessage(shop.error ?? products.error),
-    onRetry: [shop.error, products.error].filter(Boolean).some(isRetryable) ? () => { void shop.refetch(); void products.refetch(); } : undefined }
+    onRetry: [shop.error, products.error].filter(Boolean).some(isRetryable) ? () => { for (const query of [shop, products]) if (query.error && isRetryable(query.error)) void query.refetch(); } : undefined }
     : shop.isPending || products.isPending ? { status: "loading" } : { status: "ready" };
   const rows = products.data?.results ?? [];
   const currency = shop.data?.currency ?? "inr";

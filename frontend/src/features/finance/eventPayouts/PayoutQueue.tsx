@@ -19,7 +19,7 @@ function QueueContent({ scope, onOpen }: { scope: FinanceScope; onOpen: (id: str
   // Selection is restricted to the currently loaded page and current server actions.
   const ids = selected.filter(id => query.data?.results.some(row => row.id === id && permits(row, "export")));
   return <ListLayout header={{ eyebrow: t`Finance`, title: t`Event payouts`, subtitle: t`Review liabilities and record completed payments.` }}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Unable to load the finance queue.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: isRetryable(query.error) ? (t`Unable to load the finance queue.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
     isEmpty={query.data?.count === 0} empty={{ message: t`There are no event payout obligations here.` }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: value => { setPage(value); setSelected([]); } }}
     body={{ kind: "rows", rows: [

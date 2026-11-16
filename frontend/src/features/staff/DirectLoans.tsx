@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { KitChecklistCapture, useKitChecklist } from "../inventory/KitChecklist";
 import { featureEnabled } from "../../lib/features";
@@ -191,9 +192,9 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   </DirectLoanCompactWork>;
   const shown = loans.results;
   const tabHref = (key: string) => { const next = new URLSearchParams(params); next.set("handout", key); return `?${next}`; };
-  return <ListLayout standalone={false}
+  return <><QueryErrors queries={[products, members, container]} />{<ListLayout standalone={false}
     header={{ title: t`Direct handout`, subtitle: t`Lend tools straight from the shelf, without a request.`, primary: { label: t`New handout`, icon: "Plus", onClick: () => setGuided(true) } }}
-    state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: t`Couldn't load direct handouts. Try again.`, onRetry: isRetryable(loans.error) ? () => void loans.refetch() : undefined }}
+    state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: isRetryable(loans.error) ? (t`Couldn't load direct handouts. Try again.`) : (loans.error instanceof Error ? loans.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(loans.error) ? () => void loans.refetch() : undefined }}
     tabs={[{ key: "on-loan", label: t`On loan`, count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: t`Returned`, count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: t`Claim codes`, href: tabHref("claim-codes") }]} activeTab={tab}
     isEmpty={tab !== "claim-codes" && !shown.length} filtered={Boolean(term || overdue)}
     filters={tab === "claim-codes" ? undefined : { search: { label: t`Search borrowers`, value: search, onChange: setSearch },
@@ -213,5 +214,5 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
       />
       {returnFlow.chargeRequestId ? <DamageChargeDialog key={returnFlow.chargeRequestId} makerspaceId={makerspace.id} requestId={returnFlow.chargeRequestId} onClose={returnFlow.closeChargeStep} /> : null}
     </>}
-  />;
+  />}</>;
 }

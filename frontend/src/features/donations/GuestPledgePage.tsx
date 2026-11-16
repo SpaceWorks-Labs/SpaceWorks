@@ -25,7 +25,7 @@ export function GuestPledgePage() {
     </DonationShell>;
   }
   const state = pledge.isLoading ? { status: "loading" as const } : pledge.error ? { status: "error" as const,
-    error: t`Couldn't load your pledge.`, onRetry: isRetryable(pledge.error) ? () => { void pledge.refetch(); } : undefined } : { status: "ready" as const };
+    error: isRetryable(pledge.error) ? (t`Couldn't load your pledge.`) : (pledge.error instanceof Error ? pledge.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(pledge.error) ? () => { void pledge.refetch(); } : undefined } : { status: "ready" as const };
   return <DonationShell title={t`Your pledge`} state={state}>
     {pledge.data ? <div className="grid gap-3">
       <PledgeCard key={`${pledge.data.amount}-${pledge.data.interval}`} pledge={pledge.data}

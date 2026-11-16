@@ -1,3 +1,5 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
+import { isRetryable } from "../../lib/api/errors";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { ListRow, Modal } from "../../components/ui";
@@ -115,7 +117,8 @@ export function PartnerEvents({
     else result.push({ key, title: event.series?.title ?? null, events: [event] });
     return result;
   }, []);
-  if (!rows.length) return null;
+  if (events.error && isRetryable(events.error)) return <QueryErrors queries={[events]} />;
+  if (!visible || !rows.length) return null;
 
   return (
     <section className="desk-panel p-5" aria-labelledby="partner-events-title">

@@ -20,7 +20,7 @@ export function PayoutDetail({ scope, id, poolVersion }: { scope: FinanceScope; 
   const query = usePayout(scope, id);
   const row = query.data;
   return <DetailLayout title={row?.event_title ?? t`Payout obligation`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready",
-    error: t`This obligation could not be loaded.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
+    error: isRetryable(query.error) ? (t`This obligation could not be loaded.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
     status={row ? payoutStateLabel(row.state) : undefined} main={row ? <DetailContent key={`${scopeIdentity(scope.actorId, scope.makerspaceId)}:${id}:${row.version}:${row.allowed_actions?.join()}`}
       scope={scope} row={row} poolVersion={row.expected_pool_version ?? poolVersion} /> : null} />;
 }

@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { plural, t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -44,7 +45,7 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref, sect
     ? channels.data.results.some(row => row.enabled) : undefined });
   const done = checklist.filter(item => item.done).length;
   const pages = entries.filter(entry => "tab" in entry.target && entry.target.tab !== "users");
-  return <div className="grid min-w-0 gap-5 py-4">
+  return <><QueryErrors queries={[channels]} />{<div className="grid min-w-0 gap-5 py-4">
     {allowedTabs.includes("users") ? <Link to={tabHref("users")}
       className="flex min-h-11 min-w-0 items-center gap-3 rounded-xl border border-line bg-surface p-4 hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <Users aria-hidden="true" size={24} className="shrink-0 text-accent-ink" />
@@ -83,5 +84,5 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref, sect
         </li>)}</ul>
       </section> : null}
     </>}
-  </div>;
+  </div>}</>;
 }

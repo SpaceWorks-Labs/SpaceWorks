@@ -124,7 +124,11 @@ export function visitPositions(sourceFile, { onText, onLiteral }) {
     } else if (ts.isJsxAttribute(node) && node.initializer && DISPLAY_ATTRIBUTE.test(name(node.name))) {
       literal(ts.isJsxExpression(node.initializer) ? node.initializer.expression : node.initializer, "attribute");
     } else if (ts.isJsxExpression(node) && node.expression && (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent))) {
-      literal(node.expression, "jsx-child");
+      // Literal template identifiers in a code sample are protocol syntax, never translatable prose.
+      const identifiers = ts.isJsxElement(node.parent) && name(node.parent.openingElement.tagName) === "code"
+        && (ts.isStringLiteral(node.expression) || ts.isNoSubstitutionTemplateLiteral(node.expression))
+        && /^\{[a-z][a-z0-9_]*\}(?:,\s*\{[a-z][a-z0-9_]*\})*$/.test(node.expression.text);
+      if (!identifiers) literal(node.expression, "jsx-child");
     } else if (ts.isBindingElement(node) && node.initializer && DISPLAY_PROPERTY.test(name(node.propertyName ?? node.name))) {
       literal(node.initializer, "default-prop");
     } else if (ts.isPropertyAssignment(node)) {

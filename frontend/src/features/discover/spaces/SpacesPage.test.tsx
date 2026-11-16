@@ -10,7 +10,8 @@ type QueryState = { data?: Makerspace[]; isLoading?: boolean; isError?: boolean;
 const query = vi.hoisted(() => ({ value: {} as QueryState }));
 vi.mock("../../inventory/usePublicInventory", () => ({ usePublicMakerspaces: () => query.value }));
 const hosting = vi.hoisted(() => ({ value: { data: false as boolean | undefined } }));
-vi.mock("../../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
+vi.mock("../../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false,
+  usePublicOrganizationDirectory: () => ({ isSuccess: false, error: null }) }));
 vi.mock("../../hosting/hostingApi", () => ({ useHostingConfig: () => hosting.value }));
 
 const spaces: Makerspace[] = [

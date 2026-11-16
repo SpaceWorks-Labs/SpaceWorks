@@ -49,7 +49,7 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
 
 
     {query.isPending ? <LogoLoader label={t`Loading profile…`} size={48} className="min-h-16 py-3" /> : null}
-    {query.error ? <ErrorBlock error={new Error(t`Couldn't load profile. Try again.`)} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : null}
+    {query.error ? <ErrorBlock error={isRetryable(query.error) ? (new Error(t`Couldn't load profile. Try again.`)) : query.error} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : null}
     {draft ? <form className="grid gap-4" onSubmit={event => {
       event.preventDefault();
       const invalid = validateHours(hours) ?? (!/^[a-z]{3}$/.test(draft.default_currency) ? "Enter a three-letter currency code." : null);

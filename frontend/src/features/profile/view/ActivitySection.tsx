@@ -21,7 +21,7 @@ export function EventsHistory({ handle }: { handle: string }) {
   return <div className="grid gap-3">
     <button type="button" className="desk-button w-fit" aria-expanded={open} onClick={() => setOpen(value => !value)}>{open ? t`Hide events history` : t`Show events history`}</button>
     {open && events.isLoading ? <LogoLoader size={48} className="min-h-16 py-3" /> : null}
-    {open && events.error ? <ErrorBlock error={new Error(t`Couldn't load events. Try again.`)} onRetry={isRetryable(events.error) ? () => { void events.refetch(); } : undefined} /> : null}
+    {open && events.error ? <ErrorBlock error={isRetryable(events.error) ? (new Error(t`Couldn't load events. Try again.`)) : events.error} onRetry={isRetryable(events.error) ? () => { void events.refetch(); } : undefined} /> : null}
     {open && events.data && !events.data.results.length ? <p className="text-sm text-muted">{t`No past events yet.`}</p> : null}
     {open && events.data?.results.length ? <ul className="grid gap-2">{events.data.results.map((event, index) => <li key={`${event.starts_at}-${index}`} className="flex flex-wrap items-center gap-3">
       <span className="chip">{badge[event.badge] ?? event.badge}</span>

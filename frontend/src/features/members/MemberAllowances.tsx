@@ -1,3 +1,5 @@
+import { isRetryable } from "../../lib/api/errors";
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Callout, ProgressBar, StatusPill } from "../../components/ui";
@@ -41,6 +43,7 @@ function Meter({ label, meter, left }: { label: string; meter: AllowanceMeter; l
 export function MemberAllowances({ makerspaceId }: { makerspaceId: number }) {
   const query = useMemberAllowances(makerspaceId);
   const data = query.data;
+  if (query.error && isRetryable(query.error)) return <QueryErrors queries={[query]} />;
   if (!data || typeof data !== "object" || !("borrowing" in data)) return null;
   const loans = data.borrowing?.active_loans, items = data.borrowing?.items_out, guests = data.guest_passes;
   const meters = [

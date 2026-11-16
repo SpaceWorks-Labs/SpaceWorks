@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -29,8 +30,8 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
     </div> },
     ...(modules.data?.deployment ? [{ id: "deployment", title: t`Deployment`, rows: <DeploymentModules deployment={modules.data.deployment} /> }] : []),
   ];
-  return <SettingsLayout header={{ title: t`Areas & add-ons`, subtitle: t`Turn whole areas (Inventory, Machines, Events, Bookings, Shop) and add-ons (SMS, chat apps, analytics) on or off for this space, with the features inside each. Group them by area or by the role that uses them.` }}
+  return <><QueryErrors queries={[settings, roles]} />{<SettingsLayout header={{ title: t`Areas & add-ons`, subtitle: t`Turn whole areas (Inventory, Machines, Events, Bookings, Shop) and add-ons (SMS, chat apps, analytics) on or off for this space, with the features inside each. Group them by area or by the role that uses them.` }}
     state={adminQueryState(modules, "modules")} isEmpty={!groups || groups.length === 0}
     empty={{ message: t`Nothing to switch on yet. Ask whoever runs your server to check its configuration.` }}
-    sections={sections} />;
+    sections={sections} />}</>;
 }

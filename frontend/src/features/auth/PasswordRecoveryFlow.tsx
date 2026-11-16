@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { CenteredCardLayout } from "../../components/layouts";
+import { isRetryable } from "../../lib/api/errors";
 import { NewPasswordFields } from "./NewPasswordFields";
 import {
   CONFIRM_FAILURE_MESSAGE,
@@ -46,7 +47,8 @@ export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", i
       if (isRecoveryUnavailable(requestError)) {
         setStep("unavailable");
       } else {
-        setError(t`Unable to request password recovery. Please try again.`);
+        setError(isRetryable(requestError) ? t`Unable to request password recovery. Please try again.`
+          : t`This content is no longer available for your access.`);
       }
     } finally {
       setPending(false);

@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +33,7 @@ export function MoneyQueues({ makerspaceId, claimsOn }: { makerspaceId: number; 
   const [rejecting, setRejecting] = useState<((note: string) => void) | null>(null);
   const reject = (apply: (note: string) => void) => setRejecting(() => apply);
   const error = decideClaim.error ?? decideRow.error;
-  return <div className="grid min-w-0 gap-6">
+  return <><QueryErrors queries={[claims, confirmations]} />{<div className="grid min-w-0 gap-6">
     {message ? <p role="status" className="text-sm">{message}</p> : null}
     {error ? <p role="alert" className="text-sm text-danger">{financeError(error)}</p> : null}
     {claimsOn ? <section className="grid gap-2" aria-labelledby="claims-heading">
@@ -65,5 +66,5 @@ export function MoneyQueues({ makerspaceId, claimsOn }: { makerspaceId: number; 
     </section>
     {rejecting ? <NoteDialog title={t`Reject`} label={t`Tell the payer why (optional)`} confirmLabel={t`Reject`}
       onConfirm={note => { rejecting(note); setRejecting(null); }} onClose={() => setRejecting(null)} /> : null}
-  </div>;
+  </div>}</>;
 }

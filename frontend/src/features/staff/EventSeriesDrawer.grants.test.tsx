@@ -1,3 +1,4 @@
+import { formatLocale } from "../../lib/format";
 import { fireEvent, render as rtlRender, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Screens now read query-backed switches (help-centre bootstrap, #184 charge flags), so every render needs a client.
@@ -62,7 +63,7 @@ describe("series grant boundaries", () => {
     expect(screen.queryByText("Series collaborators")).not.toBeInTheDocument();
     expect(screen.queryByText("Series staff management")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: (name) => name.includes(new Date("2026-10-15T10:00:00Z").toLocaleString()) }));
+    fireEvent.click(screen.getByRole("button", { name: (name) => name.includes(new Date("2026-10-15T10:00:00Z").toLocaleString(formatLocale())) }));
     expect(onSelectOccurrence).toHaveBeenCalledWith(31);
     expect(update).not.toHaveBeenCalled();
   });

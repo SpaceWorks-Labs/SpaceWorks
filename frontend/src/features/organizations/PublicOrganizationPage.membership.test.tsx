@@ -12,6 +12,7 @@ vi.mock("../publicPages/pageApi", async () => ({ ...await vi.importActual<typeof
 }));
 vi.mock("./publicDirectoryApi", async () => ({ ...await vi.importActual<typeof import("./publicDirectoryApi")>("./publicDirectoryApi"),
   useOrganizationDirectoryEnabled: () => state.directory,
+  usePublicOrganizationDirectory: () => ({ isSuccess: state.directory, error: null }),
 }));
 vi.mock("../../lib/charges", () => ({ useChargesOn: () => true }));
 vi.mock("./publicOrganizationsApi", () => ({

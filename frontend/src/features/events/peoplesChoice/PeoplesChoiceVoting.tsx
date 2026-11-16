@@ -31,9 +31,10 @@ export function usePeoplesChoiceVoting(slug: string, token: string, space: Peopl
   const [session, setSession] = useVoterSession(running);
   const signedIn = session === 'authenticated';
   const { ballot, vote } = useBallot(space && running && signedIn && pub.data ? { makerspaceId: space.makerspaceId, eventId: pub.data.event_id } : null);
-  return { pub: running ? pub.data : undefined, session, setSession, ballot: ballot.data, ballotError: ballot.error, vote };
+  return { publicQuery: pub, ballotQuery: ballot, pub: running ? pub.data : undefined, session, setSession, ballot: ballot.data, ballotError: ballot.error, vote };
 }
-export type PeoplesChoiceVoting = ReturnType<typeof usePeoplesChoiceVoting>;
+type VotingQueries = ReturnType<typeof usePeoplesChoiceVoting>;
+export type PeoplesChoiceVoting = Omit<VotingQueries, "publicQuery" | "ballotQuery"> & { publicQuery?: VotingQueries["publicQuery"]; ballotQuery?: VotingQueries["ballotQuery"] };
 
 /** The block above the gallery: the window, the member's ballot, sign-in, or the published award. */
 export function PeoplesChoiceBanner({ voting, slug, projectHref }: { voting: PeoplesChoiceVoting; slug: string; projectHref?: (id: string) => string }) {

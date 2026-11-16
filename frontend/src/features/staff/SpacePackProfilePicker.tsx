@@ -20,7 +20,7 @@ export function SpacePackProfilePicker({ value, onChange, disabled = false, enab
         {(profiles.data?.results ?? []).map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
       </select>
     </Field>
-    {profiles.error ? <ErrorBlock error={new Error(t`Couldn't load space pack profile. Try again.`)} onRetry={isRetryable(profiles.error) ? () => { void profiles.refetch(); } : undefined} /> : null}
+    {profiles.error ? <ErrorBlock error={isRetryable(profiles.error) ? (new Error(t`Couldn't load space pack profile. Try again.`)) : profiles.error} onRetry={isRetryable(profiles.error) ? () => { void profiles.refetch(); } : undefined} /> : null}
     <PagePager page={page} setPage={next => { onChange(null); setPage(next); }} count={profiles.data?.count} next={profiles.data?.next} disabled={disabled} />
   </div></SettingsQueryState>;
 }

@@ -47,9 +47,9 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
   const missing = query.error instanceof StructuredApiError && [403, 404].includes(query.error.status);
   const label = job ? jobLabel(job.label) : undefined;
   return <DetailLayout back={{ label: t`My machine jobs`, href: context.path("member/machine-jobs") }}
-    state={context.bootstrapError ? { status: "error", error: t`Couldn't load this makerspace. Try again.` }
+    state={context.bootstrapError ? { status: "error", error: isRetryable(context.bootstrapFailure) ? t`Couldn't load this makerspace. Try again.` : context.bootstrapFailure?.message, onRetry: context.onRetryBootstrap }
       : !context.ready || query.isPending && id > 0 ? { status: "loading" } : query.isError && !missing
-      ? { status: "error", error: t`Couldn't load this job. Try again.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
+      ? { status: "error", error: isRetryable(query.error) ? (t`Couldn't load this job. Try again.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={missing || id <= 0} empty={{ message: t`We couldn't find that job in your account.`, action: { label: t`My machine jobs`, href: context.path("member/machine-jobs") } }}
     title={job?.title ?? t`Machine job`} identity={{ kind: "icon", icon: "Wrench", tone: "info" }}
     status={label ? <StatusPill label={label.text} tone={label.tone} /> : undefined}

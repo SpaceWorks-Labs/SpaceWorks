@@ -1,3 +1,5 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
+import { isRetryable } from "../../lib/api/errors";
 import { t } from "@lingui/core/macro";
 import { PatchMoment } from "../../components/delight/PatchMoment";
 import { MakerspaceSection } from "../public/MakerspaceSection";
@@ -11,6 +13,7 @@ import { othersLabel, PersonCard } from "./PersonCard";
  */
 export function HereNowSection({ slug, enabled }: { slug: string; enabled: boolean }) {
   const query = useHereNow(slug, enabled);
+  if (enabled && query.error && isRetryable(query.error)) return <QueryErrors queries={[query]} />;
   if (!enabled || !query.data) return null;
   const { people, others_count: others, total } = query.data;
   return <MakerspaceSection id="here-now" title={t`Here now`}

@@ -66,6 +66,7 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   const ordered = [...families].sort((a, b) => Number(b === preferred) - Number(a === preferred));
   const actions = ordered.map(family => shortcuts[family]);
   const functional = <div className="grid gap-8">
+    {pageQuery.error && isRetryable(pageQuery.error) ? <ErrorBlock error={pageQuery.error} onRetry={() => { void pageQuery.refetch(); }} /> : null}
     <ClosedNoticeBanner bootstrap={bootstrap} />
     <OpenNowIndicator bootstrap={bootstrap} />
     {families.has("events") ? <FeaturedActivities slug={makerspaceSlug} path={path} timeZone={bootstrap.makerspace.timezone} /> : null}

@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { isRetryable } from "../../lib/api/errors";
 import { useParams, useSearchParams } from "react-router-dom";
 
 import { DetailLayout } from "../../components/layouts";
@@ -12,7 +13,7 @@ function Supervised({ context, machineId, sessionId }: { context: MemberJobsCont
   return <DetailLayout title={machineId ? t`Supervise machine #${machineId}` : t`Supervised sessions`}
     back={{ label: t`Member area`, href: context.path("member") }} identity={{ kind: "icon", icon: "HardHat", tone: "accent" }}
     meta={[t`Lead a workshop: add the people you supervise and record each use of the machine.`]}
-    state={context.bootstrapError ? { status: "error", error: t`Couldn't load this makerspace. Try again.` }
+    state={context.bootstrapError ? { status: "error", error: isRetryable(context.bootstrapFailure) ? t`Couldn't load this makerspace. Try again.` : context.bootstrapFailure?.message, onRetry: context.onRetryBootstrap }
       : !context.ready ? { status: "loading" } : { status: "ready" }}
     isEmpty={!on || context.makerspaceId == null}
     empty={{ message: t`Supervised sessions aren't offered here. Ask staff if you think they should be.`, action: { label: t`Member area`, href: context.path("member") } }}

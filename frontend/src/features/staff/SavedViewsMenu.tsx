@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useContext, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,6 +60,7 @@ export function SavedViewsMenu({ makerspaceId, entity, state, onRestore, eventId
   const paging = <PagePager page={page} setPage={setPage} next={views.data?.next} />;
   const mine = (views.data?.results ?? []).filter(view => view.owner_username === ownerName);
   return <div className="flex items-center gap-2">
+    <QueryErrors queries={[views]} />
     <OverflowMenu label={t`Views`} showLabel actions={[
       ...presets.map(preset => ({ label: t`${preset.label} (${preset.count})`, onClick: () => onRestore(preset.filters) })),
       ...(views.data?.results ?? []).map(view => ({ label: view.shared ? t`${view.name} (shared)` : view.name, onClick: () => onRestore(view.state) })),
@@ -68,7 +70,7 @@ export function SavedViewsMenu({ makerspaceId, entity, state, onRestore, eventId
       { label: t`Copy link to this view`, onClick: () => { void copyViewLink(state, linkPrefix); } },
       { label: t`Manage views…`, onClick: () => setManage(true) },
     ]} />
-    {views.error ? <p role="alert" className="text-sm text-danger">{views.error.message}</p> : null}
+    
     <Modal title={t`Manage saved views`} open={manage} onClose={() => { setManage(false); change.reset(); }}>
       <div className="grid gap-3">
         {mine.map(view => <SavedViewRow key={view.id} view={view} canShare={canShare} pending={change.isPending}

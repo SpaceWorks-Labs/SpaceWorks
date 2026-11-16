@@ -70,7 +70,7 @@ export function PublicPrintRequestPage() {
   if (activeStatusToken) trackingUrl.searchParams.set("token", activeStatusToken);
   const loading = bootstrapQuery.isLoading || (moduleEnabled && queuesQuery.isLoading);
   const failed = bootstrapQuery.isError || queuesQuery.isError;
-  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: t`Couldn't reach the print service. Try again.`, onRetry: [bootstrapQuery.error, queuesQuery.error].filter(Boolean).some(isRetryable) ? () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } : undefined } : { status: "ready" as const };
+  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: [bootstrapQuery.error, queuesQuery.error].filter(Boolean).some(isRetryable) ? t`Couldn't reach the print service. Try again.` : (bootstrapQuery.error ?? queuesQuery.error)?.message, onRetry: [bootstrapQuery.error, queuesQuery.error].filter(Boolean).some(isRetryable) ? () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
     <PublicDetailLayout state={state} title={t`Send a print job to ${displayName}`}
       chips={[{ label: t`3D printing`, tone: "accent" }]} sections={[{ id: "your-print", label: t`Your print`, content:

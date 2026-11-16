@@ -1,6 +1,8 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectNoA11yViolations } from "../../test/axe";
 import { moduleKeys, moduleLabel } from "../../lib/moduleLabels";
 import { findDoc } from "../docs/docsIndex";
@@ -10,7 +12,8 @@ import { moduleDocs } from "./featuresPage/featureSummary";
 import { moduleGroups, moduleSlug } from "./featuresPage/moduleGroups";
 
 vi.mock("../hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: false, isPending: false }) }));
-vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
+vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false,
+  usePublicOrganizationDirectory: () => ({ isSuccess: false, error: null }) }));
 
 function renderPage() {
   return render(<MemoryRouter initialEntries={["/features"]}><FeaturesPage /></MemoryRouter>);
@@ -28,7 +31,24 @@ describe("FeaturesPage", () => {
         expect(within(card as HTMLElement).getByRole("link", { name: moduleLabel(key) })).toHaveAttribute("href", `/features/${moduleSlug(key)}`);
       }
     }
-    expect(container.querySelectorAll("[data-module]").length).toBe(moduleKeys().length);
+    const listed = [...container.querySelectorAll("[data-module]")].map(card => card.getAttribute("data-module")).sort();
+    expect(listed).toEqual(moduleKeys().sort());
+    const registryDir = resolve(__dirname, "../../../../backend/apps/makerspaces");
+    const registry = readdirSync(registryDir).filter(name => /^module_registry.*\.py$/.test(name))
+      .map(name => readFileSync(resolve(registryDir, name), "utf8")).join("\n");
+    const keys = [...registry.matchAll(/ModuleDefinition\(\s*"(\w+)"/g)].map(match => match[1]).sort();
+    expect(keys).toContain("public_inventory");
+    expect(listed).toEqual(keys);
+  });
+
+  it("keeps the moved catalogue on Features independently of the landing switch", () => {
+    landing.enabled = false;
+    renderPage();
+    for (const title of ["How modules connect", "Integrations", "Free and paid", "Limits", "Public TV"]) {
+      expect(screen.getByRole("heading", { level: 3, name: title })).toBeInTheDocument();
+    }
+    expect(screen.getByText(/A debt raised without a provider is unclaimed/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Set up display screens" })).toHaveAttribute("href", "/docs/how-to/display-screens");
   });
 
   it("puts counts on each card and a New in 0.12.0 strip that links to module pages", () => {
@@ -78,5 +98,7 @@ describe("FeaturesPage and the retired Printing module (decision 340b)", () => {
   });
 });
 
-vi.mock("./useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: true }) }));
+const landing = vi.hoisted(() => ({ enabled: true }));
+afterEach(() => { landing.enabled = true; });
+vi.mock("./useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: landing.enabled }) }));
 vi.mock("./HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));

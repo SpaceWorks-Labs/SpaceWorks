@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, expect, it, vi } from "vitest";
 import { expectNoA11yViolations } from "../../../test/axe";
@@ -43,6 +43,10 @@ it("offers Retry for a failed inventory load and recovers in the same view", asy
  setup(<Inventory makerspace={space} />);
  expect(await screen.findByText("Couldn't load inventory. Try again.")).toBeInTheDocument();
  failed = false;
- fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+ const inventoryError = screen.getByText("Couldn't load inventory. Try again.").closest<HTMLElement>('[role="alert"]')!;
+ const attempts = () => request.mock.calls.filter(([path]) => String(path).includes("/inventory?")).length;
+ const before = attempts();
+ fireEvent.click(within(inventoryError).getByRole("button", { name: "Retry" }));
+ await waitFor(() => expect(attempts()).toBe(before + 1));
  expect(await screen.findByText("No parts added yet. Add your first item.")).toBeInTheDocument();
 });

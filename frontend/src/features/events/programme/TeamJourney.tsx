@@ -28,7 +28,7 @@ export function TeamJourney({ context, scope, section, base }: { context: Progra
   const categories = useQuery({ queryKey: ["member", scope.accountId, "help-topics", scope.makerspaceId, scope.eventId], gcTime: 0,
     queryFn: () => memberRequest<{ results: { key: string; label: string }[] }>(`/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}/help-topics/`),
     enabled: section === 'help' && context.programme.capabilities['events.mentoring'], retry: false })
-  if (teams.error) return <ErrorBlock error={teams.error} onRetry={isRetryable(teams.error) ? () => void teams.refetch() : undefined} />
+  if (teams.error) return <ErrorBlock error={teams.error} onRetry={isRetryable(teams.error) ? () => { void teams.refetch(); if (categories.error && isRetryable(categories.error)) void categories.refetch(); } : undefined} />
   if (teams.isPending) return <LogoLoader label={t`Loading your team…`} />
   if (!team) return <div className="grid gap-3"><p>{t`Your team must be ready before this step.`}</p><button className="desk-button" onClick={() => navigate(`${base}/team`)}>{t`Open your team`}</button></div>
   const submissionScope = { ...scope, teamId: team.id }

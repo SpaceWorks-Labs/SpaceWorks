@@ -29,7 +29,7 @@ export const MODULE_GROUP: Record<ModuleKey, ModuleGroupKey> = {
 export type ModuleGroup = { key: ModuleGroupKey; title: string; summary: string; modules: ModuleKey[] };
 
 const GROUP_TEXT = (): Record<ModuleGroupKey, [string, string]> => ({
-  inventory: [t`Inventory`, t`The catalogue, loans, QR and photo evidence, and everything that moves stock. On by default; a space can switch it off.`],
+  inventory: [t`Inventory`, t`The catalogue, loans, QR and photo evidence, and everything that moves stock. The six core modules are always on; the rest are optional.`],
   stocktake: [t`Stocktake`, t`Scan-first stock counts and variance reports.`],
   machines: [t`Machines`, t`Machine registry, job queues, access and maintenance.`],
   events: [t`Events`, t`Tickets, check-in, badges, certificates and reimbursements.`],

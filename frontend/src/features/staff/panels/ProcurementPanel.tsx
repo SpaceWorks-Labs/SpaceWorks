@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
@@ -150,7 +151,7 @@ export function ProcurementPanel({
   if (vendorsEnabled && params.get("view") === "vendors") return <VendorsPanel makerspaceId={makerspace.id} onBack={() => showView("")} />;
   // Decision 241: the same list grouped by area, machine type then machine, and item category.
   if (params.get("view") === "groups") return <AreaOverviewPage title={t`To buy, grouped`} makerspaceId={makerspace.id} section="tobuy" onBack={() => showView("")} />;
-  return <ListLayout header={{ title: t`To buy`, subtitle: t`What the space needs, from request to shelf.`, primary: add,
+  return <><QueryErrors queries={[machineTypes]} />{<ListLayout header={{ title: t`To buy`, subtitle: t`What the space needs, from request to shelf.`, primary: add,
     secondary: vendorsEnabled ? { label: t`Vendors`, onClick: () => showView("vendors") } : undefined,
     overflow: [{ label: t`Group by area and machine`, onClick: () => showView("groups") }, { label: t`Export CSV`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("csv") }, { label: t`Export Excel`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("xlsx") }] }}
     callout={rows.some(item => item.status === "received" && !item.moved_to_inventory_at) ? { size: "banner", tone: "warn", lead: "Received items aren't in inventory yet.", body: t`Move a purchase onto the shelves when it's ready.`, action: { label: t`Move them`, onClick: () => setMoveTarget(rows.find(item => item.status === "received" && !item.moved_to_inventory_at)!) } } : undefined}
@@ -199,7 +200,7 @@ export function ProcurementPanel({
       {boughtTarget ? <MarkBoughtDialog key={boughtTarget.id} item={boughtTarget} makerspaceId={makerspace.id} vendorsEnabled={vendorsEnabled}
         onClose={() => setBoughtTarget(null)} onDone={() => { setBoughtTarget(null); invalidate(); invalidateFinance(queryClient, makerspace.id);
           void queryClient.invalidateQueries({ queryKey: ["consumables", makerspace.id] }); }} /> : null}
-    </>} />;
+    </>} />}</>;
 }
 function KindSelect({ value, onChange }: { value: Kind; onChange: (kind: Kind) => void }) {
  return <Field label={t`Kind`}><select className="desk-input" value={value} onChange={e => onChange(e.target.value as Kind)}><option value="hardware">{t`Hardware`}</option><option value="printing">{t`Printing`}</option></select></Field>;

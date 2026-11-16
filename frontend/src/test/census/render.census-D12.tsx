@@ -1,8 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { isDeepStrictEqual } from "node:util";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../App";
 import { TenantProvider } from "../../lib/tenant";
@@ -12,15 +12,16 @@ import { clearAccessToken } from "../../lib/api/sessionTokens";
 import { routeInventory, type RouteCase } from "./source.census-D12";
 import { installFetch, PHASES, REFUSALS, type Phase } from "./fetch.census-D12";
 import { emptyResponse } from "./schema.census-D12";
-import { actionFor, activateAction, fillAction } from "./actions.census-D12";
+import { actionFor, activateAction } from "./actions.census-D12";
 import { effectFor } from "./protocols.census-D12";
 import { emptyCopyFor, stateCopyFor } from "./presentation.census-D12";
-import { assertExemptPresentation, expectNoRetry, retryControls } from "./refusals.census-D12";
+import { assertExemptPresentation, expectNoRetry } from "./refusals.census-D12";
 import { EMPTY_COPY, FAILURE_COPY, MODULE_COPY, PERMISSION_COPY, productDefect, regressionId, exemption } from "./contracts.census-D12";
 import { mountedScreens, observeQueryCaches } from "./observe.census-D12";
 import { screenCopyFor, emptyFormFor, pendingCopyFor, autoRetryFor } from "./screenContracts.census-D12";
 import { prepareScreen } from "./screenDrivers.census-D12";
-import { contextlessExemption } from "./contextless.census-D12";
+import { exemptionProofFor } from "./exemptions.census-D12";
+import { assertScreenRetries } from "./retries.census-D12";
 import { warmLazyRoutes } from "./warm.census-D12";
 
 const ROUTES = routeInventory();
@@ -33,6 +34,8 @@ const clients: QueryClient[] = [];
 const disposers: (() => void)[] = [];
 const crashes: string[] = [];
 let observed: ReturnType<typeof observeQueryCaches>;
+let currentPath = "";
+function LocationProbe() { currentPath = useLocation().pathname; return null; }
 class CrashProbe extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
@@ -87,28 +90,31 @@ async function show(row: RouteCase, phase: Phase, display: typeof DISPLAYS[numbe
   chooseTheme(display.theme);
   const container = document.createElement("div");
   document.body.append(container);
+  const proof = exemption(row, phase) ? exemptionProofFor(row, phase) : undefined;
+  const targets = proof?.mounts ?? [row.screen.split("/")[0], ...(row.leaves ?? [])];
   const targetMounted = () => {
     if (!Object.keys(container).some(key => key.startsWith("__reactContainer$"))) return false;
     const mounted = new Set([...mountedScreens(container), ...observed.rendered]);
-    return mounted.has(row.screen.split("/")[0]) && (row.leaves ?? []).every(leaf => mounted.has(leaf));
+    return targets.every(target => mounted.has(target));
   };
-  const network = installFetch(phase, platform, row, targetMounted, observed.requestOwner);
+  const networkRow = proof?.destination ? { ...row, screen: targets[0] } : row;
+  const network = installFetch(phase, platform, networkRow, targetMounted, observed.requestOwner, observed.requestOperation, proof?.admissionOnly);
   disposers.push(network.dispose);
   const client = new QueryClient({ defaultOptions: { queries: {
     retry: false, retryDelay: 0, gcTime: Infinity, refetchOnWindowFocus: false,
   }, mutations: { retry: false } } });
   clients.push(client);
   const view = render(<QueryClientProvider client={client}><TenantProvider><MemoryRouter initialEntries={[path]}>
-    <CrashProbe><App /></CrashProbe>
+    <LocationProbe /><CrashProbe><App /></CrashProbe>
   </MemoryRouter></TenantProvider></QueryClientProvider>, { container });
   if (!exemption(row, phase)) { await prepareScreen(row); await activateAction(row, phase); }
   await waitFor(() => {
     expect(crashes, row.id).toEqual([]);
     expect(network.fixtureErrors, `Fixture contract: ${row.id}`).toEqual([]);
-    const target = row.screen.split("/")[0];
-    if (!exemption(row, phase) || contextlessExemption(row, phase)) {
-      const mounted = mountedScreens(view.container);
-      expect([...mounted], `Admission did not mount ${row.screen}: ${row.id}`).toContain(target);
+    const mounted = mountedScreens(view.container);
+    for (const target of targets) expect([...mounted], `Admission did not mount ${target}: ${row.id}`).toContain(target);
+    if (proof?.destination) expect(currentPath, `Redirect destination: ${row.id}`).toBe(proof.destination);
+    if (!proof) {
       if (row.leaves) {
         expect(row.leaves, `Missing staff dispatch case: ${row.id}`).not.toEqual([]);
         for (const leaf of row.leaves) expect([...mounted], `Staff leaf not mounted: ${leaf}`).toContain(leaf);
@@ -118,7 +124,7 @@ async function show(row: RouteCase, phase: Phase, display: typeof DISPLAYS[numbe
       if (row.memberTab && phase !== "loading") expect([...view.container.querySelectorAll('a[aria-current="page"]')]
         .map(link => link.getAttribute("href"))).toContain(row.path);
     }
-    if (action && phase === "empty") expect(screen.getByText(action.idle, { exact: true })).toBeVisible();
+    if (!proof && action && phase === "empty") expect(screen.getByText(action.idle, { exact: true })).toBeVisible();
     else if (!exemption(row, phase)) expect(network.own().length, `No domain fetch reached: ${row.id}`).not.toBe(0);
     else expect(view.container.querySelectorAll("main")).toHaveLength(1);
   // Cold lazy chunks under a loaded worker pool; stays below the 10 s hook timeout.
@@ -244,48 +250,8 @@ describe(`D12 every ${mode} production route, at the real fetch boundary`, () =>
         await waitFor(() => expect(visibleCopy(copy).length, `Missing ${phase} explanation: ${row.id}`).not.toBe(0), { timeout: PRESENT });
         for (const message of visibleCopy(copy)) expect(message).toBeVisible();
         if (phase !== "error") expectNoRetry(row, phase);
-        const auto = phase === "error" ? autoRetryFor(row) : undefined;
-        if (auto) {
-          const before = network.domain().length;
-          await waitFor(() => expect(network.domain().length).toBeGreaterThan(before), { timeout: auto.ms + 3000 });
-          await assertTypedErrors("error");
-        } else if (phase === "error") {
-          const action = actionFor(row);
-          const choices = retryControls(row);
-          // A scanner's disabled Find button is not its retry control. Command
-          // screens can instead expose the original action again after failure.
-          if (action?.file) {
-            const retry = screen.getByLabelText(action.file.label);
-            expect(retry.tagName).toBe("INPUT"); expect(retry).toHaveAttribute("type", "file");
-            expect(retry).toBeEnabled(); retry.focus(); expect(document.activeElement).toBe(retry);
-            const before = network.domain().length;
-            expect(fireEvent.keyDown(retry, { key: "Enter", code: "Enter" })).toBe(true);
-            await fillAction(row);
-            await waitFor(() => expect(network.domain().length).toBeGreaterThan(before));
-            await assertTypedErrors("error");
-            expect(crashes).toEqual([]); return;
-          }
-          if (!choices.length && action) {
-            // ScanWorkbench clears its input after each scan. Restore that input
-            // before testing the original action's keyboard retry (same payload).
-            await fillAction(row);
-            choices.push(...screen.queryAllByRole("button", { name: action.button }));
-          }
-          // Member dashboards can contain several independently retryable queries;
-          // require and activate each native control, not one control per page.
-          expect(choices.length, `No retry control: ${row.id}: ${document.body.textContent?.slice(0, 1500)}`).toBeGreaterThan(0);
-          for (const retry of choices) {
-            expect(retry.tagName).toBe("BUTTON");
-            retry.focus(); expect(document.activeElement).toBe(retry);
-            expect(retry).toBeEnabled();
-            const before = network.domain().length;
-            expect(fireEvent.keyDown(retry, { key: "Enter", code: "Enter" })).toBe(true);
-            // jsdom does not synthesize the native button's default Enter click.
-            fireEvent.click(retry);
-            fireEvent.keyUp(retry, { key: "Enter", code: "Enter" });
-            await waitFor(() => expect(network.domain().length).toBeGreaterThan(before));
-            await assertTypedErrors("error");
-          }
+        if (phase === "error") {
+          await assertScreenRetries(row, network, () => assertTypedErrors("error"), autoRetryFor(row)?.ms);
         }
       }
       expect(crashes).toEqual([]);

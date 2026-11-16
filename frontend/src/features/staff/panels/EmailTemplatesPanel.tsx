@@ -69,7 +69,7 @@ export function EmailTemplatesPanel({ makerspace }: { makerspace: Makerspace }) 
     onSelectMachineType={machineType => setSelected({ ...selected, machineType })}
     onBack={() => { const next = new URLSearchParams(search); next.delete("template"); setSearch(next); }} />;
   return <ListLayout header={{ title: t`Email templates`, subtitle: t`What people receive from ${makerspace.name}, in your words.` }}
-    state={{ status: list.isLoading ? "loading" : list.error ? "error" : "ready", error: t`Couldn't load email templates. Try again.`, onRetry: isRetryable(list.error) ? () => { void list.refetch(); } : undefined }}
+    state={{ status: list.isLoading ? "loading" : list.error ? "error" : "ready", error: isRetryable(list.error) ? (t`Couldn't load email templates. Try again.`) : (list.error instanceof Error ? list.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(list.error) ? () => { void list.refetch(); } : undefined }}
     isEmpty={!rows.length} empty={{ message: t`No editable templates here.` }}
     tabs={[{ key: "all", label: t`All templates`, href: href("all"), count: rows.length }, ...grouped.map(group => ({ key: group.stream, label: formatLabel(group.stream), href: href(group.stream), count: group.audiences.reduce((count, audience) => count + audience.templates.length, 0) }))]}
     activeTab={streamFilter} body={{ kind: "rows", rows: grouped.filter(group => streamFilter === "all" || group.stream === streamFilter).map(group =>

@@ -82,7 +82,7 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
   const stepKeys = ["borrower", "tools", "photo", "receipt"];
   return <FlowLayout presentation="dialog" open standalone={false} title={t`Guided direct handout`}
     subject={t`Record who borrowed the tools and the evidence of handover.`}
-    state={{ status: members.isLoading || products.isLoading ? "loading" : members.error || products.error ? "error" : "ready", error: t`Couldn't load handout details. Try again.`, onRetry: [members.error, products.error].filter(Boolean).some(isRetryable) ? () => { void members.refetch(); void products.refetch(); } : undefined }}
+    state={{ status: members.isLoading || products.isLoading ? "loading" : members.error || products.error ? "error" : "ready", error: isRetryable((members.error ?? products.error)) ? t`Couldn't load handout details. Try again.` : (members.error ?? products.error)?.message, onRetry: [members.error, products.error].filter(Boolean).some(isRetryable) ? () => { void members.refetch(); void products.refetch(); } : undefined }}
     steps={[t`Borrower card`, t`Scan or select tools`, t`Issue photo`, t`Receipt`].map((label, index) => ({ key: stepKeys[index], label, state: index < step ? "done" : index === step ? "current" : "todo" }))}
     current={stepKeys[step]} compact={compact}
     onCancel={() => { if (!issue.isPending && !compactAction?.pending) onClose(); }}

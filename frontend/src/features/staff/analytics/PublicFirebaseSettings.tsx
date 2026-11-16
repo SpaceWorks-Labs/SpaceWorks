@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ export function PublicFirebaseSettings() {
   const [draft, setDraft] = useState<FirebasePublic | null>(null);
   useEffect(() => { if (query.data) setDraft(query.data.config ?? empty()); }, [query.data]);
   if (query.isPending) return <LogoLoader label={t`Loading Firebase web settings…`} />;
+  if (query.error) return <QueryErrors queries={[query]} />;
   if (query.error || !draft) return <p role="alert">{t`Firebase web settings could not load.`}</p>;
   const fields: { key: keyof FirebasePublic; label: string; required?: boolean }[] = [
     { key: "api_key", label: t`Web API key`, required: true }, { key: "auth_domain", label: t`Auth domain` },

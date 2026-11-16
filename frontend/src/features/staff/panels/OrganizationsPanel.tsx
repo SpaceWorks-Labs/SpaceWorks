@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
@@ -6,7 +7,7 @@ import { DashboardLayout } from "../../../components/layouts/DashboardLayout";
 import { SettingsLayout } from "../../../components/layouts/SettingsLayout";
 import { useTenant } from "../../../lib/tenant";
 import { OrganizationSelfCreation, useOrganizationSelfCreationVisible } from "../../organizations/OrganizationSelfCreation";
-import { useDeleteOrganization } from "../../organizations/organizationSelfServiceApi";
+import { useDeleteOrganization, useOrganizationCreationPolicy } from "../../organizations/organizationSelfServiceApi";
 import { OrganizationInvitations } from "../OrganizationInvitations";
 import { HostingInvitations } from "../HostingInvitations";
 import { useHostingAvailability } from "../../hosting/hostingApi";
@@ -57,6 +58,7 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
   // which only exists on the central origin (global organization operations are tenant-unbound) and only
   // while the platform policy allows it, so a switched-off policy never opens an empty create page.
   const canSelfCreate = useOrganizationSelfCreationVisible(!isSuperadmin && tenant.mode === "central");
+  const creationPolicy = useOrganizationCreationPolicy(!isSuperadmin && tenant.mode === "central");
   const createAction = isSuperadmin || canSelfCreate ? { label: t`Create organization`, onClick: () => setCreating(true) } : undefined;
   if (creating && isSuperadmin) return <OrganizationCreate onClose={() => setCreating(false)} onCreated={id => { setCreating(false); select(id); }} />;
   if (creating) return <SettingsLayout
@@ -72,7 +74,7 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
         ...(organizations.data && organizations.data.count > 1 ? [{ label: t`All organizations`, onClick: () => select(null) }] : []),
         ...(createAction ? [createAction] : []),
       ] }}
-    state={{ status: detail.isLoading ? "loading" : detail.isError ? "error" : "ready", error: t`Couldn't load organization. Try again.`, onRetry: isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined }}
+    state={{ status: detail.isLoading ? "loading" : detail.isError ? "error" : "ready", error: isRetryable(detail.error) ? (t`Couldn't load organization. Try again.`) : (detail.error instanceof Error ? detail.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined }}
     tabs={[
       { key: "profile", label: t`Profile`, href: `?org=${selectedId}&section=profile#org-profile` },
       ...(canEditPage ? [{ key: "public-page", label: t`Public page`, href: `?org=${selectedId}&section=public-page#org-public-page` }] : []),
@@ -105,10 +107,10 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
       action: { label: t`Delete organization`, pending: remove.isPending, pendingLabel: t`Deleting…`,
         confirm: { title: t`Delete ${detail.data.name}?`, message: t`This permanently removes this unlinked organization, its memberships and invitations.`, confirmLabel: t`Delete organization` },
         onClick: () => remove.mutate(undefined, { onSuccess: () => { select(null); setPage(1); } }) } }] : []} />;
-  return <DashboardLayout header={{ eyebrow: t`Space Works`, title: t`Organizations`, subtitle: t`Your teams, people and connected makerspaces.`, primary: createAction }}
-    state={{ status: organizations.isLoading ? "loading" : organizations.isError ? "error" : "ready", error: t`Couldn't load organizations. Try again.`, onRetry: isRetryable(organizations.error) ? () => { void organizations.refetch(); } : undefined }} stats={[]}
+  return <><QueryErrors queries={[creationPolicy]} />{<DashboardLayout header={{ eyebrow: t`Space Works`, title: t`Organizations`, subtitle: t`Your teams, people and connected makerspaces.`, primary: createAction }}
+    state={{ status: organizations.isLoading ? "loading" : organizations.isError ? "error" : "ready", error: isRetryable(organizations.error) ? (t`Couldn't load organizations. Try again.`) : (organizations.error instanceof Error ? organizations.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(organizations.error) ? () => { void organizations.refetch(); } : undefined }} stats={[]}
     main={[{ title: t`Your organizations`, isEmpty: !organizations.data?.results.length,
       empty: { message: canSelfCreate ? t`You're not part of an organization yet. Ask an organization admin for an invite, or create your own.` : t`You're not part of an organization yet. Ask an organization admin for an invite.`, action: createAction },
       content: <div className="grid gap-3 sm:grid-cols-2">{organizations.data?.results.map(org => <ListRow key={org.id} title={org.name} identity={{ kind: "avatar", name: org.name, seed: String(org.id) }} meta={org.slug} onClick={() => select(org.id)} />)}</div> }]}
-    progress={organizations.data ? <PagePager page={page} setPage={setPage} next={organizations.data.next} /> : undefined} />;
+    progress={organizations.data ? <PagePager page={page} setPage={setPage} next={organizations.data.next} /> : undefined} />}</>;
 }

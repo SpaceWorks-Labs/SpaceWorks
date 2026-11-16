@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { MemberHistoryLinks } from "./MemberHistoryLinks";
 import { RestrictedPayments, isRestrictedAccount } from "./RestrictedPayments";
 import { t } from "@lingui/core/macro";
@@ -186,7 +187,7 @@ export function MemberArea() {
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} name={spaceName} logoUrl={spaceLogo} /></div>;
   if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { const target = afterSignIn(); if (target) { window.location.assign(target); return; } setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
-  return <div style={brandStyle}>
+  return <>{<div style={brandStyle}>
     <MemberPortalTabs modules={bootstrap.data?.modules ?? []} features={bootstrap.data?.features} active={activeTab} space={{ id: makerspaceId >= 0 ? makerspaceId : undefined, slug: resolvedSlug }}
       workspace={bootstrap.data ? { name: bootstrap.data.makerspace.name, subtitle: membership?.membership_status ?? t`Member area`,
         avatar: spaceLogo ? { kind: "image", src: spaceLogo } : { kind: "avatar", name: bootstrap.data.makerspace.name, seed: resolvedSlug }, locked: true } : undefined}
@@ -194,9 +195,9 @@ export function MemberArea() {
       user={unauthenticated ? { name: "Not signed in", menu: [{ label: t`Sign in`, onClick: () => setShowSignIn(true) }] }
         : { name: profile.data?.username || "Your account", menu: [{ label: t`Account & two-step sign-in`, href: "/mfa" }, { label: t`API access & connected apps`, href: "/account/api-access" }, { label: t`Delete account`, href: `${slug ? `/m/${encodeURIComponent(slug)}` : ""}/member/account?section=deletion` }],
         onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
-    <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
+    <MemberSectionNavigation><QueryErrors queries={[archivedPayments, payments, admission, invitations, waiver, presence, messaging, activity]} /><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
-      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: t`Couldn't load your makerspace. Try again.`, onRetry: isRetryable(bootstrap.error) ? () => void bootstrap.refetch() : undefined } : { status: "ready" }}
+      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: isRetryable(bootstrap.error) ? (t`Couldn't load your makerspace. Try again.`) : (bootstrap.error instanceof Error ? bootstrap.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(bootstrap.error) ? () => void bootstrap.refetch() : undefined } : { status: "ready" }}
       primary={presenceOn && activeTab === "overview" && presence.isSuccess && !presence.data.active ? { label: t`Check in`, onClick: () => setPresenceSheet(true) } : undefined}>
     {/* The install tip belongs on the home tab, not repeated above every screen's own content. */}
     {membershipModuleOn && activeTab === "overview" ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
@@ -234,7 +235,7 @@ export function MemberArea() {
       {activeTab === "payments" && memberActivity && membershipCharges ? <MemberDues dues={memberActivity.membership_dues} currency={admission.data?.joining_fee_currency ?? admission.data?.default_plan?.currency} /> : null}
       {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history}
         withdraw={bootstrap.data?.features?.includes("loans.withdrawals") ? { makerspaceId, makerspaceSlug: resolvedSlug } : undefined} /> : null}
-      {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
+      {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /> : null}
       {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
     {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberUsagePanel key={makerspaceId} makerspaceId={makerspaceId} /> : null}
     {activeTab === "overview" && membership?.membership_status === "active" && makerspaceId >= 0 && bootstrap.data?.features?.includes("safety.incidents") ? <MemberIncidentReports key={makerspaceId} makerspaceId={makerspaceId} /> : null}
@@ -293,5 +294,5 @@ export function MemberArea() {
     </div> : null}
     </MemberSectionNavigation>
     </MemberPortalTabs>
-  </div>;
+  </div>}</>;
 }

@@ -1,3 +1,5 @@
+import { isRetryable } from "../../lib/api/errors";
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { invitationStateLabel } from "./lifecycleLabels";
@@ -20,6 +22,7 @@ export function CollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
   const respond = useRespondToCollaboration(makerspaceId);
   const rows = inbox.data ?? [];
 
+  if (inbox.error && isRetryable(inbox.error)) return <QueryErrors queries={[inbox]} />;
   if (!rows.length) return null;
 
   return (

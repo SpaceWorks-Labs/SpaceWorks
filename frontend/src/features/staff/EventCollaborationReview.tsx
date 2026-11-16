@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { DetailLayout } from "../../components/layouts";
@@ -14,7 +15,7 @@ export function useEventCollaborationReview(makerspaceId: number) {
   const invited = [...(inbox.data ?? []), ...(series.data ?? [])].filter(row => row.status === "invited").length;
   const total = (inbox.data?.length ?? 0) + (series.data?.length ?? 0);
   const callout: CalloutProps | undefined = invited ? { size: "banner", tone: "warn", lead: plural(invited, { one: "# invitation to co-host an event.", other: "# invitations to co-host an event." }), action: { label: t`Review`, onClick: () => setOpen(true) } } : undefined;
-  const detail = <>
+  const detail = <><QueryErrors queries={[inbox, series]} />
     {total && !invited ? <button className="desk-button mt-6" type="button" onClick={() => setOpen(true)}>{t`Review collaborations`}</button> : null}
     {open ? <DetailLayout presentation="drawer" open onClose={() => setOpen(false)} title={t`Event collaborations`} state={{ status: "ready" }}
       main={<><CollaborationInbox makerspaceId={makerspaceId} /><EventSeriesCollaborationInbox makerspaceId={makerspaceId} /></>} /> : null}

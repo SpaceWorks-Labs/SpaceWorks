@@ -1,24 +1,31 @@
 import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RoleApplicationForm, type RoleFormBridge } from '../contributions/RoleApplicationForm'
-import { useProgrammeDetail } from '../contributions/api'
+import { programmeKey, useProgrammeDetail } from '../contributions/api'
 import type { EventScope, Posting, RoleApplication, RoleFormValue } from '../contributions/types'
 import type { ProgrammeContext } from '../contracts/types'
 import { prefillDetails } from '../../accountSavedDetails/api'
 import { SaveIntentNotice } from '../../accountSavedDetails/RegistrationSavedDetails'
 import { FormV2Fields, memberFormInput, type FormState, type FieldErrors } from '../../forms'
 import { filledState, formSchema, ownerAnswers } from './formBridge'
-import { ErrorBlock } from '../../../components/ui'
-import { isRetryable } from "../../../lib/api/errors";
+import { QueryErrors } from '../../../components/ui/QueryErrors'
 
 export function ProgrammeRolePage({ scope, context, postingId, applicationId, base }: {
   scope: EventScope; context: ProgrammeContext; postingId?: number; applicationId?: number; base: string
 }) {
   const navigate = useNavigate()
   const application = useProgrammeDetail<RoleApplication>(scope, 'member', `/role-applications/${applicationId}/`, Boolean(applicationId))
-  const id = postingId ?? application.data?.posting_id
+  const identity = JSON.stringify([programmeKey(scope, 'member'), base, applicationId, postingId])
+  const resolvedId = application.isSuccess ? application.data?.posting_id ?? undefined : undefined
+  const [resolvedPosting, setResolvedPosting] = useState<{ identity: string; id?: number }>({ identity })
+  // Keep only the successful link, so erasing a refusal cannot discard the posting's failed observer.
+  // Reset during render so a new route/session never observes the previous identity's posting.
+  if (resolvedPosting.identity !== identity || (resolvedId !== undefined && resolvedPosting.id !== resolvedId)) {
+    setResolvedPosting({ identity, id: resolvedId })
+  }
+  const id = postingId ?? resolvedId ?? (resolvedPosting.identity === identity ? resolvedPosting.id : undefined)
   const posting = useProgrammeDetail<Posting>(scope, 'member', `/role-postings/${id}/`, Boolean(id))
   const bridge = useMemo<RoleFormBridge>(() => ({
     prefill: async ({ posting: row, application: own }) => {
@@ -53,7 +60,7 @@ export function ProgrammeRolePage({ scope, context, postingId, applicationId, ba
     savedDetailsStatus: intent => <SaveIntentNotice actorId={scope.accountId} operationId={intent.operation_id} />,
   }), [scope.accountId, scope.eventId, scope.makerspaceId, context, application.data?.form, posting.data])
   const error = application.error || posting.error
-  if (error) return <ErrorBlock error={error} onRetry={[application.error, posting.error].filter(Boolean).some(isRetryable) ? () => { void application.refetch(); void posting.refetch() } : undefined} />
+  if (error) return <QueryErrors queries={[application, posting]} />
   if (!posting.data || (applicationId && !application.data)) return <LogoLoader label={t`Loading your role application…`} />
   return <RoleApplicationForm scope={scope} posting={posting.data} application={application.data ?? posting.data.application ?? null}
     bridge={bridge} completionReady onSaved={savedId => navigate(`${base}/role-applications/${savedId}`)} />

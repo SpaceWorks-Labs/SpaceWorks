@@ -1,3 +1,4 @@
+import { formatLocale } from "../../lib/format";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -8,7 +9,7 @@ import { MfaReadinessBanner } from "./MfaReadinessBanner";
 describe("MfaReadinessBanner", () => {
   it("names the lock date and links to enrolment", async () => {
     const endsAt = "2026-11-07T09:30:00Z";
-    const when = new Date(endsAt).toLocaleString(undefined, { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
+    const when = new Date(endsAt).toLocaleString(formatLocale(), { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
     const { container } = render(<MfaReadinessBanner endsAt={endsAt} href="/mfa?return=%2Fadmin" />);
     expect(screen.getByText("Set up two-step sign-in")).toBeInTheDocument();
     expect(screen.getByText(new RegExp(`Staff screens lock on ${when}`))).toBeInTheDocument();

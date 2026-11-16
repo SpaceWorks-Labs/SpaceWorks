@@ -93,7 +93,7 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
         header={{ title: t`Dashboard`, eyebrow: new Date().toLocaleDateString(formatLocale(), { weekday: "long", day: "numeric", month: "long" }),
           subtitle: t`What's happening at ${makerspace.name}.`, primary }}
         state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
-          error: t`Couldn't load dashboard. Try again.`, onRetry: isRetryable(dashboard.error) ? () => { void dashboard.refetch(); } : undefined }}
+          error: isRetryable(dashboard.error) ? (t`Couldn't load dashboard. Try again.`) : (dashboard.error instanceof Error ? dashboard.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(dashboard.error) ? () => { void dashboard.refetch(); } : undefined }}
         progress={<><DashboardFailedAreas areas={dashboard.data?.failed_areas} onRetry={isRetryable(dashboard.error) ? () => { void dashboard.refetch(); } : undefined} />{attention ? <WaitingOnMe attention={attention} routing={attentionRouting} onRetry={isRetryable(dashboard.error) ? () => { void dashboard.refetch(); } : undefined} /> : null}
           <LateShiftLine />{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}
           {attention ? <AreaSections attention={attention} routing={attentionRouting} /> : null}</>}

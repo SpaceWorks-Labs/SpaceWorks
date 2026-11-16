@@ -47,7 +47,7 @@ export function PlatformTenantAnalytics({ space, period, initialReport }: {
     <button type="button" className="desk-button" aria-expanded={showDashboard} onClick={() => setShowDashboard(!showDashboard)}>{t`Open ${space.name} dashboard`}</button>
     {showDashboard ? <section aria-label={`${space.name} dashboard`}>
       {dashboard.isLoading ? <LogoLoader label={t`Loading dashboard…`} size={48} className="min-h-16 py-3" /> : dashboard.isError ? <div role="alert">
-        <p>{t`Couldn't load this makerspace's dashboard.`}</p>{isRetryable(dashboard.error) ? <button type="button" onClick={() => void dashboard.refetch()}>{t`Retry dashboard`}</button> : null}</div> : dashboard.data ? <>
+        <p>{isRetryable(dashboard.error) ? t`Couldn't load this makerspace's dashboard.` : (dashboard.error instanceof Error ? dashboard.error.message : t`This content is no longer available for your access.`)}</p>{isRetryable(dashboard.error) ? <button type="button" onClick={() => void dashboard.refetch()}>{t`Retry dashboard`}</button> : null}</div> : dashboard.data ? <>
         <dl className="grid gap-3 sm:grid-cols-3">{TILES.filter(tile => typeof dashboard.data?.[tile.key] === "number").map(tile =>
           <div key={tile.key}><dt>{tile.label}</dt><dd>{dashboard.data?.[tile.key]}</dd></div>)}</dl>
         <DashboardAnalyticsWidgets widgets={dashboard.data.widgets ?? []} makerspaceId={space.id} analyticsBase={`${base}/analytics`} />

@@ -27,13 +27,14 @@ function JobList({ context }: { context: MemberJobsContext }) {
     enabled: context.ready && context.makerspaceId != null, retry: false,
     refetchInterval: current => (current.state.data ?? []).some(job => !FINISHED_LABELS.has(job.label)) ? 90_000 : false });
   const rows = jobs.data ?? [];
+  const loadError = context.bootstrapFailure ?? jobs.error;
   // Jobs that need the member float to the top; the server already orders newest first.
   const needsYou = (job: MemberJob) => ["needs_changes", "quote_sent", "awaiting_payment", "ready_to_collect"].includes(job.label) ? 0 : 1;
   const ordered = [...rows].sort((a, b) => needsYou(a) - needsYou(b));
   return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine jobs`, subtitle: t`Everything you've asked the space to make.`,
     primary: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}
     state={context.bootstrapError || jobs.isError
-      ? { status: "error", error: t`Couldn't load your jobs. Try again.`, onRetry: isRetryable(jobs.error) ? () => { void jobs.refetch(); } : undefined }
+      ? { status: "error", error: isRetryable(loadError) ? (t`Couldn't load your jobs. Try again.`) : (loadError instanceof Error ? loadError.message : t`This content is no longer available for your access.`), onRetry: context.bootstrapError ? context.onRetryBootstrap : isRetryable(loadError) ? () => { void jobs.refetch(); } : undefined }
       : !context.ready || jobs.isPending ? { status: "loading" } : { status: "ready" }}
     isEmpty={jobs.isSuccess && !rows.length}
     empty={{ message: t`No machine jobs yet. Send the space a file and it will show up here.`, action: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}

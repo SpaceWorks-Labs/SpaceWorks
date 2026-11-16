@@ -3,7 +3,8 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { DocsPage } from "./DocsPage";
 import { allDocs, neighbours } from "./docsIndex";
-vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
+vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false,
+  usePublicOrganizationDirectory: () => ({ isSuccess: false, error: null }) }));
 vi.mock("../hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: false }) }));
 vi.mock("../hub/useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: true }) }));
 vi.mock("../hub/HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));

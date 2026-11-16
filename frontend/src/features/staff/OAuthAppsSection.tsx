@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 // #196: a space's registered OAuth apps (app connections). The Space Manager, or the superadmin
 // for any space, registers an app; people then connect it to their own account on the consent screen.
 import { t } from "@lingui/core/macro";
@@ -42,6 +43,7 @@ export function OAuthAppsSection({ makerspaceId }: { makerspaceId: number }) {
     onSuccess: () => { void refresh(); },
   });
   return <div className="grid gap-3">
+    <QueryErrors queries={[apps]} />
     <Field label={t`App name`}><input className="desk-input w-full" value={name} onChange={(event) => setName(event.target.value)} /></Field>
     <Field label={t`Redirect URIs (https, one per line)`}>
       <textarea className="desk-input min-h-20 w-full" value={uris} onChange={(event) => setUris(event.target.value)} /></Field>
@@ -67,7 +69,7 @@ export function OAuthAppsSection({ makerspaceId }: { makerspaceId: number }) {
         <button className="desk-button" disabled={update.isPending} onClick={() => update.mutate({ id: app.id, active: !app.is_active })}>
           {app.is_active ? t`Switch off` : t`Switch on`}</button>
         <button className="desk-button" onClick={() => setRemove(app.id)}>{t`Delete`}</button></>} />)}
-    {!apps.isLoading && !apps.data?.length ? <EmptyState message={t`No apps registered. People connect an app from its sign-in button.`} /> : null}
+    {!apps.isLoading && !apps.error && !apps.data?.length ? <EmptyState message={t`No apps registered. People connect an app from its sign-in button.`} /> : null}
     <ConfirmDialog open={remove !== null} tone="danger" title={t`Delete this app?`} confirmLabel={t`Delete`} pending={destroy.isPending}
       message={t`Everyone who connected it loses the connection at once.`} onCancel={() => setRemove(null)}
       onConfirm={() => { if (remove !== null) destroy.mutate(remove); setRemove(null); }} />

@@ -52,7 +52,7 @@ function ReferenceBlock({ title, value, tall = false }: { title: string; value: 
 
 export function PreviewPane({ preview, loading, error, onRetry }: { preview?: Preview; loading: boolean; error: Error | null; onRetry?: () => void }) {
   if (loading && !preview) return <LogoLoader size={48} className="min-h-96 py-3" />;
-  if (error) return <ErrorBlock error={new Error(t`Couldn't load the preview. Try again.`)} onRetry={isRetryable(error) ? onRetry : undefined} />;
+  if (error) return <ErrorBlock error={isRetryable(error) ? (new Error(t`Couldn't load the preview. Try again.`)) : error} onRetry={isRetryable(error) ? onRetry : undefined} />;
   return (
     <div className="grid gap-3 rounded-md border border-line bg-bg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">

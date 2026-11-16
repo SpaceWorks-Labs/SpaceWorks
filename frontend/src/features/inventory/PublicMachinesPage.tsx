@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -66,6 +67,7 @@ export function PublicMachinesPage() {
   useEffect(() => { setPage(1); setKind(""); setTrainingOnly(false); }, [makerspaceSlug, detailEnabled]);
   const machines = useQuery({
     queryKey: ["public-machines", makerspaceSlug, detailEnabled, page],
+    enabled: Boolean(bootstrap && makerspaceSlug),
     queryFn: () => tenantPublicRequest<PaginatedMachines>(
       makerspaceSlug, publicMachinesPath(makerspaceSlug) + (detailEnabled ? "/details" : "") + `?page=${page}&page_size=24`,
     ),
@@ -99,14 +101,14 @@ export function PublicMachinesPage() {
 
   const visibleGroups = groups.filter(group => !kind || group.name === kind).map(group => ({ ...group, machines: group.machines.filter(machine => !trainingOnly || machine.training_required === true) })).filter(group => group.machines.length);
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
-  return <div style={brandStyle}>
+  return <><QueryErrors queries={[jobTypes]} />{<div style={brandStyle}>
     <PageMetadata title={t`Machines · ${displayName}`} description={t`What you can use at ${displayName}`} path={tenantPath("machines")}
       image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
       header={{ title: t`Machines`, subtitle: t`What you can use at ${displayName}`, ...(jobTypeIds.size
         ? { primary: { label: t`Request a job`, href: tenantPath("machine-jobs/new") }, secondary: { label: t`Member area`, href: tenantPath("member") } }
         : { primary: { label: t`Member area`, href: tenantPath("member") } }) }}
-      state={machines.isLoading ? { status: "loading" } : machines.error ? publicErrorState(machines.error, { surface: "machines" }, () => { void machines.refetch(); }) : { status: "ready" }}
+      state={tenant.mode === "central" && bootstrapQuery.error ? publicErrorState(bootstrapQuery.error, { surface: "machines" }, () => { void bootstrapQuery.refetch(); }) : !bootstrap || machines.isLoading ? { status: "loading" } : machines.error ? publicErrorState(machines.error, { surface: "machines" }, () => { void machines.refetch(); }) : { status: "ready" }}
       isEmpty={!groups.length} empty={{ message: t`No machines listed yet. Check back soon.` }}>
       {!intakeAvailable && bootstrap ? <p role="status">{t`Online machine requests aren't available here. Ask space staff for help.`}</p> : null}
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label={t`Filter machines`}>
@@ -129,5 +131,5 @@ export function PublicMachinesPage() {
       </CollapsibleSection>)}</div>
       <Pagination page={page} onChange={setPage} totalPages={Math.max(1, Math.ceil((machines.data?.count ?? 0) / 24))} count={machines.data?.count} pageSize={24} disabled={machines.isFetching} />
     </PublicLayout>
-  </div>;
+  </div>}</>;
 }

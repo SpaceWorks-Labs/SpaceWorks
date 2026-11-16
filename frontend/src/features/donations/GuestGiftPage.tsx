@@ -29,7 +29,7 @@ export function GuestGiftPage() {
     </DonationShell>;
   }
   const state = gift.isLoading ? { status: "loading" as const } : gift.error ? { status: "error" as const,
-    error: t`Couldn't load your gift.`, onRetry: isRetryable(gift.error) ? () => { void gift.refetch(); } : undefined } : { status: "ready" as const };
+    error: isRetryable(gift.error) ? (t`Couldn't load your gift.`) : (gift.error instanceof Error ? gift.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(gift.error) ? () => { void gift.refetch(); } : undefined } : { status: "ready" as const };
   return <DonationShell title={t`Your gift`} state={state}>
     {gift.data ? <div className="grid gap-3">
       <GiftStatusView gift={gift.data} taxReceiptHref={donationsApi.taxReceiptUrl(token)} onPayOnline={() => pay.mutate()}

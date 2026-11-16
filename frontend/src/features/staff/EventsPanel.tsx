@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { formatDateTime, formatLocale } from "../../lib/format";
 import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
@@ -153,7 +154,7 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules
     preview={{ label: t`Event preview`, content: <EventCreatePreview values={creationMode === "single" ? newValues : newSeriesValues} currency={events.data?.results[0]?.currency} /> }}
     submit={{ label: creationMode === "single" ? t`Create event` : t`Create series`, pending: create.isPending || createSeries.isPending || createWithRoom.isPending, pendingLabel: t`Creating…`,
       disabled: events.isPending || (creationMode === "single" && roomIncomplete), disabledReason: events.isPending ? t`Loading this space's default registration audience.` : creationMode === "single" && roomIncomplete ? t`Finish the venue step or choose “No room for now”.` : undefined, onClick: creationMode === "single" ? submit : submitSeries }} />;
-  return <div><ListLayout
+  return <><QueryErrors queries={[series]} />{<div><ListLayout
     header={{ title: t`Events`, subtitle: t`Bring people together. Make something happen.`, primary: denied ? undefined : { label: t`New event`, onClick: () => { setCreationMode("single"); setCreating(true); } }, secondary: denied ? undefined : { label: t`New series`, onClick: () => { setCreationMode("series"); setCreating(true); } }, overflow: denied ? undefined : [...eventSettings.actions, ...eventPayments.actions] }}
     callout={denied ? undefined : collaborations.callout}
     state={denied || isQueue || isInsights ? { status: "ready" } : opsQueryState(view.active === "series" ? series : events, "events")}
@@ -168,5 +169,5 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules
     detail={denied ? undefined : collaborations.detail} />
     {eventSettings.dialog}
     {eventPayments.dialog}
-  </div>;
+  </div>}</>;
 }

@@ -84,8 +84,10 @@ it("token or host changes bind a fresh denied consent policy", async () => {
   expect(mocks.update.mock.lastCall![2].analytics).toBe(true);
   window.__MIXPANEL__ = { ...selected, token: "other-public-project", apiHost: "https://collector.example.test" };
   view.rerender(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/m/lab"]}><WebTelemetry /></MemoryRouter></QueryClientProvider>);
-  await waitFor(() => expect(screen.getByRole("checkbox", { name: "Usage analytics" })).not.toBeChecked());
-  expect(mocks.update.mock.lastCall![2]).toEqual(deniedConsent());
+  await waitFor(() => {
+    expect(screen.getByRole("checkbox", { name: "Usage analytics" })).not.toBeChecked();
+    expect(mocks.update.mock.lastCall![2]).toEqual(deniedConsent());
+  });
   expect(mocks.update.mock.lastCall![6]).toEqual(window.__MIXPANEL__);
 });
 

@@ -21,7 +21,7 @@ export type FeatureArea = {
 /** Core and always-installed modules, then setup's default-yes areas (Inventory, Machines, Reports). */
 const MODULE_DEFAULTS: Record<ModuleKey, ModuleDefault> = {
   public_inventory: "always", request_workflow: "always", staff_admin: "always", scanner: "always",
-  evidence_uploads: "always", qr_management: "always", notifications: "always", email: "always", member_accounts: "always",
+  evidence_uploads: "always", qr_management: "always", notifications: "on", email: "on", member_accounts: "on",
   guest_handover: "on", asset_units: "on", containers: "on", bulk_import: "on", stock_transfers: "on",
   qr_print_batches: "on", stocktake: "on", devices: "on", machines: "on", machine_service: "on", reports: "on",
   events: "off", event_reimbursements: "off", bookings: "off", membership: "off", presence: "off", mobile: "off",

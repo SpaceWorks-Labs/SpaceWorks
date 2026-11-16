@@ -1,3 +1,5 @@
+import { isRetryable } from "../../../lib/api/errors";
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,12 +21,14 @@ export function VolunteerLog({ makerspaceId }: { makerspaceId: number }) {
     mutationFn: () => communityMemberApi.logHours(makerspaceId, { minutes: Number(form.minutes), worked_on: form.day, description: form.description.trim() }),
     onSuccess: () => { setForm({ minutes: "", day: "", description: "" }); void client.invalidateQueries({ queryKey: communityKeys.myHours(makerspaceId) }); },
   });
+  if (hours.error && isRetryable(hours.error)) return <QueryErrors queries={[hours, credits]} />;
   if (hours.isError) return null;
   const entries = hours.data ?? [];
   const available = (credits.data ?? []).filter((row) => row.status === "available");
   return <section aria-labelledby="volunteer-log-title" className="desk-panel grid gap-4 p-5">
     <div><h2 id="volunteer-log-title" className="title-panel">{t`Volunteering`}</h2>
       <p className="mt-1 text-sm text-muted">{t`Log the time you gave. Once staff approve it, hours can earn a credit on your next membership charge.`}</p></div>
+    {credits.error && isRetryable(credits.error) ? <QueryErrors queries={[credits]} /> : null}
     {available.length ? <p className="text-sm text-success-ink">{t`Credits waiting for your next charge: ${available.map(creditLabel).join(", ")}`}</p> : null}
     <form className="grid gap-3" aria-label={t`Log volunteer hours`} onSubmit={(event) => { event.preventDefault(); log.mutate(); }}>
       <div className="grid gap-3 sm:grid-cols-2">

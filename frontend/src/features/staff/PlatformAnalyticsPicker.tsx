@@ -23,7 +23,7 @@ export function PlatformAnalyticsPicker({ period }: { period: AnalyticsPeriod })
       {space && !spaces.data?.results.some(row => row.id === space.id) ? <option value={space.id}>{space.name}</option> : null}
       {spaces.data?.results.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
     </select></label>
-    {spaces.isLoading ? <LogoLoader label={t`Loading makerspaces…`} size={48} className="min-h-16 py-3" /> : spaces.isError ? <div role="alert"><p>{t`Couldn't load the makerspace picker.`}</p>{isRetryable(spaces.error) ? <button type="button" className="desk-button" onClick={() => void spaces.refetch()}>{t`Retry`}</button> : null}</div> : !spaces.data?.results.length ? <p>{t`No makerspaces are available for this report.`}</p> : null}
+    {spaces.isLoading ? <LogoLoader label={t`Loading makerspaces…`} size={48} className="min-h-16 py-3" /> : spaces.isError ? <div role="alert"><p>{isRetryable(spaces.error) ? t`Couldn't load the makerspace picker.` : (spaces.error instanceof Error ? spaces.error.message : t`This content is no longer available for your access.`)}</p>{isRetryable(spaces.error) ? <button type="button" className="desk-button" onClick={() => void spaces.refetch()}>{t`Retry`}</button> : null}</div> : !spaces.data?.results.length ? <p>{t`No makerspaces are available for this report.`}</p> : null}
     {spaces.data && (spaces.data.next || spaces.data.previous) ? <Pagination page={page} totalPages={Math.ceil(spaces.data.count / 24)} onChange={setPage} /> : null}
     {space ? <PlatformTenantAnalytics key={space.id} space={space} period={period} initialReport={pickerReport} /> : <p className="text-sm text-muted">{t`Choose a space to open its scoped analytics.`}</p>}
   </section>;

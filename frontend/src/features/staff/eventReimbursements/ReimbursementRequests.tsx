@@ -20,7 +20,7 @@ export function ReimbursementRequests({ scope }: { scope: EventScope }) {
   const [selected, setSelected] = useState<RequestReviewRow | null>(null);
   const query = useRequestQueue(scope, page);
   return <ListLayout header={{ title: t`Support request screening`, subtitle: t`Offer awards within the approved policy and available budget.` }}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Requests could not be loaded.`, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: isRetryable(query.error) ? (t`Requests could not be loaded.`) : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }}
     isEmpty={query.data?.count === 0} empty={{ message: t`No support requests to review.` }} pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: "rows", rows: query.data?.results.map(row => <article key={row.id} className="grid gap-3 rounded-2xl border border-line bg-panel p-5">
       <h2 className="title-section">{row.owner_label}</h2><p>{t`${reimbursementStateLabel(row.state)} · estimated ${formatMinorMoney(row.estimated_total_minor, row.currency)}`}</p>

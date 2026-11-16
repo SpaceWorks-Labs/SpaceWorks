@@ -60,7 +60,7 @@ export function SchedulePanel({ makerspace, allowedTabs, guestOnly, singleTenant
       </label>)}
     </fieldset> : null}
     <QueryContent state={schedule.isLoading ? { status: "loading" } : schedule.error
-      ? { status: "error", error: t`Couldn't load the schedule. Try again.`, onRetry: isRetryable(schedule.error) ? () => { void schedule.refetch(); } : undefined } : { status: "ready" }}
+      ? { status: "error", error: isRetryable(schedule.error) ? (t`Couldn't load the schedule. Try again.`) : (schedule.error instanceof Error ? schedule.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(schedule.error) ? () => { void schedule.refetch(); } : undefined } : { status: "ready" }}
       isEmpty={schedule.isSuccess && (!layers.length || !entries.length)}
       empty={{ message: !layers.length ? t`Nothing here is yours to schedule yet. Bookings, events, machine jobs and maintenance appear once you run one of those areas.`
         : t`Nothing scheduled for ${range}. Try another range or turn more layers on.` }}>

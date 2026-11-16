@@ -14,6 +14,8 @@ import { moduleGroups, moduleSlug } from "./featuresPage/moduleGroups";
 import { HubFooter } from "./HubFooter";
 import { HubHeader } from "./HubHeader";
 import { DOCS_LINKS } from "./hubLinks";
+import { FeatureCoverage } from "./landing/FeatureCoverage";
+import { ProductGuide } from "./landing/ProductGuide";
 import "./hub.css";
 import "./featuresPage/features.css";
 import { SearchField } from "../../components/ui/SearchField";
@@ -78,6 +80,12 @@ export function FeaturesPage() {
         </section>)}
         {visible.length ? null : <p role="status" className="sw-features-empty">{t`No module matches "${query}". Try a shorter word.`}</p>}
       </div>
+      {needle ? null : <section className="sw-hub-wrap" aria-labelledby="features-guide-title">
+        <h2 id="features-guide-title" className="title-section">{t`One connected makerspace`}</h2>
+        <p className="mt-4 text-muted">{t`Six core modules always protect handovers. Other modules are optional: switching them off keeps their data; deleting it is a separate superadmin action. Maintenance, To-Buy, warranty and repairs are switches within their parent areas.`}</p>
+        <FeatureCoverage />
+        <ProductGuide />
+      </section>}
       {/* Patch is this closing section's one bold moment, so its buttons stay teal (no orange beside it). */}
       <section aria-labelledby="features-cta-title" className="sw-hub-wrap">
         <div className="sw-features-cta">

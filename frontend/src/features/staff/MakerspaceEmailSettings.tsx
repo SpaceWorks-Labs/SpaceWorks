@@ -127,7 +127,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
         {!recipients.isLoading && recipients.data?.length === 0 ? (
           <p className="mt-3 text-sm text-muted">{t`No managers to notify yet.`}</p>
         ) : null}
-        {recipients.error ? <ErrorBlock error={new Error(t`Couldn't load notification recipients. Try again.`)} onRetry={isRetryable(recipients.error) ? () => { void recipients.refetch(); } : undefined} /> : null}
+        {recipients.error ? <ErrorBlock error={isRetryable(recipients.error) ? (new Error(t`Couldn't load notification recipients. Try again.`)) : recipients.error} onRetry={isRetryable(recipients.error) ? () => { void recipients.refetch(); } : undefined} /> : null}
         {saveRecipients.error ? (
           <p className="mt-3 text-sm text-danger">{saveRecipients.error.message}</p>
         ) : null}

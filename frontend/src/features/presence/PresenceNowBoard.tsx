@@ -38,7 +38,7 @@ export function PresenceNowBoard({ slug, spaceName, enabled }: PresenceNowBoardP
   const rows = tv.data ?? [];
   const canFullscreen = typeof document !== "undefined" && typeof document.documentElement.requestFullscreen === "function";
   const state = missing ? { status: "ready" as const } : tv.isLoading ? { status: "loading" as const }
-    : tv.isError && !tv.data ? { status: "error" as const, error: t`Couldn't load who's in. Retrying automatically.`, onRetry: isRetryable(tv.error) ? () => void tv.refetch() : undefined } : { status: "ready" as const };
+    : tv.isError && !tv.data ? { status: "error" as const, error: isRetryable(tv.error) ? (t`Couldn't load who's in. Retrying automatically.`) : (tv.error instanceof Error ? tv.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(tv.error) ? () => void tv.refetch() : undefined } : { status: "ready" as const };
   return <KioskLayout mode="work" state={state}
     isEmpty={missing || (tv.isSuccess && rows.length === 0)}
     empty={{ message: missing ? t`This display isn't available for this makerspace.` : t`No one is checked in right now.` }}

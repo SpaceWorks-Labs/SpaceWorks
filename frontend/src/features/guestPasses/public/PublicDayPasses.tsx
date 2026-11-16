@@ -1,3 +1,5 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
+import { isRetryable } from "../../../lib/api/errors";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
@@ -14,6 +16,7 @@ import { guestKeys, publicDayPasses } from "../api";
 export function PublicDayPasses({ slug, memberHref }: { slug: string; memberHref: string }) {
   const offers = useQuery({ queryKey: guestKeys.publicOffers(slug), queryFn: () => publicDayPasses(slug), retry: false, enabled: Boolean(slug) });
   const rows = offers.data ?? [];
+  if (offers.error && isRetryable(offers.error)) return <QueryErrors queries={[offers]} />;
   if (!rows.length) return null;
   return <MakerspaceSection id="day-passes" title={t`Visit for a day`} subtitle={t`Not a member? A day pass lets you use the space for one day.`}>
     <div className="desk-panel grid gap-4 p-5">

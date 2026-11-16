@@ -6,6 +6,7 @@ import { featureCatalogue } from "./catalogue";
 import { defaultLabel, moduleSummary, summaryLine } from "./featureSummary";
 import { moduleDefault } from "./featureAreas";
 import { moduleSlug } from "./moduleGroups";
+import { moduleWithout } from "./moduleLifecycle";
 
 /** One module on the overview: icon, name, one-line value, counts, and a link to its page. */
 export function ModuleCard({ module, solo = false }: { module: ModuleKey; solo?: boolean }) {
@@ -17,6 +18,7 @@ export function ModuleCard({ module, solo = false }: { module: ModuleKey; solo?:
       <TransitionLink to={`/features/${moduleSlug(module)}`} className="sw-features-card-link">{moduleLabel(module)}</TransitionLink>
     </h3>
     <p className="text-muted">{entry.value}</p>
+    <p className="text-sm text-muted" data-module-without>{moduleWithout()[module]}</p>
     <p className="sw-features-card-meta">
       <span>{summaryLine(moduleSummary(module))}</span>
       <span className="sw-features-default" data-default={moduleDefault(module)}>{defaultLabel(module)}</span>

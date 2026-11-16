@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -76,7 +77,7 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
             sheetImport={featureEnabled(enabledFeatures, "membership.id_programmes_import_sheets")} /> }} />
     </div>;
   }
-  return <div onClickCapture={tabs.onClickCapture}>
+  return <><QueryErrors queries={[memberships, settings]} />{<div onClickCapture={tabs.onClickCapture}>
     <ListLayout header={{ title: t`Member cards`, subtitle: t`Cards that open the member area at the desk and prove membership.`,
       primary: { label: selected.length ? plural(selected.length, { one: "Print sheet (# selected)", other: "Print sheet (# selected)" }) : t`Print all active`,
         onClick: () => printSheet.mutate(selected), pending: printSheet.isPending, pendingLabel: t`Preparing…` },
@@ -107,5 +108,5 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
           onDone={() => void queryClient.invalidateQueries({ queryKey: ["member-cards", makerspaceId] })} />
         <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={scope} jobsPath={jobsPath}
           previewPath={`${jobsPath}/preview`} title={selected.length ? t`Print sheet: ${selected.length} selected cards` : t`Print sheet: all active cards`} /></>} />
-  </div>;
+  </div>}</>;
 }

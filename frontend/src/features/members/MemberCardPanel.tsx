@@ -2,7 +2,7 @@ import { formatDate } from "../../lib/format";
 import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
-import { Callout, EmptyState, StatusPill, TicketCard, Icon } from "../../components/ui";
+import { ErrorBlock, Callout, EmptyState, StatusPill, TicketCard, Icon } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { CardPhotoUpload } from "./memberCard/CardPhotoUpload";
 import { OfflineCardSave } from "./memberCard/OfflineCardSave";
@@ -50,9 +50,7 @@ export function MemberCardPanel({ makerspaceId, spaceName: givenSpaceName, compa
     return (
       <section className="desk-panel p-5">
         <h2 className="title-panel">{t`Your member card`}</h2>
-        <p className="mt-1 text-sm text-danger" role="alert">
-          {card.error instanceof Error ? card.error.message : t`Could not load your card.`}
-        </p>
+        <ErrorBlock error={card.error instanceof Error ? card.error : new Error(t`Could not load your card.`)} onRetry={() => { void card.refetch(); }} />
       </section>
     );
   }

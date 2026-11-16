@@ -82,7 +82,7 @@ export function DonatePage() {
   }
   const data = page.data;
   const state = page.isLoading ? { status: "loading" as const } : page.error ? { status: "error" as const,
-    error: t`Couldn't load the donation page.`, onRetry: isRetryable(page.error) ? () => { void page.refetch(); } : undefined } : { status: "ready" as const };
+    error: isRetryable(page.error) ? (t`Couldn't load the donation page.`) : (page.error instanceof Error ? page.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(page.error) ? () => { void page.refetch(); } : undefined } : { status: "ready" as const };
   return <DonationShell title={data ? t`Support ${data.makerspace}` : t`Support this space`} subtitle={data?.intro || undefined}
     state={state}>
     {!done && featured ? <CampaignHero campaign={featured} /> : null}

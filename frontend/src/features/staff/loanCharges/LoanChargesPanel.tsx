@@ -75,7 +75,7 @@ function LoanChargesSection({ makerspaceId, requestId, inDisclosure = false }: {
   if (query.isLoading) return <LogoLoader label={t`Loading charges…`} size={48} className="min-h-16 py-3" />;
   if (query.error) {
     if (isHiddenError(query.error)) return inDisclosure ? <p className="text-sm text-muted">{t`Charges are not available to you for this loan.`}</p> : null;
-    return <p className="text-sm text-danger" role="alert">{t`Couldn't load this loan's charges.${" "}`}
+    return <p className="text-sm text-danger" role="alert">{isRetryable(query.error) ? t`Couldn't load this loan's charges.${" "}` : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`)}
       {isRetryable(query.error) ? <button className="desk-button-ghost underline" type="button" onClick={() => void query.refetch()}>{t`Try again`}</button> : null}</p>;
   }
   const data = query.data as LoanCharges | undefined;

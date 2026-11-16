@@ -45,6 +45,7 @@ type Props = {
   existingPools: PrinterPool[];
   machinesLoading: boolean;
   machinesFailed: boolean;
+  machinesError?: string;
   onSelectMachine: (machineId: number) => void;
   draft: ServiceDraft;
   setDraft: (update: (draft: ServiceDraft) => ServiceDraft) => void;
@@ -73,7 +74,7 @@ type Props = {
 export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage, canConfigureMachineTypes = false,
   machineServiceEnabled, printingEnabled, reportsEnabled = true, machineType, allMachines, visibleMachines,
   typePools, formPools, existingPools, machinesLoading, machinesFailed, onSelectMachine, draft, setDraft,
-  detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools, onWorkOrders, onSessions, printerAdapter = false, routedView, tabHref }: Props) {
+  machinesError, detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools, onWorkOrders, onSessions, printerAdapter = false, routedView, tabHref }: Props) {
   const [creating, setCreating] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [createdMachineId, setCreatedMachineId] = useState<number | null>(null);
@@ -149,9 +150,9 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
         secondary: service && view.active === "queue" ? { label: t`Log usage`, onClick: () => setLogging(true) } : undefined,
         overflow: onWorkOrders || onSessions ? [...(onWorkOrders ? [{ label: t`Work orders`, onClick: onWorkOrders }] : []),
           ...(onSessions ? [{ label: t`Sessions`, onClick: onSessions }] : [])] : undefined }}
-      banner={poolError ? { size: "banner", tone: "warn", lead: onRetryPools ? t`Couldn’t load consumable pools. Try again before starting work.` : t`Couldn’t load consumable pools.`, action: onRetryPools ? { label: t`Retry`, onClick: onRetryPools } : undefined } : undefined}
+      banner={poolError ? { size: "banner", tone: "warn", lead: onRetryPools ? t`Couldn’t load consumable pools. Try again before starting work.` : poolError, action: onRetryPools ? { label: t`Retry`, onClick: onRetryPools } : undefined } : undefined}
       tabs={view.tabs} activeTab={view.active} main={main}
-      state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: t`Couldn't load machines. Try again.`, onRetry } : { status: "ready" }} />
+      state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: onRetry ? t`Couldn't load machines. Try again.` : machinesError ?? t`This content is no longer available for your access.`, onRetry } : { status: "ready" }} />
 
   </div>;
 }

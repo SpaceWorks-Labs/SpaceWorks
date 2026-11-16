@@ -79,7 +79,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
           ))}
         </div>
       ) : null}
-      {spaces.error ? <ErrorBlock error={new Error(t`Couldn't load booking rules. Try again.`)} onRetry={isRetryable(spaces.error) ? () => { void spaces.refetch(); } : undefined} /> : null}
+      {spaces.error ? <ErrorBlock error={isRetryable(spaces.error) ? (new Error(t`Couldn't load booking rules. Try again.`)) : spaces.error} onRetry={isRetryable(spaces.error) ? () => { void spaces.refetch(); } : undefined} /> : null}
       {spaces.data ? <Pagination page={page} count={spaces.data.count} pageSize={pageSize} totalPages={Math.ceil(spaces.data.count / pageSize)} onChange={setPage} disabled={spaces.isFetching} /> : null}
     </div></SettingsRow></SettingsQueryState>
   );

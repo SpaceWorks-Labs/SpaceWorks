@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { refreshAccessToken, StructuredApiError } from "../../lib/api";
+import { refreshAccessToken } from "../../lib/api";
 import { CenteredCardLayout } from "../../components/layouts";
 import { NotFoundPage } from "../NotFoundPage";
 import { isProfileMissing, isSignedOutError, useAccountProfile } from "./publicProfileApi";
@@ -20,7 +20,7 @@ export function ProfileByAccountPage() {
   if (!/^\d+$/.test(accountId) || isProfileMissing(profile.error)) return <NotFoundPage />;
   if (session === "out" || isSignedOutError(profile.error)) return <CenteredCardLayout state={{ status: "ready" }} title={t`Sign in to view this profile`}
     body={t`This profile is only shown to signed-in members.`} primary={{ label: t`Sign in`, href: "/member" }} />;
-  const failure = profile.error instanceof StructuredApiError && profile.error.detail ? profile.error.detail : t`Couldn't load this profile. Try again.`;
+  const failure = isRetryable(profile.error) ? t`Couldn't load this profile. Try again.` : profile.error?.message;
   return <ProfileFrame state={session === "checking" || profile.isLoading ? { status: "loading" }
     : profile.error ? { status: "error", error: failure, onRetry: isRetryable(profile.error) ? () => { void profile.refetch(); } : undefined } : { status: "ready" }}>
     {profile.data ? <GlobalProfileView key={profile.data.account_id} profile={profile.data} editHref={editor.href} /> : null}

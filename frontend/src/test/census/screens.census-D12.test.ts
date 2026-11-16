@@ -39,6 +39,9 @@ describe("D12 per-screen driver contracts", () => {
       } else if (entry.screen === "JobRequestPage" && entry.phase === "module") {
         expect(source).toContain("${displayName} isn't taking job requests right now.");
         expect(entry.text).toBe("D12 Lab isn't taking job requests right now.");
+      } else if (entry.screen === "CardVerifyPage" && entry.phase === "permission") {
+        expect(entry.text).toBe(REFUSALS.permission.detail);
+        expect(readFileSync(resolve(ROOT, "src/features/cards/CardVerifyPage.tsx"), "utf8")).toContain("check.error.message");
       } else expect(source).toContain(entry.text);
     }
     for (const entry of EMPTY_FORMS) {

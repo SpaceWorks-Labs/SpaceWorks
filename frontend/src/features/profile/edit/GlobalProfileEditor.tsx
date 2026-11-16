@@ -48,7 +48,7 @@ function ProfileForm({ profile }: { profile: AccountProfile }) {
 export function GlobalProfileEditor() {
   const profile = useOwnProfile();
   if (profile.isLoading) return <LogoLoader label={t`Loading your profile…`} size={48} className="min-h-48 py-3" />;
-  if (profile.error || !profile.data) return <ErrorBlock error={new Error(profile.error instanceof Error ? profile.error.message : t`Unable to load your profile.`)} onRetry={isRetryable(profile.error) ? () => { void profile.refetch(); } : undefined} />;
+  if (profile.error || !profile.data) return <ErrorBlock error={isRetryable(profile.error) ? (new Error(profile.error instanceof Error ? profile.error.message : t`Unable to load your profile.`)) : profile.error} onRetry={isRetryable(profile.error) ? () => { void profile.refetch(); } : undefined} />;
   return <div className="grid gap-5">
     <VisibilityPanel profile={profile.data} />
     <ProfileForm profile={profile.data} />

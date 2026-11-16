@@ -31,7 +31,7 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
 
   if (summary.isLoading) return <section className="desk-panel p-5"><LogoLoader size={48} className="min-h-40 py-3" /></section>;
   if (summary.error || !summary.data) {
-    return <section className="desk-panel p-5"><Callout size="panel" tone="danger" lead={t`Analytics could not load.`}
+    return <section className="desk-panel p-5"><Callout size="panel" tone="danger" lead={isRetryable(summary.error) ? t`Analytics could not load.` : errorText(summary.error, t`This content is no longer available for your access.`)}
       body={errorText(summary.error, t`Try again in a moment.`)} />
       {isRetryable(summary.error) ? <button type="button" className="desk-button" onClick={() => { void summary.refetch(); }}>{t`Retry`}</button> : null}{scope.kind === "platform" ? <PublicFirebaseSettings /> : <p>{t`Ask a platform administrator to configure Firebase web notifications.`}</p>}</section>;
   }

@@ -67,7 +67,7 @@ export function MemberTermsDialog({
       open
       onClose={onClose}
       title={t`Membership terms for ${memberName}`}
-      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: t`Couldn't load terms. Try again.`, onRetry: isRetryable(terms.error) ? () => { void terms.refetch(); } : undefined }}
+      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: isRetryable(terms.error) ? (t`Couldn't load terms. Try again.`) : (terms.error instanceof Error ? terms.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(terms.error) ? () => { void terms.refetch(); } : undefined }}
       footer={{ secondary: [{ label: t`Close`, onClick: onClose }] }} main={<>
       <form
         className="flex flex-wrap items-end gap-2"

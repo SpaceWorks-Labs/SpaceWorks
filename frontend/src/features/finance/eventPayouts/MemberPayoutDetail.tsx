@@ -19,7 +19,7 @@ export function MemberPayoutDetail({ actorId, id, backHref }: { actorId: number;
   return <DetailLayout title={row?.event_title ?? t`Your reimbursement`} status={row ? payoutStateLabel(row.state) : undefined}
     back={backHref ? { label: t`Your reimbursements`, href: backHref } : undefined}
     state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: query.error instanceof StructuredApiError && query.error.status === 404
-      ? t`We couldn't find this reimbursement in your account.` : t`Your reimbursement could not be loaded.`,
+      ? t`We couldn't find this reimbursement in your account.` : isRetryable(query.error) ? t`Your reimbursement could not be loaded.` : query.error?.message,
       onRetry: query.error && isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
     main={row ? <div className="grid gap-6"><div key={`${scopeIdentity(actorId)}:${id}:${row.version}`} className="grid gap-6">
       <p>{t`${money(row.approved_minor, row.currency)} approved · ${money(row.effective_paid_minor, row.currency)} recorded paid · ${money(row.remaining_minor, row.currency)} remaining`}</p>

@@ -158,7 +158,7 @@ export function EmailTemplateEditor({
     <DetailLayout title={detail.data?.label ?? t`Email template`} back={onBack ? { label: t`All templates`, onClick: onBack } : undefined}
       status={<StatusPill label={detail.data?.is_overridden ? t`Edited` : t`Default`} tone={detail.data?.is_overridden ? "warn" : "neutral"} />}
       meta={[`${selected.stream} · to ${selected.audience}`]}
-      state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: t`Couldn't load the template. Try again.`, onRetry: isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined }}
+      state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: isRetryable(detail.error) ? (t`Couldn't load the template. Try again.`) : (detail.error instanceof Error ? detail.error.message : t`This content is no longer available for your access.`), onRetry: isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined }}
       actions={{ primary: { label: t`Save`, pending: save.isPending, onClick: () => save.mutate(),
         // Never save before the template has loaded: an empty draft would overwrite it.
         disabled: !detail.data, disabledReason: !detail.data ? t`Wait for the template to load.` : undefined },

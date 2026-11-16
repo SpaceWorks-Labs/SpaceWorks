@@ -28,7 +28,7 @@ export function TimelineEditor() {
         <SectionToggle section="education" label={t`Show education`} /></div>
     </SettingsRow>
     {timeline.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
-    {timeline.error ? <div className="py-4"><ErrorBlock error={new Error(t`Couldn't load your timeline. Try again.`)} onRetry={isRetryable(timeline.error) ? () => { void timeline.refetch(); } : undefined} /></div> : null}
+    {timeline.error ? <div className="py-4"><ErrorBlock error={isRetryable(timeline.error) ? (new Error(t`Couldn't load your timeline. Try again.`)) : timeline.error} onRetry={isRetryable(timeline.error) ? () => { void timeline.refetch(); } : undefined} /></div> : null}
     {!timeline.isLoading && !timeline.error ? KINDS.map(kind => {
       const copy = TIMELINE_COPY[kind];
       const entries = rows.filter(row => row.kind === kind);

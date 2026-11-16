@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -53,9 +54,10 @@ function CalendarScope({ slug, context, owner }: { slug: string; context: Sessio
   const denied = [state.error, issue.error, revoke.error].some(error => [401, 403, 404].includes((error as { status?: number } | null)?.status ?? 0));
   if (retired || !admitted() || denied) return null;
   return <div className="mt-3 rounded-lg border border-line p-3">
+    <QueryErrors queries={[state]} />
     <p className="text-sm text-muted">{t`Subscribe to your own bookings. Keep the calendar link private; rotating it disables the previous link.`}</p>
     <div className="mt-2 flex flex-wrap gap-2"><button type="button" className="desk-button-brand" disabled={state.isLoading || state.isError || issue.isPending || revoke.isPending} onClick={() => issue.mutate()}>{state.data?.enabled ? t`Rotate calendar link` : t`Create calendar link`}</button>{state.data?.enabled ? <button type="button" className="desk-button-ghost" disabled={issue.isPending || revoke.isPending} onClick={() => revoke.mutate()}>{t`Revoke calendar link`}</button> : null}</div>
     {url ? <label className="mt-2 grid gap-1 text-sm">{t`Private calendar URL`}<input className="desk-input w-full" readOnly value={url} onFocus={(event) => event.target.select()} /></label> : null}
-    {state.error || issue.error || revoke.error ? <p role="alert" className="text-danger">{(state.error ?? issue.error ?? revoke.error)?.message}</p> : null}
+    {issue.error || revoke.error ? <p role="alert" className="text-danger">{(issue.error ?? revoke.error)?.message}</p> : null}
   </div>;
 }

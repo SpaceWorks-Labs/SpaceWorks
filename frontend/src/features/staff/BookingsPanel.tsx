@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -75,7 +76,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false, publicSi
       onStatus={status => setParam("status", status === "pending" ? null : status)} onOpenBooking={booking => openBooking(booking.space_id, booking.id)} />
     : view === "issues" ? <BookingIssuesList makerspaceId={makerspaceId} onOpenBooking={issue => openBooking(issue.space_id, issue.booking_id)} />
     : null;
-  return <><ListLayout header={{ title: t`Bookings`,
+  return <><QueryErrors queries={[spaces, openIssues]} /><ListLayout header={{ title: t`Bookings`,
     subtitle: t`Manage spaces, booking requests and public availability.`,
     primary: unavailable ? undefined : { label: t`New space`, onClick: () => setCreateOpen(true) },
     secondary: unavailable ? undefined : { label: t`New booking`, onClick: () => setChoosingBooking(true) },

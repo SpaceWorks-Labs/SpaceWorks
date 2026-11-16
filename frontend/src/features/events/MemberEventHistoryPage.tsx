@@ -47,7 +47,7 @@ export function MemberEventHistoryPage() {
       {/* 403: no registration or talk here yet, or this account can't see history in this space. */}
       {status === 403 ? <EmptyState message={t`No event history here yet. Events you register for or speak at will appear here.`} /> : null}
       {error && status !== 403 ? <ErrorText message={error.message} onRetry={[identity.error, history.error].filter(Boolean).some(isRetryable) ? () => { void (identity.error ? identity.refetch() : history.refetch()); } : undefined} /> : null}
-      {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} onRetry={isRetryable(bootstrap.error) ? () => { void bootstrap.refetch(); } : undefined} /> : null}
+      {bootstrap.error ? <ErrorText message={isRetryable(bootstrap.error) ? (t`Unable to load this makerspace.`) : (bootstrap.error instanceof Error ? bootstrap.error.message : t`This content is no longer available for your access.`)} onRetry={isRetryable(bootstrap.error) ? () => { void bootstrap.refetch(); } : undefined} /> : null}
       {/* Decision 223 join funnel: an attendee who is not a member is offered a pre-filled membership request. */}
       {makerspaceId && attended && space?.features?.includes("membership.join_funnel") ? <section className="desk-panel grid gap-2 p-5" aria-label={t`Become a member`}>
         <h2 className="title-panel">{t`Become a member`}</h2><p className="text-sm text-muted">{t`Enjoyed the event? Join to use the space and borrow between events.`}</p>

@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { plural, t } from "@lingui/core/macro";
 import { sessionScope } from '../../staff/eventProgramme/sessionScope'
 import { useEffect, useRef, useState } from 'react'
@@ -25,7 +26,7 @@ export function TeamFinderPage({ context, accountId }: { context: ProgrammeConte
   useEffect(() => { if (own.data) { setIntro(own.data.intro ?? ''); setProfileSkills((own.data.skills ?? []).join(', ')) } }, [own.data])
   const action = useMutation({ mutationFn: ({ suffix, body, method = 'POST' }: { suffix: string; body: Record<string, unknown>; method?: 'POST' | 'PATCH' }) =>
     commands.current.send(base + suffix, method, body), onSuccess: () => client.invalidateQueries({ queryKey: key }) })
-  return <ListLayout header={{ title: t`Find your next teammate` }} state={cards.isLoading ? { status: 'loading' }
+  return <><QueryErrors queries={[own]} />{<ListLayout header={{ title: t`Find your next teammate` }} state={cards.isLoading ? { status: 'loading' }
     : cards.error ? { status: 'error', error: cards.error.message, onRetry: isRetryable(cards.error) ? () => { void cards.refetch() } : undefined } : { status: 'ready' }}
     empty={{ message: t`No teams or participants match these skills.` }}
     pagination={{ page, pageSize: 24, count: cards.data?.count ?? 0, onChange: setPage }}
@@ -54,5 +55,5 @@ export function TeamFinderPage({ context, accountId }: { context: ProgrammeConte
               onClick={() => action.mutate({ suffix: '/teams/' + card.id + '/join-request/', body: { expected_version: card.version } })}>{t`Request to join`}</button> : null}
           </div></Card>)}
       </>}
-    </> }} />
+    </> }} />}</>
 }

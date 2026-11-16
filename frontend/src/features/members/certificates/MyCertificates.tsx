@@ -51,7 +51,7 @@ function CertificateCard({ row, makerspaceId }: { row: HolderCertificate; makers
 export function MyCertificates({ makerspaceId }: { makerspaceId: number }) {
   const query = useMyCertificates(makerspaceId);
   if (query.isLoading) return <LogoLoader label={t`Loading your certificates…`} />;
-  if (query.isError) return <p role="alert" className="text-sm text-danger">{t`Your certificates could not be loaded. `}{isRetryable(query.error) ? <button type="button" className="desk-button-ghost" onClick={() => { void query.refetch(); }}>{t`Try again`}</button> : null}</p>;
+  if (query.isError) return <p role="alert" className="text-sm text-danger">{isRetryable(query.error) ? t`Your certificates could not be loaded. ` : (query.error instanceof Error ? query.error.message : t`This content is no longer available for your access.`)}{isRetryable(query.error) ? <button type="button" className="desk-button-ghost" onClick={() => { void query.refetch(); }}>{t`Try again`}</button> : null}</p>;
   if (!query.data?.length) return <EmptyState message={t`No certificates yet. They appear here once organisers issue them.`} />;
   return <ul className="grid gap-3" aria-label={t`My certificates`}>{query.data.map((row) => <CertificateCard key={row.id} row={row} makerspaceId={makerspaceId} />)}</ul>;
 }

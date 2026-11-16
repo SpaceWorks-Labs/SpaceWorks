@@ -1,3 +1,4 @@
+import { QueryErrors } from "../../../components/ui/QueryErrors";
 import { t } from "@lingui/core/macro";
 import type React from "react";
 import { ListLayout, DetailLayout } from "../../../components/layouts";
@@ -27,10 +28,10 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
         {createBatch.isError ? <ErrorText message={createBatch.error.message} /> : null}
       </Modal>
   </>;
-  if (!batchId) return <ListLayout header={{ title: t`QR labels`, subtitle: t`Print labels for items, units and boxes.`, primary: { label: t`New batch`, onClick: () => setBatchModalOpen(true) } }}
+  if (!batchId) return <><QueryErrors queries={[products]} /><ListLayout header={{ title: t`QR labels`, subtitle: t`Print labels for items, units and boxes.`, primary: { label: t`New batch`, onClick: () => setBatchModalOpen(true) } }}
     state={inventoryQueryState(batches, "label batches")} isEmpty={!batches.data?.results.length}
     empty={{ message: t`No label batches yet. Start one to print QR labels.`, action: { label: t`New batch`, onClick: () => setBatchModalOpen(true) } }}
-    body={{ kind: "rows", rows: batches.data?.results.map(item => <ListRow key={item.id} title={item.title} identity={{ kind: "date", date: item.created_at }} meta={<RelativeTime date={item.created_at} />} onClick={() => setBatchId(String(item.id))} />) }} detail={createDialog} />;
+    body={{ kind: "rows", rows: batches.data?.results.map(item => <ListRow key={item.id} title={item.title} identity={{ kind: "date", date: item.created_at }} meta={<RelativeTime date={item.created_at} />} onClick={() => setBatchId(String(item.id))} />) }} detail={createDialog} /></>;
   return <DetailLayout title={batch.data?.title ?? t`QR labels`} back={{ label: t`All batches`, onClick: () => setBatchId("") }} state={inventoryQueryState(batch, "this label batch")} meta={[`${batchItems.length} labels`]}
     actions={{ primary: { label: t`Download all (ZIP)`, pending: downloadZip.isPending, pendingLabel: t`Preparing…`, disabled: !batchItems.length, disabledReason: t`Add a label to this batch first.`, onClick: () => downloadZip.mutate() },
       secondary: { label: t`New batch`, icon: "Plus", onClick: () => setBatchModalOpen(true) } }}
